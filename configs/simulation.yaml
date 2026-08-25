@@ -1,0 +1,104 @@
+# Design choices and anything the fitted artifact does not supply.
+#
+# Values the artifact fits are deliberately absent here. Setting one in both
+# places raises rather than silently preferring one, because a measurement and
+# a choice support different claims and nothing distinguishes them afterwards.
+
+seed: 0
+
+population:
+  n_holders: 20000
+  cards_per_holder_mean: 2.0
+  accounts_per_holder_mean: 1.2
+  devices_per_holder_mean: 1.6
+  fingerprint_count: 500
+
+  households:
+    mean_size: 2.5
+    single_occupant_share: 0.28
+
+  devices:
+    emulator_share: 0.01
+    age_days_median: 180.0
+    age_days_spread: 1.2
+
+  activity:
+    tier_weights:
+      dormant: 0.40
+      occasional: 0.35
+      regular: 0.20
+      heavy: 0.05
+    tier_rate_multipliers:
+      dormant: 0.15
+      occasional: 0.6
+      regular: 1.0
+      heavy: 4.0
+
+  geo:
+    travel_share: 0.04
+    travel_distance_km: 400.0
+
+  merchants:
+    count: 2000
+    high_liquidity_share: 0.06
+    high_risk_share: 0.08
+    chargeback_rate_mean: 0.002
+
+  archetype_weights:
+    commuter: 0.24
+    homebody: 0.20
+    online_heavy: 0.18
+    traveller: 0.08
+    senior: 0.16
+    business: 0.14
+
+behavior:
+  hard_negatives:
+    naive_rule_trip_target: 0.065
+    new_device_rate_yearly: 0.6
+    travel_rate_yearly: 2.0
+    large_purchase_share: 0.01
+    dispute_rate: 0.0008
+    password_reset_rate_yearly: 0.35
+    gift_card_share: 0.02
+    shopping_session_share: 0.08
+
+engine:
+  fraud_base_rate: 0.005
+  check_invariants_every: 0
+
+  windows:
+    windows_seconds: [3600, 86400, 604800]
+    compound_criteria: [category_cluster, entry_mode, merchant_risk_tier]
+
+  rules:
+    txn_count_1h: 3
+    distinct_merchants_24h: 5
+    amount_sum_24h: 1000.0
+    new_account_txn_count: 1
+    new_account_days: 7
+    distinct_payment_methods_7d: 2
+    amount_ratio_30d: 3.0
+    declines_1h: 2
+    distinct_ips_24h: 3
+
+  channel:
+    base_decline_rate: 0.03
+    voice_similarity_threshold: 0.85
+    liveness_threshold: 0.90
+    document_forensic_threshold: 0.75
+    step_up_challenge_rate: 0.12
+    step_up_abandon_rate: 0.15
+    payee_cooling_off_hours: 24
+    manual_review_cost: 8.0
+
+  episode:
+    max_actions: 40
+    max_hours: 720
+    max_value_per_merchant: 2000.0
+
+warm_start:
+  events_per_entity: 10
+  lookback_days: 180
+  tenure_days_median: 400.0
+  tenure_days_spread: 1.1

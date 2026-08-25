@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fraudsim"
+version = "0.1.0"
+description = "Entity-graph world model and simulator for payment fraud research"
+requires-python = ">=3.13"
+
+# Runtime tier. Deliberately excludes pandas/pyarrow/networkx so that a stray
+# import in the simulation path fails in a clean install instead of silently
+# resolving against a globally installed copy.
+dependencies = [
+    "numpy>=2.5",
+    "scipy>=1.18",
+    "pydantic>=2.13",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+analysis = ["networkx>=3.6", "matplotlib>=3.10"]
+calibration = ["pandas>=2.2", "pyarrow>=17.0"]
+dev = ["pytest>=8.0", "pytest-cov"]
+
+[tool.setuptools.packages.find]
+include = ["fraudsim*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error::RuntimeWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
