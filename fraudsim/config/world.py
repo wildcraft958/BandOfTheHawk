@@ -128,7 +128,16 @@ class PopulationConfig(StrictModel):
     cards_per_holder_mean: Annotated[float, Field(ge=1.0, le=10.0)] = 2.0
     accounts_per_holder_mean: Annotated[float, Field(ge=1.0, le=5.0)] = 1.2
     devices_per_holder_mean: Annotated[float, Field(ge=1.0, le=6.0)] = 1.6
-    fingerprint_count: Annotated[int, Field(ge=10, le=200_000)] = 500
+
+    # Left unset by default, and derived from the fan-out target instead.
+    #
+    # A fixed count silently contradicts that target: the cards a signature
+    # reaches is devices-per-signature times cards-per-device, so choosing the
+    # count also chooses the reach. Setting 500 signatures against 32,000
+    # devices forces a reach near 134 whatever the degrees say, and the
+    # measured data had over nine thousand signatures across a comparable
+    # number of rows. Signatures are common, not rare.
+    fingerprint_count: Annotated[int, Field(ge=10, le=1_000_000)] | None = None
 
     households: HouseholdConfig = Field(default_factory=HouseholdConfig)
     devices: DeviceConfig = Field(default_factory=DeviceConfig)
@@ -154,6 +163,19 @@ class PopulationConfig(StrictModel):
         if abs(total - 1.0) > 1e-6:
             raise ValueError(f"archetype_weights must sum to 1, got {total}")
         return self
+
+    def resolved_fingerprint_count(self) -> int:
+        """How many configuration signatures the population needs.
+
+        Derived from the fan-out target unless set explicitly, since the count
+        and the reach are two views of the same quantity and picking one fixes
+        the other.
+        """
+        if self.fingerprint_count is not None:
+            return self.fingerprint_count
+        n_devices = max(1, int(self.n_holders * self.devices_per_holder_mean))
+        cards_reached = n_devices * self.devices.household_mean
+        return max(2, int(round(cards_reached / max(self.fanout.target_mean, 1e-6))))
 
 
 class WarmStartConfig(StrictModel):

@@ -11,7 +11,7 @@ population:
   cards_per_holder_mean: 2.0
   accounts_per_holder_mean: 1.2
   devices_per_holder_mean: 1.6
-  fingerprint_count: 500
+  # fingerprint_count derived from the fan-out target; see PopulationConfig
 
   households:
     mean_size: 2.5

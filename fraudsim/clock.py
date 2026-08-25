@@ -49,6 +49,17 @@ class SimClock:
         """Reset for a fresh run. Only valid between runs, never mid-episode."""
         self._now = self._origin
 
+    def rewind_to(self, ts: int) -> int:
+        """Move the clock back to start a backdated phase.
+
+        Only for setting up history before the observation window opens.
+        Nothing during a run may call this: the rolling windows evict from the
+        front assuming it holds the oldest entry, and time moving backwards
+        underneath them silently discards history an event still needs.
+        """
+        self._now = ts
+        return self._now
+
 
 class WarmStartClock(SimClock):
     """Clock for backdated history generation.
