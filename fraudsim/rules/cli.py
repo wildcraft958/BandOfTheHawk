@@ -17,7 +17,7 @@ from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
 from ..timing.arrival import DriftingRateProcess
-from ..timing.circadian import CircadianClock
+from ..timing.circadian import HolderClockModel
 from .engine import VelocityRuleEngine
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,7 +43,7 @@ def cmd_rate(args: argparse.Namespace) -> int:
     graph, _ = PopulationBuilder(config).build()
     states = FeatureStateStore(config.engine.windows)
     builder = EventBuilder(
-        graph, states, config.engine.windows, CircadianClock(config.behavior.circadian)
+        graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
     )
     process = DriftingRateProcess(config.behavior.arrival)
     rng = np.random.default_rng(args.seed)
@@ -84,7 +84,8 @@ def cmd_rate(args: argparse.Namespace) -> int:
 
     rates = VelocityRuleEngine(config.engine.rules).trigger_rates(events)
     target = config.behavior.hard_negatives.naive_rule_trip_target
-    print(rates.render(target=target))
+    tolerance = config.behavior.hard_negatives.naive_rule_trip_tolerance
+    print(rates.render(target=target, tolerance=tolerance))
     print("\n  this traffic carries no travel, sessions, or new devices yet,")
     print("  so the rules keyed on those stay quiet until they are injected")
     return 0

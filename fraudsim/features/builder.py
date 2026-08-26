@@ -17,7 +17,7 @@ import math
 
 from ..config.engine import WindowConfig
 from ..ids import CardId, DeviceId, MerchantId
-from ..timing.circadian import CircadianClock
+from ..timing.circadian import HolderClockModel
 from ..world.entities import CategoryCluster, RiskTier
 from ..world.graph import EntityGraph
 from .schema import AuthAttemptEvent, BindingEvent, EventType
@@ -46,21 +46,26 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 class EventBuilder:
     """Builds events from graph facts and rolling state."""
 
-    __slots__ = ("_graph", "_states", "_config", "_clock", "_next_id", "_warm_start")
+    __slots__ = ("_graph", "_states", "_config", "_clocks", "_next_id", "_warm_start")
 
     def __init__(
         self,
         graph: EntityGraph,
         states: FeatureStateStore,
         config: WindowConfig,
-        clock: CircadianClock | None = None,
+        clocks: HolderClockModel | None = None,
     ) -> None:
         self._graph = graph
         self._states = states
         self._config = config
-        self._clock = clock
+        self._clocks = clocks
         self._next_id = 0
         self._warm_start = False
+
+    @property
+    def clocks(self) -> HolderClockModel | None:
+        """The per-holder clocks this builder reads, if it has any."""
+        return self._clocks
 
     @property
     def warm_start(self) -> bool:
@@ -116,9 +121,14 @@ class EventBuilder:
             account_age = max(0, (ts - opened) // MINUTES_PER_DAY)
 
         minute_of_day = ts % MINUTES_PER_DAY
-        within_usual = (
-            self._clock.contains_timestamp(ts) if self._clock is not None else None
-        )
+        # Read against this holder's own hours, not the population's. A
+        # population-level interval is the same test for everyone, so it
+        # carries no information about whether *this* holder is acting oddly.
+        within_usual = None
+        if self._clocks is not None:
+            holder_clock = self._clocks.clock(int(holder.holder_id))
+            if holder_clock is not None:
+                within_usual = holder_clock.contains_timestamp(ts)
 
         return AuthAttemptEvent(
             event_id=self._mint(),

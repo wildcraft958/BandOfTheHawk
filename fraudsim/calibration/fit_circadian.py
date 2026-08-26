@@ -172,3 +172,133 @@ def fit_circadian(hours: np.ndarray, n_components: int = 1, seed: int = 0) -> Ci
         resultant_length=resultant,
         n_samples=len(hours),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class HierarchicalCircadianFit:
+    """Hour as a habit each holder has, rather than one the population shares.
+
+    The mixture above describes when transactions happen. It says nothing
+    about whether a given holder keeps to their own hours, and a generator
+    built from it alone gives every holder the population's curve: their
+    apparent preferences then differ only by sampling, which is the amount
+    defect in a circular coordinate.
+
+    Two numbers describe the population instead of one: holders concentrate
+    around their own preferred hour (`kappa_within`), and those preferred hours
+    concentrate around a population mode (`kappa_between`). A third was tried
+    and abandoned - see the fitting function.
+
+    `kappa_within` is inflated slightly above the value the entity-level
+    resultant implies, so that the generated marginal lands on the measured
+    one. The correction is recorded as `marginal_gain` rather than folded in
+    silently, because it is compensating for a shape mismatch rather than
+    estimating anything.
+    """
+
+    population_mode_hour: float
+    kappa_between: float
+    kappa_within_mean: float
+    marginal_gain: float
+    hour_marginal_r: float
+    hour_within_r: float
+    hour_between_r: float
+    n_entities: int
+    n_events: int
+
+    def as_dict(self) -> dict[str, float]:
+        return {
+            "population_mode_hour": self.population_mode_hour,
+            "kappa_between": self.kappa_between,
+            "kappa_within_mean": self.kappa_within_mean,
+            "marginal_gain": self.marginal_gain,
+            "hour_marginal_r": self.hour_marginal_r,
+            "hour_within_r": self.hour_within_r,
+            "hour_between_r": self.hour_between_r,
+            "n_entities": float(self.n_entities),
+            "n_events": float(self.n_events),
+        }
+
+
+def _simulate_marginal_r(
+    kappa_between: float,
+    kappa_within: float,
+    n_entities: int,
+    n_events: int,
+    seed: int,
+) -> float:
+    """Marginal resultant a population with these parameters would produce."""
+    rng = np.random.default_rng(seed)
+    preferred = rng.vonmises(0.0, kappa_between, n_entities)
+    angles = rng.vonmises(
+        np.repeat(preferred, n_events), max(kappa_within, 1e-3)
+    )
+    return float(np.hypot(np.cos(angles).mean(), np.sin(angles).mean()))
+
+
+def fit_hierarchical_circadian(
+    frame,
+    entity_column: str,
+    hour_column: str,
+    min_events: int = 10,
+    seed: int = 0,
+) -> HierarchicalCircadianFit:
+    """Fit per-holder hour habits against all three measured resultants.
+
+    For a von Mises within a von Mises the resultants multiply, so two
+    parameters would suffice if the population were homogeneous. It is not:
+    measured on the judge dataset the product of the within and between terms
+    falls short of the marginal by between three and ten percent, and the
+    shortfall moves with the cutoff. Event-weighting shrinks it without closing
+    it, so a residual remains that is genuine heterogeneity rather than an
+    artefact of how entities were weighted.
+
+    Both parameters invert their measured resultants directly, and the
+    within-holder one is then nudged until the generated marginal matches the
+    measured marginal. What that nudge compensates for, and what it is not, is
+    recorded in the body.
+    """
+    from .entity_stats import circular_entity_spread, resultant_to_kappa
+
+    spread = circular_entity_spread(
+        frame, entity_column, hour_column, min_events=min_events
+    )
+    kappa_between = resultant_to_kappa(spread.between_r)
+    base_within = resultant_to_kappa(spread.within_r)
+
+    # Calibrate the within-holder tightness so the generated marginal lands on
+    # the measured one, and record how far it had to move.
+    #
+    # A spread on the tightness was tried here first, on the theory that
+    # tighter holders transact more and so carry extra weight in the marginal.
+    # Measurement says otherwise: busier entities keep looser hours, not
+    # tighter (corrected R falls from 0.492 to 0.452 across activity bands,
+    # correlating at -0.08 with log activity). Spreading the tightness also
+    # moves the marginal the wrong way, monotonically, because the resultant
+    # is concave in the concentration and spreading it lowers the mean.
+    #
+    # What remains is a shape mismatch rather than a missing parameter. Real
+    # holders are not von Mises about a single hour - they have a midday and
+    # an evening peak - so a single-component fit reproducing their resultant
+    # under-delivers the marginal by a few percent. The gain compensates for
+    # that, and is reported so nobody mistakes it for something measured.
+    low, high = base_within, base_within * 4.0
+    for _ in range(24):
+        mid = 0.5 * (low + high)
+        if _simulate_marginal_r(kappa_between, mid, 900, 30, seed + 17) < spread.marginal_r:
+            low = mid
+        else:
+            high = mid
+    kappa_within = 0.5 * (low + high)
+
+    return HierarchicalCircadianFit(
+        population_mode_hour=spread.marginal_mean,
+        kappa_between=kappa_between,
+        kappa_within_mean=kappa_within,
+        marginal_gain=kappa_within / base_within if base_within else float("nan"),
+        hour_marginal_r=spread.marginal_r,
+        hour_within_r=spread.within_r,
+        hour_between_r=spread.between_r,
+        n_entities=spread.n_entities,
+        n_events=spread.n_events,
+    )

@@ -25,6 +25,40 @@ def w1(left: np.ndarray, right: np.ndarray) -> float:
     return float(wasserstein_distance(np.asarray(left, float), np.asarray(right, float)))
 
 
+def circular_w1(left: np.ndarray, right: np.ndarray, period: float = 24.0) -> float:
+    """Wasserstein-1 on a circle, in the units of the samples.
+
+    The linear form is wrong on any periodic quantity and does not announce
+    it. Hours 23.5 and 0.5 are one apart, and `w1` calls them twenty-three, so
+    a generator whose evening peak sits an hour late scores worse than one
+    whose peak is at dawn. It returns a plausible number either way.
+
+    On a circle there is no fixed origin for a cumulative distribution to
+    start from, so the distance is the minimum over where the circle is cut:
+
+        min over c of  the mean of |F_left(x) - F_right(x) - c|
+
+    which is minimised at the median of the CDF difference. Note this is a
+    shift of the *difference between the two distributions*, not a rotation of
+    one sample. Minimising over rotations of the data would make the distance
+    translation-invariant, and two populations peaking twelve hours apart
+    would score zero.
+    """
+    left = np.asarray(left, dtype=float)
+    right = np.asarray(right, dtype=float)
+    if len(left) == 0 or len(right) == 0:
+        return float("nan")
+
+    # Shared grid over the circle, so the two samples need not match in length.
+    grid = np.linspace(0.0, period, 512, endpoint=False)
+    fl = np.searchsorted(np.sort(left % period), grid, side="right") / len(left)
+    fr = np.searchsorted(np.sort(right % period), grid, side="right") / len(right)
+
+    delta = fl - fr
+    shift = float(np.median(delta))
+    return float(np.mean(np.abs(delta - shift)) * period)
+
+
 def ks(left: np.ndarray, right: np.ndarray) -> float:
     """Kolmogorov-Smirnov statistic. Secondary; reported, not relied upon."""
     if len(left) == 0 or len(right) == 0:

@@ -13,6 +13,8 @@ two places.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 from ..config.behavior import CircadianConfig
@@ -145,3 +147,112 @@ def resultant_length(hours: np.ndarray) -> float:
     """Concentration on the circle: 0 for flat, 1 for a spike."""
     angles = _to_angle(np.asarray(hours, dtype=float))
     return float(np.hypot(np.cos(angles).mean(), np.sin(angles).mean()))
+
+
+@dataclass(slots=True)
+class HolderClock:
+    """One holder's own time-of-day habit.
+
+    The population mixture says when transactions happen. It cannot say
+    whether a given holder keeps to their own hours, and a generator drawing
+    every event from it gives each holder the population's curve, so their
+    apparent preferences differ only by sampling. That is the amount defect in
+    a circular coordinate, and it is invisible to any marginal comparison: a
+    population that all shops in the evening and one whose members each keep
+    tight but unrelated hours can share a marginal exactly.
+    """
+
+    preferred_hour: float
+    kappa: float
+
+    def sample_hour(self, rng: np.random.Generator) -> float:
+        angle = rng.vonmises(float(_to_angle(self.preferred_hour)), self.kappa)
+        return float(_to_hours(angle))
+
+    def sample_minute_of_day(self, rng: np.random.Generator) -> int:
+        return int(self.sample_hour(rng) * 60) % MINUTES_PER_DAY
+
+    def contains(self, hour: float, coverage: float = 0.95) -> bool:
+        """Whether an hour falls inside this holder's usual range.
+
+        A single von Mises is symmetric about its mean, so the densest region
+        holding a given mass is an arc centred on the preferred hour and the
+        half-width follows from the density alone. No grid search is needed,
+        which matters because this is called once per event.
+
+        At very low concentration the arc covers the whole circle: a holder
+        with no habit has no unusual hours, and reporting some as unusual
+        would invent a signal.
+        """
+        if self.kappa <= 1e-6:
+            return True
+        # Density at angular distance d is proportional to exp(kappa*cos(d)).
+        # The arc holding `coverage` of the mass is bounded where the density
+        # falls to the level whose enclosed mass equals coverage; solved by
+        # bisection on the enclosed mass, which is monotone in the half-width.
+        low, high = 0.0, np.pi
+        for _ in range(40):
+            mid = 0.5 * (low + high)
+            if _vonmises_mass(self.kappa, mid) < coverage:
+                low = mid
+            else:
+                high = mid
+        half_width = 0.5 * (low + high)
+
+        delta = _to_angle(float(hour)) - _to_angle(self.preferred_hour)
+        distance = abs((delta + np.pi) % TWO_PI - np.pi)
+        return bool(distance <= half_width)
+
+    def contains_timestamp(self, minutes: int, coverage: float = 0.95) -> bool:
+        return self.contains((minutes % MINUTES_PER_DAY) / 60.0, coverage)
+
+
+def _vonmises_mass(kappa: float, half_width: float) -> float:
+    """Mass of a von Mises within `half_width` radians of its mean."""
+    grid = np.linspace(-half_width, half_width, 256)
+    inside = np.trapezoid(np.exp(kappa * np.cos(grid)), grid)
+    full_grid = np.linspace(-np.pi, np.pi, 512)
+    total = np.trapezoid(np.exp(kappa * np.cos(full_grid)), full_grid)
+    return float(inside / total) if total else 1.0
+
+
+class HolderClockModel:
+    """Time-of-day habits for a population of holders.
+
+    Mirrors the amount model: a habit is drawn once per holder and kept, so a
+    holder's transactions look like that holder's rather than the
+    population's.
+    """
+
+    __slots__ = ("_config", "_clocks")
+
+    def __init__(self, config: CircadianConfig) -> None:
+        self._config = config
+        self._clocks: dict[int, HolderClock] = {}
+
+    def register(self, holder_id: int, rng: np.random.Generator) -> HolderClock:
+        """Give a holder their own preferred hour, once.
+
+        The preferred hour is drawn about the population mode at the measured
+        between-holder concentration. Where that concentration is very high
+        every holder lands on the mode and the model reduces to a single
+        shared curve, which is the behaviour it exists to replace.
+        """
+        mode = _to_angle(self._config.population_mode_hour)
+        preferred = float(_to_hours(rng.vonmises(float(mode), self._config.kappa_between)))
+        clock = HolderClock(
+            preferred_hour=preferred, kappa=float(self._config.kappa_within_mean)
+        )
+        self._clocks[holder_id] = clock
+        return clock
+
+    def clock(self, holder_id: int) -> HolderClock | None:
+        return self._clocks.get(holder_id)
+
+    def require(self, holder_id: int, rng: np.random.Generator) -> HolderClock:
+        """The holder's clock, drawing one if they have none yet."""
+        existing = self._clocks.get(holder_id)
+        return existing if existing is not None else self.register(holder_id, rng)
+
+    def __len__(self) -> int:
+        return len(self._clocks)

@@ -2,6 +2,7 @@
 
     python -m fraudsim.analysis.cli metrics
     python -m fraudsim.analysis.cli compare
+    python -m fraudsim.analysis.cli entity-stats
 """
 
 from __future__ import annotations
@@ -17,6 +18,8 @@ from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
 from ..protocols import AlwaysApproveScorer
+from ..timing.circadian import HolderClockModel
+from .entity_report import render_entity_report
 from .graph_snapshot import GraphSnapshot
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,28 +28,40 @@ DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def _build(args: argparse.Namespace, warm: bool = True):
+    """Build a world, optionally run its warm start, and hand back both.
+
+    The simulator is returned rather than dropped because its event log is the
+    generated side of every comparison here. Building the world again to get
+    at it would draw a different one.
+    """
     artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
     overrides = {"population": {"n_holders": args.holders}} if args.holders else None
     config = resolve(args.config, artifact=artifact, overrides=overrides).config
 
     graph, _ = PopulationBuilder(config).build()
+    simulator = None
     if warm:
         states = FeatureStateStore(config.engine.windows)
-        builder = EventBuilder(graph, states, config.engine.windows)
+        # The clock was omitted here, which left `within_usual_hours` at None
+        # for every event on the one path that exists to compare generated
+        # traffic against real.
+        builder = EventBuilder(
+            graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
+        )
         simulator = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
         WarmStartRunner(simulator, config, seed=config.seed).run()
-    return graph, config
+    return graph, config, simulator
 
 
 def cmd_metrics(args: argparse.Namespace) -> int:
-    graph, _ = _build(args)
+    graph, _, _ = _build(args)
     print(GraphSnapshot(graph).render())
     return 0
 
 
 def cmd_compare(args: argparse.Namespace) -> int:
     """Generated structure beside what was measured on real data."""
-    graph, config = _build(args)
+    graph, config, _ = _build(args)
     snapshot = GraphSnapshot(graph)
     target = config.population.fanout
 
@@ -82,6 +97,19 @@ def cmd_compare(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_entity_stats(args: argparse.Namespace) -> int:
+    """Per-entity structure, generated beside real.
+
+    The statistics a marginal comparison cannot see. Each is reported against
+    the judge dataset rather than against a threshold, because what matters is
+    not whether the generated value looks reasonable but whether it sits where
+    the real one does.
+    """
+    _, _, simulator = _build(args)
+    print(render_entity_report(simulator.log, args.judge, min_events=args.min_events))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="fraudsim.analysis")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -95,6 +123,17 @@ def main(argv: list[str] | None = None) -> int:
     compare = subparsers.add_parser("compare", help="generated beside measured")
     compare.add_argument("--holders", type=int, default=None)
     compare.set_defaults(func=cmd_compare)
+
+    entity = subparsers.add_parser(
+        "entity-stats", help="per-entity structure, generated beside real"
+    )
+    entity.add_argument("--holders", type=int, default=4000)
+    entity.add_argument("--min-events", type=int, default=5)
+    entity.add_argument(
+        "--judge", type=Path, default=None,
+        help="judge dataset root; omit to report the generated side alone",
+    )
+    entity.set_defaults(func=cmd_entity_stats)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

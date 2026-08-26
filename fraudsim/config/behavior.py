@@ -86,6 +86,19 @@ class CircadianConfig(StrictModel):
     confidence: UnitInterval = 0.95
     min_history_days: Annotated[int, Field(ge=1, le=90)] = 7
 
+    # Per-holder habits, which the mixture above cannot express.
+    #
+    # The mixture says when transactions happen across the population. Drawing
+    # every event from it hands each holder the same curve, so two holders
+    # differ only by sampling and any feature reading an hour against a
+    # holder's own history reads nothing. Measured on the judge dataset,
+    # holders concentrate at a resultant of 0.48 about their own preferred
+    # hour, and those preferred hours concentrate at 0.85 about the evening
+    # mode - neither of which a marginal comparison can see.
+    population_mode_hour: Annotated[float, Field(ge=0.0, lt=24.0)] = 20.50
+    kappa_between: PositiveFloat = 3.685
+    kappa_within_mean: PositiveFloat = 1.175
+
     @model_validator(mode="after")
     def _components_align(self) -> "CircadianConfig":
         if not len(self.means) == len(self.concentrations) == len(self.weights):
@@ -137,6 +150,25 @@ class CategoryConfig(StrictModel):
         return self
 
 
+class LoyaltyConfig(StrictModel):
+    """How much a card sticks to its own merchants and categories.
+
+    Neither is fitted. The judge dataset has no merchant entity, and the
+    taxonomy source is a generator whose typical card visits 83% of the
+    merchant roster with a top-1 share under one percent, so its per-card
+    concentration is a lower bound rather than a measurement.
+
+    Both ranges reach down to the behaviour they replace: at zero loyalty the
+    merchant draw is uniform, and at high concentration every card of an
+    archetype shares one mix. A claim can therefore be stated as holding
+    across a range that contains the defect as well as the correction.
+    """
+
+    merchant_loyalty: UnitInterval = 0.55
+    merchant_preferred_set_mean: Annotated[float, Field(ge=1.0, le=200.0)] = 12.0
+    category_concentration: Annotated[float, Field(ge=0.5, le=200.0)] = 8.0
+
+
 class HardNegativeConfig(StrictModel):
     """Legitimate behaviour that looks suspicious.
 
@@ -152,6 +184,13 @@ class HardNegativeConfig(StrictModel):
     """
 
     naive_rule_trip_target: UnitInterval = 0.065
+    # How far from the target still counts as calibrated.
+    #
+    # There were three different answers to that: this target, a hardcoded
+    # plus or minus two points in the renderer, and a two-to-fifteen percent
+    # range in the test. A regression landing at 0.14 printed "off target" and
+    # passed the suite. One number, read by both.
+    naive_rule_trip_tolerance: UnitInterval = 0.02
     new_device_rate_yearly: PositiveFloat = 0.6
     travel_rate_yearly: PositiveFloat = 2.0
     large_purchase_share: UnitInterval = 0.01
@@ -173,4 +212,5 @@ class BehaviorConfig(StrictModel):
     arrival: ArrivalConfig = Field(default_factory=ArrivalConfig)
     circadian: CircadianConfig = Field(default_factory=CircadianConfig)
     categories: CategoryConfig = Field(default_factory=CategoryConfig)
+    loyalty: LoyaltyConfig = Field(default_factory=LoyaltyConfig)
     hard_negatives: HardNegativeConfig = Field(default_factory=HardNegativeConfig)

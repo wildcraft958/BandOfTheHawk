@@ -16,7 +16,7 @@ from .artifact import FittedParams
 from .behavioral import fanout_stats
 from .fit_amount import fit_amount
 from .fit_arrival import fit_arrival, measure_targets, simulate_arrival
-from .fit_circadian import fit_circadian
+from .fit_circadian import fit_circadian, fit_hierarchical_circadian
 from .fit_fanout import fit_fanout
 from .fit_heterogeneity import fit_heterogeneity
 from .fit_timing import fit_hawkes, sequences_from_frame
@@ -76,6 +76,14 @@ def run_calibration(
             "n_samples": circadian.n_samples,
         },
     )
+
+    say("fitting per-holder circadian habits")
+    benign_hours = benign.copy()
+    benign_hours["_hour"] = (benign["TransactionDT"].to_numpy(float) / 3600.0) % 24
+    hierarchical = fit_hierarchical_circadian(
+        benign_hours, "entity", "_hour", min_events=10, seed=seed
+    )
+    params.add_fitted("circadian_hierarchical", hierarchical.as_dict())
 
     say("fitting arrival timing")
     sequences = sequences_from_frame(benign, "entity", "TransactionDT", min_events=10)
@@ -195,6 +203,42 @@ def _record_swept(params: FittedParams) -> None:
         reason=(
             "per-category amounts in the taxonomy source are inverted, with travel below "
             "grocery, so the conditional cannot be taken from it"
+        ),
+    )
+    params.add_swept(
+        "merchant_loyalty",
+        value=0.55,
+        low=0.0,
+        high=0.9,
+        reason=(
+            "nothing anchors it. The judge dataset carries no merchant entity, and the "
+            "taxonomy source is itself a generator whose typical card visits 572 of its "
+            "693 merchants with a top-1 share of 0.67%, so its per-card concentration of "
+            "1.05x the marginal is geographic rather than loyalty. The low end reproduces "
+            "the uniform draw this replaces, so the range contains the null"
+        ),
+    )
+    params.add_swept(
+        "merchant_preferred_set_mean",
+        value=12.0,
+        low=3.0,
+        high=60.0,
+        reason=(
+            "how many merchants a cardholder uses regularly is unmeasured in both "
+            "sources; the taxonomy source's cards have no regulars at all"
+        ),
+    )
+    params.add_swept(
+        "category_concentration",
+        value=8.0,
+        low=1.0,
+        high=100.0,
+        reason=(
+            "the taxonomy source's per-card category concentration of 1.055x the marginal "
+            "is significant against a shuffled null but tiny, and it is a generator whose "
+            "category draw is close to a shared curve, so that figure is a lower bound "
+            "rather than an estimate. High concentration reproduces the shared mix this "
+            "replaces"
         ),
     )
     params.add_swept(

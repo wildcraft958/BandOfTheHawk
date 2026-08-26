@@ -126,10 +126,18 @@ def test_hard_negatives_were_injected(warmed) -> None:
 
 def test_naive_rules_trip_at_the_intended_rate(warmed) -> None:
     """The gate. Too low and the false-positive metric is vacuous; too high and
-    the traffic is not ordinary behaviour."""
+    the traffic is not ordinary behaviour.
+
+    Against the configured tolerance rather than a wider range of its own. A
+    range the printed verdict disagrees with lets a regression pass the suite
+    while the report calls it off target.
+    """
     simulator, config, _ = warmed
+    negatives = config.behavior.hard_negatives
     rates = VelocityRuleEngine(config.engine.rules).trigger_rates(auth_events(simulator))
-    assert 0.02 <= rates.any_rule <= 0.15
+    assert abs(rates.any_rule - negatives.naive_rule_trip_target) <= (
+        negatives.naive_rule_trip_tolerance
+    )
 
 
 def test_no_single_rule_dominates(warmed) -> None:

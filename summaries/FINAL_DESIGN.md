@@ -1,6 +1,13 @@
 # Closed-Loop GenAI Payment Fraud Red/Blue System
 ## Final Build Specification
 
+> **See `RECONCILIATION.md` for what was actually built.** The simulation has
+> diverged from this document in several places, each for a measured reason:
+> the timing model was rejected on its goodness-of-fit gate, merchant and
+> category concentration proved unfittable from the available sources, and the
+> fidelity protocol gained a per-entity layer this document does not describe.
+> Where the two conflict, that one is current.
+
 > Supersedes `design.md` where they conflict. `design.md` remains the reference
 > for the component contract, payload schemas, and the per-turn loop — none of
 > that changes. This document records **what actually gets built**, after the

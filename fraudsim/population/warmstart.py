@@ -30,9 +30,12 @@ from ..engine.stages import Stage
 from ..features.schema import EventType
 from ..ids import ActorId, BucketId, CardId, DeviceId
 from ..timing.arrival import DriftingRateProcess
+from ..timing.circadian import HolderClockModel
 from ..world.edges import BindMethod, ProvisionedEdge
 from ..world.entities import ActivityTier, CategoryCluster, Device
 from ..behavior.amount import AmountModel
+from ..behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
+from ..population.archetypes import build_profiles
 from .negatives import NegativeInjector, Plan
 
 MINUTES_PER_DAY = 1440
@@ -94,12 +97,32 @@ class WarmStartRunner:
         self.rng = np.random.default_rng(seed)
         self._process = DriftingRateProcess(config.behavior.arrival)
         self._amounts = AmountModel(config.behavior.amount)
+        # Shared with the event builder where it has one, so a holder is
+        # judged against the same hours they were generated with. A second
+        # model would draw different preferences and the feature would be
+        # measuring the disagreement between two populations.
+        # `or` would not do: a freshly built model is empty and therefore
+        # falsy, so the builder's model would be discarded and the holders
+        # judged against hours they were never generated with.
+        shared = getattr(simulator.builder, "clocks", None)
+        self._clocks = shared if shared is not None else HolderClockModel(
+            config.behavior.circadian
+        )
+        by_cluster, popularity = clusters_from_graph(
+            simulator.graph, config.population.merchants.popularity_exponent
+        )
+        self._loyalty = LoyaltyModel(config.behavior.loyalty, by_cluster, popularity)
+        self._profiles = build_profiles(
+            config.behavior.categories.mix,
+            config.population.archetype_weights,
+        )
         self._injector = NegativeInjector(
             negatives=config.behavior.hard_negatives,
             amount=config.behavior.amount,
             geo=config.population.geo,
             rng=self.rng,
             amounts=self._amounts,
+            loyalty=self._loyalty,
         )
         # Devices created during the warm start are numbered above anything the
         # population builder issued, so a replacement handset cannot collide
@@ -114,9 +137,19 @@ class WarmStartRunner:
         cards = self._eligible_cards()
         # Each card gets its own amount level before any of them transacts, so
         # a card's purchases look like that card's rather than the population's.
+        # Its holder gets their own hours for the same reason.
         for card_id in cards:
             holder = graph.holders[graph.cards[card_id].holder_id]
             self._amounts.register(int(card_id), self.rng, holder.archetype)
+            self._clocks.require(int(holder.holder_id), self.rng)
+            # Its own category mix and its own regulars, tilted by the
+            # archetype's preferences. Without this every card draws from the
+            # population's mix and shops at a merchant nobody has ever used.
+            self._loyalty.register(
+                int(card_id),
+                self.rng,
+                archetype_weights(self._profiles, holder.archetype),
+            )
 
         schedule = self._build_schedule(cards, warm.events_per_entity)
 
@@ -133,13 +166,37 @@ class WarmStartRunner:
             m for m in merchants if graph.merchants[m].category is CategoryCluster.TRAVEL
         ] or merchants
 
-        counts: dict[int, int] = {}
+        # Plans are expanded into timed events and the whole lot sorted before
+        # any of it runs.
+        #
+        # Executing plan by plan does not work once time of day carries a
+        # habit. A plan spans real time - a trip covers days, a session an
+        # afternoon - so running one to completion pushes the clock past the
+        # slots that follow it, and the clock only moves forward. Every later
+        # event was then dragged to whatever hour the clock had reached,
+        # which cost most of the rhythm the schedule had just been given and
+        # inflated the gaps between a card's transactions tenfold. Both were
+        # invisible while hours were uniform.
+        planned: list[tuple[int, int, CardId, object]] = []
         for ts, card_id in schedule:
-            actor_id = self._actor_for(card_id)
             self._injector.for_card(int(card_id))
             plan = self._injector.plan(merchants, liquid, travel)
-            counts[card_id] = counts.get(card_id, 0) + self._execute(
-                plan, actor_id, card_id, ts
+            if plan.bind_device:
+                planned.append((ts, 0, card_id, ("bind_device", None)))
+            for event_type, offset in plan.bindings:
+                planned.append((ts + offset, 1, card_id, ("binding", event_type)))
+            for auth in plan.auths:
+                planned.append((ts + auth.offset_minutes, 2, card_id, ("auth", auth)))
+
+        # Ties break towards the device binding, so a plan that creates a
+        # device and then spends through it still does so in that order.
+        planned.sort(key=lambda row: (row[0], row[1]))
+
+        counts: dict[int, int] = {}
+        for ts, _, card_id, (kind, payload) in planned:
+            actor_id = self._actor_for(card_id)
+            counts[card_id] = counts.get(card_id, 0) + self._emit(
+                kind, payload, actor_id, card_id, ts
             )
 
         self.simulator.builder.set_warm_start(False)
@@ -179,11 +236,23 @@ class WarmStartRunner:
             if count == 0:
                 continue
 
+            clock = self._clocks.require(int(holder.holder_id), self.rng)
             state = self._process.new_state(self.rng, rate_multiplier=multiplier)
             elapsed = 0.0
             for _ in range(count):
                 elapsed += self._process.next_gap_seconds(state, self.rng)
                 minutes = int(elapsed / SECONDS_PER_MINUTE)
+                # The gap process decides which day an event lands on; the
+                # holder's own clock decides the time of day. Without the
+                # second step every hour is equally likely, and the generated
+                # marginal comes out four times flatter than the real one
+                # while no holder has any hours of their own.
+                #
+                # The perturbation is bounded by a day against a gap median of
+                # roughly three, and the arrival targets it could disturb are
+                # checked against their noise floors rather than assumed safe.
+                day = minutes // MINUTES_PER_DAY
+                minutes = day * MINUTES_PER_DAY + clock.sample_minute_of_day(self.rng)
                 if minutes > lookback:
                     break
                 schedule.append((minutes - lookback, card_id))
@@ -228,44 +297,41 @@ class WarmStartRunner:
 
     # ---------------------------------------------------- hard negatives
 
-    def _execute(self, plan: Plan, actor_id: ActorId, card_id: CardId, ts: int) -> int:
-        """Run a plan through the simulator.
+    def _emit(self, kind: str, payload, actor_id: ActorId, card_id: CardId, ts: int) -> int:
+        """Run one already-scheduled event.
 
-        Offsets are relative to the slot, and the clock only moves forward, so
-        each event advances to whichever is later. A plan whose offsets fall
-        behind the clock still runs, it simply runs now.
+        Offsets were folded in when the plan was expanded, so this places
+        exactly what it is given and returns how many scoreable events it
+        produced.
         """
-        emitted = 0
+        if kind == "bind_device":
+            self._advance_to(ts)
+            self._bind_new_device(card_id, self.simulator.clock.now)
+            return 0
 
-        if plan.bind_device:
-            self._bind_new_device(card_id, ts)
-
-        for event_type, offset in plan.bindings:
-            self._advance_to(ts + offset)
+        if kind == "binding":
+            self._advance_to(ts)
             self.simulator.step(
                 actor_id,
                 Action(
-                    name=_ACTION_FOR_EVENT.get(event_type, ActionName.RESET_PASSWORD),
+                    name=_ACTION_FOR_EVENT.get(payload, ActionName.RESET_PASSWORD),
                     target_id=int(card_id),
                 ),
             )
-            emitted += 1
+            return 1
 
-        for auth in plan.auths:
-            self._advance_to(ts + auth.offset_minutes)
-            self.simulator.step(
-                actor_id,
-                Action(
-                    name=ActionName.ATTEMPT_AUTH,
-                    target_id=card_id,
-                    secondary_id=auth.merchant_id,
-                    amount=auth.amount,
-                    entry_mode=int(self.rng.integers(0, 4)),
-                ),
-            )
-            emitted += 1
-
-        return emitted
+        self._advance_to(ts)
+        self.simulator.step(
+            actor_id,
+            Action(
+                name=ActionName.ATTEMPT_AUTH,
+                target_id=card_id,
+                secondary_id=payload.merchant_id,
+                amount=payload.amount,
+                entry_mode=int(self.rng.integers(0, 4)),
+            ),
+        )
+        return 1
 
     def _advance_to(self, ts: int) -> None:
         self.simulator.clock.advance_to(max(self.simulator.clock.now, ts))

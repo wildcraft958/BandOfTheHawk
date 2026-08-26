@@ -36,6 +36,7 @@ FITTED_ROUTES: dict[str, tuple[str, ...]] = {
     "amount_heterogeneity": ("behavior", "amount"),
     "arrival": ("behavior", "arrival"),
     "circadian": ("behavior", "circadian"),
+    "circadian_hierarchical": ("behavior", "circadian"),
     "fingerprint_fanout": ("population", "fanout"),
 }
 
@@ -44,6 +45,7 @@ FITTED_METADATA = {
     "median", "mean", "n_samples", "n_entities", "n_gaps", "n_nodes",
     "grand_mean", "between_share", "n_events", "total_sd",
     "minimum", "resultant_length", "log_likelihood", "ks_statistic",
+    "hour_marginal_r", "hour_within_r", "hour_between_r", "marginal_gain",
     "ks_pvalue", "converged", "branching_ratio",
 }
 
@@ -54,6 +56,9 @@ SWEPT_ROUTES: dict[str, tuple[str, ...]] = {
     "merchant_popularity_exponent": ("population", "merchants", "popularity_exponent"),
     "amount_by_category_spread": ("behavior", "amount", "category_spread"),
     "recovery_chain_probability": ("behavior", "hard_negatives", "recovery_chain_probability"),
+    "merchant_loyalty": ("behavior", "loyalty", "merchant_loyalty"),
+    "merchant_preferred_set_mean": ("behavior", "loyalty", "merchant_preferred_set_mean"),
+    "category_concentration": ("behavior", "loyalty", "category_concentration"),
 }
 
 

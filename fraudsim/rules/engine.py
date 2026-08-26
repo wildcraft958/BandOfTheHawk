@@ -42,7 +42,7 @@ class TriggerRates:
     per_rule: dict[str, float] = field(default_factory=dict)
     any_rule: float = 0.0
 
-    def render(self, target: float | None = None) -> str:
+    def render(self, target: float | None = None, tolerance: float = 0.02) -> str:
         lines = [f"rule trigger rates over {self.n_events:,} events", ""]
         for rule_id in sorted(self.per_rule):
             lines.append(f"  {rule_id:<6}{self.per_rule[rule_id]:>9.4f}")

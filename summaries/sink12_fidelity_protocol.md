@@ -1,5 +1,11 @@
 # SINK 12 — Fidelity Validation Protocol
 
+> **L1 has a third axis this document does not describe.** Its conditionals are
+> conditional on *category*; the per-entity axis is separate and is where the
+> amount defect was found. A generator can match the pooled distribution, and
+> every per-category slice of it, while distributing it across entities
+> entirely wrongly. See `RECONCILIATION.md` §1.
+
 > Supersedes the fidelity section of `design.md:683-693`.
 >
 > The original plan was a single discriminator AUC against hand-picked cutoffs

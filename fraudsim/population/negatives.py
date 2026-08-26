@@ -26,6 +26,7 @@ from enum import Enum
 import numpy as np
 
 from ..behavior.amount import AmountModel
+from ..behavior.loyalty import LoyaltyModel
 from ..config.behavior import AmountConfig, HardNegativeConfig
 from ..config.world import GeoConfig
 from ..features.schema import EventType
@@ -79,6 +80,7 @@ class NegativeInjector:
         geo: GeoConfig,
         rng: np.random.Generator,
         amounts: AmountModel | None = None,
+        loyalty: LoyaltyModel | None = None,
     ) -> None:
         self.negatives = negatives
         self.amount = amount
@@ -88,6 +90,11 @@ class NegativeInjector:
         # shared curve makes every card alike and halves the spread of per-card
         # means, which a pooled comparison cannot see.
         self.amounts = amounts
+        # Merchants come from the acting card's own regulars where it has
+        # them. A uniform draw over the whole roster makes almost every
+        # transaction the card's first at that merchant, so the feature that
+        # asks carries no information at all.
+        self.loyalty = loyalty
         self._card_id: int | None = None
         self.counts: dict[str, int] = {kind.value: 0 for kind in NegativeKind}
         self._thresholds = self._build_thresholds(negatives)
@@ -145,6 +152,21 @@ class NegativeInjector:
     def _pick(self, options: list) -> int:
         return options[int(self.rng.integers(0, len(options)))]
 
+    def _pick_merchant(self, options: list) -> int:
+        """This card's usual merchant, or a uniform draw if it has none.
+
+        Constrained pools are passed through untouched by the callers that
+        need them: a card's habits should not override "this has to be a
+        travel merchant".
+        """
+        if self.loyalty is not None and self._card_id is not None:
+            picked = self.loyalty.pick_merchant(
+                self._card_id, self.rng, np.asarray(options, dtype=int)
+            )
+            if picked is not None:
+                return picked
+        return self._pick(options)
+
     # ------------------------------------------------------------ planning
 
     def plan(
@@ -169,7 +191,7 @@ class NegativeInjector:
             kind=NegativeKind.ORDINARY,
             auths=[
                 PlannedAuth(
-                    merchant_id=self._pick(merchants),
+                    merchant_id=self._pick_merchant(merchants),
                     amount=self._base_amount(),
                     geo_distance_km=self._local_distance(),
                 )
@@ -186,7 +208,7 @@ class NegativeInjector:
             kind=NegativeKind.LARGE_PURCHASE,
             auths=[
                 PlannedAuth(
-                    merchant_id=self._pick(merchants),
+                    merchant_id=self._pick_merchant(merchants),
                     amount=self._base_amount() * float(self.rng.uniform(8.0, 20.0)),
                     geo_distance_km=self._local_distance(),
                 )
@@ -212,6 +234,14 @@ class NegativeInjector:
 
         Trips distance-based checks and, because a trip visits several places,
         the distinct-merchant rule as well.
+
+        This raises the travel share of generated traffic above the configured
+        category mix, by roughly three points: it fires on under one percent of
+        slots but emits several authorisations each, all of them travel. That
+        is the behaviour, not a defect - people on a trip do spend on travel -
+        and the mix describes ordinary spending rather than the total. Do not
+        try to correct it by constraining this pool, which would remove the
+        hard negative instead of the discrepancy.
         """
         distance = float(self.rng.exponential(self.geo.travel_distance_km))
         pool = travel_merchants or merchants
@@ -243,7 +273,7 @@ class NegativeInjector:
             offset += int(self.rng.exponential(11))
             auths.append(
                 PlannedAuth(
-                    merchant_id=self._pick(merchants),
+                    merchant_id=self._pick_merchant(merchants),
                     amount=self._base_amount(),
                     geo_distance_km=self._local_distance(),
                     offset_minutes=offset,
@@ -265,7 +295,7 @@ class NegativeInjector:
             offset += int(self.rng.exponential(90))
             auths.append(
                 PlannedAuth(
-                    merchant_id=self._pick(merchants),
+                    merchant_id=self._pick_merchant(merchants),
                     amount=self._base_amount(),
                     geo_distance_km=self._local_distance(),
                     offset_minutes=offset,

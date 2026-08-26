@@ -66,16 +66,6 @@ ARCHETYPE_RATE_SCALE: dict[Archetype, float] = {
     Archetype.BUSINESS: 2.2,
 }
 
-# Shift on the log amount, so an archetype spends more or less per transaction.
-ARCHETYPE_AMOUNT_SHIFT: dict[Archetype, float] = {
-    Archetype.COMMUTER: -0.10,
-    Archetype.HOMEBODY: -0.05,
-    Archetype.ONLINE_HEAVY: 0.05,
-    Archetype.TRAVELLER: 0.30,
-    Archetype.SENIOR: 0.10,
-    Archetype.BUSINESS: 0.45,
-}
-
 # How far from home an archetype ranges, as a multiple of the base radius.
 ARCHETYPE_GEO_SCALE: dict[Archetype, float] = {
     Archetype.COMMUTER: 1.4,
@@ -93,7 +83,6 @@ class ArchetypeProfile:
 
     archetype: Archetype
     rate_scale: float
-    amount_shift: float
     geo_scale: float
     category_weights: np.ndarray
 
@@ -105,24 +94,66 @@ class ArchetypeProfile:
 CLUSTER_ORDER: tuple[CategoryCluster, ...] = tuple(CategoryCluster)
 
 
-def build_profiles(base_mix: dict[str, float]) -> dict[Archetype, ArchetypeProfile]:
-    """Combine the population category mix with each archetype's preferences."""
+def build_profiles(
+    base_mix: dict[str, float],
+    archetype_shares: dict[str, float] | None = None,
+) -> dict[Archetype, ArchetypeProfile]:
+    """Combine the population category mix with each archetype's preferences.
+
+    Tilting each archetype and normalising it individually does not preserve
+    the population mix: the average of the tilted mixes, weighted by how
+    common each archetype is, drifts away from the mix that was fitted. Travel
+    drifts most, because the two archetypes that favour it favour it strongly.
+
+    So the tilts are rescaled until the population-weighted average returns
+    the configured mix. Archetypes still differ from one another by the same
+    ratios; what changes is that their differences now redistribute the mix
+    rather than moving it.
+    """
     base = np.array([base_mix.get(cluster.value, 0.0) for cluster in CLUSTER_ORDER], dtype=float)
     if base.sum() <= 0:
         raise ValueError("category mix is empty")
     base /= base.sum()
 
+    shares = np.array(
+        [
+            (archetype_shares or {}).get(archetype.value, 1.0 / len(Archetype))
+            for archetype in Archetype
+        ],
+        dtype=float,
+    )
+    shares /= shares.sum()
+
+    affinities = np.array(
+        [
+            [CATEGORY_AFFINITY.get(a, {}).get(c, 1.0) for c in CLUSTER_ORDER]
+            for a in Archetype
+        ],
+        dtype=float,
+    )
+
+    # Iteratively correct the base the tilts are applied to, until the
+    # population-weighted average of the tilted mixes lands on the target.
+    # A handful of passes converges; the map is a contraction because each
+    # correction is a ratio of the target to what the current base produces.
+    target = base.copy()
+    adjusted = base.copy()
+    for _ in range(60):
+        tilted = affinities * adjusted
+        tilted /= tilted.sum(axis=1, keepdims=True)
+        realised = (tilted * shares[:, None]).sum(axis=0)
+        if np.max(np.abs(realised - target)) < 1e-9:
+            break
+        adjusted *= target / np.maximum(realised, 1e-12)
+        adjusted /= adjusted.sum()
+
     profiles: dict[Archetype, ArchetypeProfile] = {}
-    for archetype in Archetype:
-        affinity = CATEGORY_AFFINITY.get(archetype, {})
-        weights = base * np.array(
-            [affinity.get(cluster, 1.0) for cluster in CLUSTER_ORDER], dtype=float
-        )
+    for index, archetype in enumerate(Archetype):
+        weights = adjusted * affinities[index]
         weights /= weights.sum()
         profiles[archetype] = ArchetypeProfile(
             archetype=archetype,
             rate_scale=ARCHETYPE_RATE_SCALE[archetype],
-            amount_shift=ARCHETYPE_AMOUNT_SHIFT[archetype],
             geo_scale=ARCHETYPE_GEO_SCALE[archetype],
             category_weights=weights,
         )

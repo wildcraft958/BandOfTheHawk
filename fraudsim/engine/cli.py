@@ -17,7 +17,7 @@ from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
 from ..protocols import AlwaysApproveScorer
 from ..rules.engine import VelocityRuleEngine
-from ..timing.circadian import CircadianClock
+from ..timing.circadian import HolderClockModel
 from .simulator import Simulator
 from .stages import describe_stages
 
@@ -35,7 +35,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
     graph, population = PopulationBuilder(config).build()
     states = FeatureStateStore(config.engine.windows)
     builder = EventBuilder(
-        graph, states, config.engine.windows, CircadianClock(config.behavior.circadian)
+        graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
     )
     # History is not shaped by a defender that does not exist yet.
     simulator = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
@@ -55,7 +55,13 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
         rates = VelocityRuleEngine(config.engine.rules).trigger_rates(events)
         print()
-        print(rates.render(target=config.behavior.hard_negatives.naive_rule_trip_target))
+        negatives = config.behavior.hard_negatives
+        print(
+            rates.render(
+                target=negatives.naive_rule_trip_target,
+                tolerance=negatives.naive_rule_trip_tolerance,
+            )
+        )
 
     graph.check_invariants()
     print(f"\n  graph invariants   {'hold':>10}")

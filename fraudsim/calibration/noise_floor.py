@@ -17,7 +17,8 @@ import numpy as np
 import pandas as pd
 
 from .behavioral import burst_stats, fanout_stats, inter_event_stats
-from .distances import jsd, w1
+from .distances import circular_w1, jsd, w1
+from .entity_stats import circular_entity_spread
 from .splits import EntitySplit, entity_level_split
 
 
@@ -101,10 +102,23 @@ class NoiseFloorBuilder:
         floors["amount_log_w1"] = w1(np.log1p(amounts_left), np.log1p(amounts_right))
         targets["amount_median"] = float(np.median(amounts_left))
 
-        hours_left = (left[self.time_column].to_numpy(float) / 3600.0) % 24
-        hours_right = (right[self.time_column].to_numpy(float) / 3600.0) % 24
+        hours_left = self._hours(left)
+        hours_right = self._hours(right)
         floors["hour_jsd"] = jsd(hours_left.astype(int), hours_right.astype(int))
-        floors["hour_w1"] = w1(hours_left, hours_right)
+        floors["hour_w1"] = circular_w1(hours_left, hours_right)
+
+        # Per-entity hour structure. The marginal floors above say whether the
+        # population's hours match; these say whether they are distributed
+        # across entities the same way, which is a question the marginal
+        # cannot reach.
+        circ_left = self._circular(left)
+        circ_right = self._circular(right)
+        floors["hour_within_r_gap"] = abs(circ_left.within_r - circ_right.within_r)
+        floors["hour_between_r_gap"] = abs(circ_left.between_r - circ_right.between_r)
+        floors["preferred_hour_w1"] = circular_w1(circ_left.preferred, circ_right.preferred)
+        targets["hour_marginal_r"] = circ_left.marginal_r
+        targets["hour_within_r"] = circ_left.within_r
+        targets["hour_between_r"] = circ_left.between_r
 
         sizes_left = left.groupby(self.entity_column, observed=True).size().to_numpy(float)
         sizes_right = right.groupby(self.entity_column, observed=True).size().to_numpy(float)
@@ -122,6 +136,32 @@ class NoiseFloorBuilder:
         targets["autocorrelation_mean"] = ie_left.mean_autocorrelation
         targets["burstiness_mean"] = ie_left.mean_burstiness
         targets["autocorrelation_share_positive"] = ie_left.share_positive
+
+        # Per-band targets, because the pooled figure above is only comparable
+        # against a population with the same history lengths.
+        #
+        # Lag-1 autocorrelation carries a small-sample bias of about -1/(n-1):
+        # with five gaps per entity it is computed against a mean estimated
+        # from those same five, which forces it negative. Real entities with
+        # five to nine events measure -0.131; the same entities with fifty or
+        # more measure +0.070. Same population, same process, opposite sign.
+        #
+        # Comparing generated traffic against the pooled target is therefore a
+        # comparison of census rather than behaviour, and it reads as a
+        # generator inverting the autocorrelation when it is doing no such
+        # thing.
+        for low, high in ((5, 9), (10, 19), (20, 49), (50, 10**9)):
+            sizes = left.groupby(self.entity_column, observed=True).size()
+            keep = sizes[(sizes >= low) & (sizes <= high)].index
+            band = left[left[self.entity_column].isin(keep)]
+            if band.empty:
+                continue
+            stats = inter_event_stats(
+                band, self.entity_column, self.time_column, min_events=5
+            )
+            label = f"{low}_{high}" if high < 10**9 else f"{low}_plus"
+            targets[f"autocorrelation_events_{label}"] = stats.mean_autocorrelation
+            targets[f"burstiness_events_{label}"] = stats.mean_burstiness
 
         burst_left = self._bursts(left)
         burst_right = self._bursts(right)
@@ -145,6 +185,21 @@ class NoiseFloorBuilder:
             right_entities=self.split.entity_counts[1],
             floors={k: float(v) for k, v in floors.items()},
             targets={k: float(v) for k, v in targets.items()},
+        )
+
+    def _hours(self, frame: pd.DataFrame) -> np.ndarray:
+        """Hour of day, derived in one place.
+
+        The floor and the fit have to agree about the epoch, and computing it
+        twice is how they stop agreeing.
+        """
+        return (frame[self.time_column].to_numpy(float) / 3600.0) % 24
+
+    def _circular(self, frame: pd.DataFrame):
+        work = frame[[self.entity_column]].copy()
+        work["_hour"] = self._hours(frame)
+        return circular_entity_spread(
+            work, self.entity_column, "_hour", min_events=self.min_events
         )
 
     def _inter_event(self, frame: pd.DataFrame):

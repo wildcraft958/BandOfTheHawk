@@ -11,7 +11,7 @@ from fraudsim.features.builder import EventBuilder, haversine_km
 from fraudsim.features.schema import EventLog, EventType
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
-from fraudsim.timing.circadian import CircadianClock
+from fraudsim.timing.circadian import HolderClock, HolderClockModel
 
 MINUTE = 1
 HOUR_MINUTES = 60
@@ -29,8 +29,8 @@ def builder():
     config = SimulationConfig.model_validate({"population": {"n_holders": 400}})
     graph, _ = PopulationBuilder(config).build()
     states = FeatureStateStore(config.engine.windows)
-    clock = CircadianClock(config.behavior.circadian)
-    return EventBuilder(graph, states, config.engine.windows, clock), graph
+    clocks = HolderClockModel(config.behavior.circadian)
+    return EventBuilder(graph, states, config.engine.windows, clocks), graph
 
 
 def first_binding(graph):
@@ -144,11 +144,31 @@ def test_warm_start_events_are_flagged(builder) -> None:
     assert not build(builder, ts=10).is_warm_start
 
 
-def test_within_usual_hours_uses_the_circular_clock(builder) -> None:
-    event_late = build(builder, ts=23 * HOUR_MINUTES + 30)
-    event_morning = build(builder, ts=8 * HOUR_MINUTES + 30)
-    assert event_late.within_usual_hours is True
-    assert event_morning.within_usual_hours is False
+def test_within_usual_hours_reads_this_holder_not_the_population(builder) -> None:
+    """The feature has to be about the acting holder.
+
+    A population-level interval is the same test for everyone, so it says
+    nothing about whether this holder is behaving unusually. Two holders with
+    opposite habits must disagree about the same hour.
+    """
+    event_builder, graph = builder
+    card_id, _, _ = first_binding(graph)
+    holder_id = int(graph.cards[card_id].holder_id)
+
+    # A holder who shops late in the evening.
+    event_builder.clocks._clocks[holder_id] = HolderClock(preferred_hour=23.0, kappa=4.0)
+    assert build(builder, ts=23 * HOUR_MINUTES).within_usual_hours is True
+    assert build(builder, ts=11 * HOUR_MINUTES).within_usual_hours is False
+
+    # The same hours, for a holder who shops in the morning.
+    event_builder.clocks._clocks[holder_id] = HolderClock(preferred_hour=11.0, kappa=4.0)
+    assert build(builder, ts=23 * HOUR_MINUTES).within_usual_hours is False
+    assert build(builder, ts=11 * HOUR_MINUTES).within_usual_hours is True
+
+
+def test_within_usual_hours_is_absent_for_an_unregistered_holder(builder) -> None:
+    """No habit on record is an absence, not a verdict."""
+    assert build(builder, ts=3 * HOUR_MINUTES).within_usual_hours is None
 
 
 def test_hour_and_weekend_derive_from_the_clock(builder) -> None:
