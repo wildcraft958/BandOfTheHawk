@@ -27,12 +27,24 @@ from ..config.simulation import SimulationConfig
 from ..engine.actions import Action, ActionName
 from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage
-from ..ids import ActorId, CardId
-from ..timing.arrival import ArrivalState, DriftingRateProcess
-from ..world.entities import ActivityTier, Archetype
+from ..features.schema import EventType
+from ..ids import ActorId, BucketId, CardId, DeviceId
+from ..timing.arrival import DriftingRateProcess
+from ..world.edges import BindMethod, ProvisionedEdge
+from ..world.entities import ActivityTier, CategoryCluster, Device
+from ..behavior.amount import AmountModel
+from .negatives import NegativeInjector, Plan
 
 MINUTES_PER_DAY = 1440
 SECONDS_PER_MINUTE = 60
+
+# Which action produces each non-payment event.
+_ACTION_FOR_EVENT = {
+    EventType.DEVICE_BIND: ActionName.ADD_DEVICE_SELFSERVE,
+    EventType.AUTH_RESET: ActionName.RESET_PASSWORD,
+    EventType.SUPPORT_TICKET: ActionName.OPEN_TICKET,
+    EventType.DISPUTE_FILED: ActionName.OPEN_TICKET,
+}
 
 
 @dataclass
@@ -81,13 +93,18 @@ class WarmStartRunner:
         self.config = config
         self.rng = np.random.default_rng(seed)
         self._process = DriftingRateProcess(config.behavior.arrival)
-        self._injected: dict[str, int] = {
-            "travel": 0,
-            "large_purchase": 0,
-            "session": 0,
-            "new_device": 0,
-            "gift_card": 0,
-        }
+        self._amounts = AmountModel(config.behavior.amount)
+        self._injector = NegativeInjector(
+            negatives=config.behavior.hard_negatives,
+            amount=config.behavior.amount,
+            geo=config.population.geo,
+            rng=self.rng,
+            amounts=self._amounts,
+        )
+        # Devices created during the warm start are numbered above anything the
+        # population builder issued, so a replacement handset cannot collide
+        # with a device that already exists.
+        self._next_device = 10_000_000
 
     def run(self) -> WarmStartReport:
         graph = self.simulator.graph
@@ -95,6 +112,12 @@ class WarmStartRunner:
         self.simulator.builder.set_warm_start(True)
 
         cards = self._eligible_cards()
+        # Each card gets its own amount level before any of them transacts, so
+        # a card's purchases look like that card's rather than the population's.
+        for card_id in cards:
+            holder = graph.holders[graph.cards[card_id].holder_id]
+            self._amounts.register(int(card_id), self.rng, holder.archetype)
+
         schedule = self._build_schedule(cards, warm.events_per_entity)
 
         # History is backdated, so the clock has to start behind the
@@ -106,27 +129,18 @@ class WarmStartRunner:
 
         merchants = list(graph.merchants)
         liquid = [m for m in merchants if graph.merchants[m].is_high_liquidity] or merchants
-        amount = self.config.behavior.amount
-        negatives = self.config.behavior.hard_negatives
+        travel = [
+            m for m in merchants if graph.merchants[m].category is CategoryCluster.TRAVEL
+        ] or merchants
 
         counts: dict[int, int] = {}
         for ts, card_id in schedule:
             actor_id = self._actor_for(card_id)
-            merchant_id, value = self._choose(
-                card_id, merchants, liquid, amount, negatives, ts
+            self._injector.for_card(int(card_id))
+            plan = self._injector.plan(merchants, liquid, travel)
+            counts[card_id] = counts.get(card_id, 0) + self._execute(
+                plan, actor_id, card_id, ts
             )
-            self.simulator.clock.advance_to(max(self.simulator.clock.now, ts))
-            self.simulator.step(
-                actor_id,
-                Action(
-                    name=ActionName.ATTEMPT_AUTH,
-                    target_id=card_id,
-                    secondary_id=merchant_id,
-                    amount=value,
-                    entry_mode=int(self.rng.integers(0, 4)),
-                ),
-            )
-            counts[card_id] = counts.get(card_id, 0) + 1
 
         self.simulator.builder.set_warm_start(False)
         return self._report(counts, cards)
@@ -214,34 +228,83 @@ class WarmStartRunner:
 
     # ---------------------------------------------------- hard negatives
 
-    def _choose(self, card_id, merchants, liquid, amount, negatives, ts):
-        """Pick a merchant and an amount, sometimes an awkward one.
+    def _execute(self, plan: Plan, actor_id: ActorId, card_id: CardId, ts: int) -> int:
+        """Run a plan through the simulator.
 
-        These are the events that make a false-positive rate meaningful:
-        ordinary behaviour that a naive rule would flag. Their rates are tuned
-        towards a target rather than measured, since no source reports how
-        often a legitimate holder does any of this.
+        Offsets are relative to the slot, and the clock only moves forward, so
+        each event advances to whichever is later. A plan whose offsets fall
+        behind the clock still runs, it simply runs now.
         """
-        roll = self.rng.random()
-        base = float(
-            np.clip(
-                self.rng.lognormal(amount.lognormal_mu, amount.lognormal_sigma),
-                1.0,
-                amount.upper_bound,
+        emitted = 0
+
+        if plan.bind_device:
+            self._bind_new_device(card_id, ts)
+
+        for event_type, offset in plan.bindings:
+            self._advance_to(ts + offset)
+            self.simulator.step(
+                actor_id,
+                Action(
+                    name=_ACTION_FOR_EVENT.get(event_type, ActionName.RESET_PASSWORD),
+                    target_id=int(card_id),
+                ),
+            )
+            emitted += 1
+
+        for auth in plan.auths:
+            self._advance_to(ts + auth.offset_minutes)
+            self.simulator.step(
+                actor_id,
+                Action(
+                    name=ActionName.ATTEMPT_AUTH,
+                    target_id=card_id,
+                    secondary_id=auth.merchant_id,
+                    amount=auth.amount,
+                    entry_mode=int(self.rng.integers(0, 4)),
+                ),
+            )
+            emitted += 1
+
+        return emitted
+
+    def _advance_to(self, ts: int) -> None:
+        self.simulator.clock.advance_to(max(self.simulator.clock.now, ts))
+
+    def _bind_new_device(self, card_id: CardId, ts: int) -> DeviceId:
+        """A replaced handset, bound to this card.
+
+        Given its own signature rather than an existing one, since a new phone
+        is rarely the same configuration as the old. The binding itself is
+        emitted as an event by the action that follows, so a detector sees the
+        sequence rather than only its consequence.
+        """
+        graph = self.simulator.graph
+        device_id = DeviceId(self._next_device)
+        self._next_device += 1
+
+        bucket_id = BucketId(int(self.rng.choice(list(graph.buckets))))
+        holder = graph.holders[graph.cards[card_id].holder_id]
+        graph.add_device(
+            Device(
+                device_id=device_id,
+                bucket_id=bucket_id,
+                first_seen_ts=ts,
+                household_id=holder.household_id,
+                os_code=int(self.rng.integers(0, 12)),
+                browser_code=int(self.rng.integers(0, 6)),
+                app_version=int(self.rng.integers(1, 40)),
+                ip_asn=int(self.rng.integers(0, 5000)),
             )
         )
-
-        if roll < negatives.large_purchase_share:
-            self._injected["large_purchase"] += 1
-            return merchants[int(self.rng.integers(0, len(merchants)))], base * float(
-                self.rng.uniform(8.0, 20.0)
+        graph.bind_device(
+            ProvisionedEdge(
+                card_id=card_id,
+                device_id=device_id,
+                bind_ts=ts,
+                bind_method=BindMethod.SELF_SERVICE,
             )
-
-        if roll < negatives.large_purchase_share + negatives.gift_card_share:
-            self._injected["gift_card"] += 1
-            return liquid[int(self.rng.integers(0, len(liquid)))], base
-
-        return merchants[int(self.rng.integers(0, len(merchants)))], base
+        )
+        return device_id
 
     # -------------------------------------------------------------- report
 
@@ -262,7 +325,7 @@ class WarmStartRunner:
                 "p90": float(np.quantile(values, 0.9)) if len(values) else 0.0,
                 "max": float(values.max()) if len(values) else 0.0,
             },
-            hard_negatives=dict(self._injected),
+            hard_negatives=dict(self._injector.counts),
             dormant_share=float((values <= 2).mean()) if len(values) else 0.0,
             cards_with_median=with_median / max(len(cards), 1),
         )

@@ -53,10 +53,18 @@ def test_history_spans_the_lookback_window(warmed) -> None:
 
 
 def test_events_do_not_pile_onto_one_instant(warmed) -> None:
+    """Timestamps have to spread across the window.
+
+    Some sharing is expected rather than suspect: a shopping session is several
+    purchases minutes apart, and a recovery is a sequence at one sitting. What
+    would be wrong is everything landing together, which is what happens when
+    the clock never leaves its origin.
+    """
     simulator, _, _ = warmed
     events = auth_events(simulator)
     distinct = len({event.ts for event in events})
-    assert distinct > len(events) * 0.5
+    assert distinct > len(events) * 0.25
+    assert distinct > 100
 
 
 def test_history_arrives_in_time_order(warmed) -> None:
@@ -147,3 +155,61 @@ def test_warm_start_is_reproducible() -> None:
         return WarmStartRunner(simulator, config, seed=seed).run().n_events
 
     assert run(5) == run(5)
+
+
+def test_every_injector_fires(warmed) -> None:
+    """All seven, not just the two that only needed a different amount.
+
+    Travel changes where, a session changes how many and how close together,
+    a new device changes what the transaction goes through, and a recovery is
+    not a transaction at all. Each needs its own shape, which is why they were
+    missing while the amount-only pair worked.
+    """
+    _, _, report = warmed
+    for kind in (
+        "large_purchase", "gift_card", "travel",
+        "session", "new_device", "dispute", "recovery",
+    ):
+        assert report.hard_negatives.get(kind, 0) > 0, f"{kind} never fired"
+
+
+def test_ordinary_traffic_still_dominates(warmed) -> None:
+    """These are meant to be the exceptions. If awkward behaviour is the norm,
+    the rate measures the injectors rather than a population."""
+    _, _, report = warmed
+    total = sum(report.hard_negatives.values())
+    assert report.hard_negatives["ordinary"] / total > 0.85
+
+
+def test_every_rule_can_fire(warmed) -> None:
+    """A rule that never fires on any traffic is untested, and its threshold is
+    a number nobody has checked."""
+    simulator, config, _ = warmed
+    rates = VelocityRuleEngine(config.engine.rules).trigger_rates(auth_events(simulator))
+    silent = [rule for rule, rate in rates.per_rule.items() if rate == 0.0]
+    # Declines are produced by the defender rather than by ordinary behaviour,
+    # so the rule keyed on them stays quiet against approve-everything traffic.
+    assert set(silent) <= {"R7"}
+
+
+def test_cards_are_seen_on_more_than_one_device(warmed) -> None:
+    """Holders move between a phone, a laptop, and a tablet.
+
+    Routing every transaction through the same binding left the count of
+    devices a card had been used on stuck at one, so the rule keyed on it could
+    not fire however many devices the card was actually bound to.
+    """
+    simulator, _, _ = warmed
+    counts = [event.card_n_devices for event in auth_events(simulator)]
+    assert max(counts) > 2
+
+
+def test_travel_reaches_beyond_the_home_radius(warmed) -> None:
+    simulator, config, _ = warmed
+    distances = [event.geo_distance_km for event in auth_events(simulator)]
+    assert max(distances) > config.population.geo.home_radius_km * 5
+
+
+def test_sessions_produce_close_together_transactions(warmed) -> None:
+    simulator, _, _ = warmed
+    assert max(event.auths_last_1h for event in auth_events(simulator)) >= 3

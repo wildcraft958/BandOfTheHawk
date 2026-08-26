@@ -246,13 +246,23 @@ def test_a_frozen_card_cannot_authorise(sim) -> None:
     assert auth(sim).code is not OutcomeCode.APPROVED
 
 
-def test_binding_actions_record_their_own_history(sim) -> None:
+def test_binding_actions_need_their_prerequisite(sim) -> None:
+    """An action that cannot do what it claims fails rather than reporting
+    success, so a stage never advances on a capability nobody obtained."""
     simulator, actor, *_ = sim
     actor.stage = Stage.ACQUIRED
-    outcome = simulator.step(
-        1, Action(name=ActionName.RESET_PASSWORD, target_id=1)
-    )
-    assert outcome.code is OutcomeCode.APPROVED
+
+    bare = simulator.step(1, Action(name=ActionName.RESET_PASSWORD, target_id=1))
+    assert bare.code is OutcomeCode.FAILED
+    assert len(simulator.log) == 0
+
+    # Credentials are only obtainable from the first stage, so the actor has to
+    # go back and acquire them rather than being handed them mid-run.
+    actor.stage = Stage.NONE
+    assert simulator.step(1, Action(name=ActionName.BUY_CREDS)).succeeded
+
+    armed = simulator.step(1, Action(name=ActionName.RESET_PASSWORD, target_id=1))
+    assert armed.code is OutcomeCode.APPROVED
     assert len(simulator.log) == 1
 
 

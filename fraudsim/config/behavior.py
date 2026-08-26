@@ -22,6 +22,19 @@ class AmountConfig(StrictModel):
     the cents digit alone would separate it from real data.
     """
 
+    # A card's own level, and the spread around it.
+    #
+    # These replace a single shared curve. With one curve the only thing
+    # separating two cards is sampling, so the spread of per-card means comes
+    # out at about half what real cards show. A marginal comparison cannot see
+    # that: pooling every transaction ignores which card produced it, and a
+    # detector reading an amount against a card's own history reads exactly
+    # what pooling gets wrong.
+    level_mean: float = 4.44
+    between_sd: PositiveFloat = 0.605
+    within_sd: PositiveFloat = 0.706
+
+    # Kept for the pooled marginal, which the fidelity comparison still uses.
     lognormal_mu: float = 4.245
     lognormal_sigma: PositiveFloat = 0.803
     tail_threshold: PositiveFloat = 435.0
@@ -146,7 +159,11 @@ class HardNegativeConfig(StrictModel):
     password_reset_rate_yearly: PositiveFloat = 0.35
     recovery_chain_probability: Annotated[float, Field(ge=1e-8, le=1e-3)] = 1e-5
     gift_card_share: UnitInterval = 0.02
-    shopping_session_share: UnitInterval = 0.08
+    # One session becomes several transactions minutes apart, so its share of
+    # slots is not its share of events. Set against the combined target rather
+    # than read off a source, since nothing reports how often a holder shops in
+    # one sitting.
+    shopping_session_share: UnitInterval = 0.012
 
 
 class BehaviorConfig(StrictModel):

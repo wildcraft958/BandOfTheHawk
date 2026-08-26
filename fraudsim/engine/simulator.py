@@ -37,6 +37,7 @@ from ..rng import RngHub
 from ..world.graph import EntityGraph
 from .actions import Action, ActionName, action_cost
 from .outcome import RISK_TO_OUTCOME, Outcome, OutcomeCode
+from .resolution import EVENT_FOR_ACTION, ActionResolver
 from .stages import Stage, StageGate
 
 
@@ -65,6 +66,27 @@ class Actor:
     value_extracted: float = 0.0
     cost_incurred: float = 0.0
 
+    # What the actor has obtained so far.
+    #
+    # These are capabilities rather than graph edges: credentials are held, not
+    # connected to anything, and a voice sample is a property of the actor. An
+    # action that needs one checks here and fails without it, which is what
+    # makes the earlier action that obtains it worth taking.
+    credentials: list[float] = field(default_factory=list)
+    identities: int = 0
+    voice_quality: float = 0.0
+    face_quality: float = 0.0
+    kyc_passed: bool = False
+    controls_number: bool = False
+    controls_account: bool = False
+    passed_step_up: bool = False
+    support_contacts: int = 0
+    payees: list[int] = field(default_factory=list)
+    laundered: float = 0.0
+    launder_hops: int = 0
+    disputes: int = 0
+    refunds: int = 0
+
     @property
     def is_adversarial(self) -> bool:
         return self.kind == ActorKind.ADVERSARIAL
@@ -74,7 +96,7 @@ class Simulator:
     """Runs actions against the world and reports what happened."""
 
     __slots__ = (
-        "graph", "clock", "config", "builder", "log", "gate",
+        "graph", "clock", "config", "builder", "log", "gate", "resolver",
         "_artifacts", "_scorer", "_hub", "_actors", "_next_episode",
     )
 
@@ -102,6 +124,9 @@ class Simulator:
         self._hub = hub or RngHub(config.seed)
         self._actors: dict[ActorId, Actor] = {}
         self._next_episode = 0
+        self.resolver = ActionResolver(
+            graph, self.clock, config, self._hub.stream("resolve")
+        )
 
     # -------------------------------------------------------------- actors
 
@@ -181,9 +206,22 @@ class Simulator:
             # No binding, so there is nothing to authorise through. This is the
             # structural constraint the stage machine exists to express.
             return Outcome(code=OutcomeCode.FAILED, stage=actor.stage, cost=cost)
-        device_id = next(iter(devices))
 
         rng = self._hub.stream("resolve")
+
+        # An action may name the device it went through. Where it does not, one
+        # of the card's bindings is chosen, weighted towards the newest.
+        #
+        # Always taking the same member of the set was wrong in a way that hid
+        # itself: a third of cards are bound to three or more devices, yet every
+        # transaction went through one of them, so the count of devices a card
+        # had been seen on never rose above two and the rule keyed on it could
+        # not fire. Holders move between a phone, a laptop, and a tablet, and
+        # the rule exists to notice when that pattern is unusual.
+        if action.device_id is not None and DeviceId(action.device_id) in devices:
+            device_id = DeviceId(action.device_id)
+        else:
+            device_id = self._pick_device(devices, rng)
         amount = action.amount if action.amount is not None else 50.0
 
         card = self.graph.cards[card_id]
@@ -235,31 +273,62 @@ class Simulator:
         )
 
     def _resolve_simple(self, actor: Actor, action: Action, cost: float) -> Outcome:
-        """Actions whose effect is on capability rather than money."""
-        succeeded = True
+        """Everything that is not an authorisation.
+
+        Delegates to the resolver registered for this action, which performs
+        the mutation the action claims or fails. A single method standing in
+        for all of them was how nineteen actions came to report success while
+        leaving the world untouched.
+
+        The event is emitted only where the action succeeded. Emitting one
+        regardless is what let the log say a device had been bound when no such
+        edge existed.
+        """
+        outcome = self.resolver.resolve(actor, action, cost)
         event_id = None
 
-        if action.name in _BINDING_EVENTS and actor.holder_id is not None:
-            event = self.builder.build_binding(
-                ts=self.clock.now,
-                event_type=_BINDING_EVENTS[action.name],
-                actor_id=int(actor.actor_id),
-                target_id=action.target_id or 0,
-                holder_id=actor.holder_id,
-            )
-            event.episode_id = actor.episode_id
-            self.builder.commit_binding(event)
-            self.log.append(event)
-            event_id = event.event_id
+        if outcome.succeeded and actor.holder_id is not None:
+            event_type = EVENT_FOR_ACTION.get(action.name)
+            if event_type is not None:
+                event = self.builder.build_binding(
+                    ts=self.clock.now,
+                    event_type=event_type,
+                    actor_id=int(actor.actor_id),
+                    target_id=action.target_id or 0,
+                    holder_id=actor.holder_id,
+                    device_id=actor.devices[-1] if actor.devices else None,
+                )
+                event.episode_id = actor.episode_id
+                self.builder.commit_binding(event)
+                self.log.append(event)
+                event_id = event.event_id
 
-        stage = self.gate.advance(actor.stage, action.name, succeeded)
+        actor.value_extracted += outcome.value_extracted
+        stage = self.gate.advance(actor.stage, action.name, outcome.succeeded)
         return Outcome(
-            code=OutcomeCode.APPROVED if succeeded else OutcomeCode.FAILED,
+            code=outcome.code,
             stage=stage,
-            reward=-cost,
+            reward=outcome.reward,
+            value_extracted=outcome.value_extracted,
             cost=cost,
             event_id=event_id,
         )
+
+    def _pick_device(self, devices, rng: np.random.Generator) -> DeviceId:
+        """Choose among a card's bindings, favouring the most recent.
+
+        A replaced handset should carry most of the traffic while the older
+        devices keep appearing occasionally, which is what a household with a
+        phone and a laptop actually looks like.
+        """
+        ordered = sorted(
+            devices, key=lambda d: self.graph.devices[d].first_seen_ts, reverse=True
+        )
+        if len(ordered) == 1:
+            return ordered[0]
+        weights = np.array([0.6**index for index in range(len(ordered))], dtype=float)
+        weights /= weights.sum()
+        return ordered[int(rng.choice(len(ordered), p=weights))]
 
     def _geo_distance(self, holder, merchant, rng: np.random.Generator) -> float:
         geo = self.config.population.geo
@@ -278,13 +347,4 @@ class Simulator:
         }
 
 
-_BINDING_EVENTS: dict[ActionName, EventType] = {
-    ActionName.ADD_DEVICE_SELFSERVE: EventType.DEVICE_BIND,
-    ActionName.RESET_PASSWORD: EventType.AUTH_RESET,
-    ActionName.OPEN_TICKET: EventType.SUPPORT_TICKET,
-    ActionName.ADD_PAYEE: EventType.PAYEE_ADD,
-    ActionName.CALL_IVR_PROVISION: EventType.IVR_CALL,
-    ActionName.SUBMIT_KYC: EventType.KYC_SUBMIT,
-    ActionName.SIM_SWAP: EventType.SIM_CHANGE,
-    ActionName.ESCALATE_LIMIT: EventType.LIMIT_CHANGE,
-}
+

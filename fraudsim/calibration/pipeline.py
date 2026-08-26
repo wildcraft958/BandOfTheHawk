@@ -18,6 +18,7 @@ from .fit_amount import fit_amount
 from .fit_arrival import fit_arrival, measure_targets, simulate_arrival
 from .fit_circadian import fit_circadian
 from .fit_fanout import fit_fanout
+from .fit_heterogeneity import fit_heterogeneity
 from .fit_timing import fit_hawkes, sequences_from_frame
 from .loaders import IeeeCisLoader, SparkovLoader
 from .noise_floor import NoiseFloorBuilder
@@ -57,6 +58,10 @@ def run_calibration(
     say("fitting amount")
     amount = fit_amount(benign["TransactionAmt"].to_numpy(float))
     params.add_fitted("amount", amount.as_dict())
+
+    say("fitting amount heterogeneity")
+    heterogeneity = fit_heterogeneity(benign, "entity", "TransactionAmt")
+    params.add_fitted("amount_heterogeneity", heterogeneity.as_dict())
 
     say("fitting circadian")
     hours = (benign["TransactionDT"].to_numpy(float) / 3600.0) % 24

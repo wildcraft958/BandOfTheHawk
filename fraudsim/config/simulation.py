@@ -33,6 +33,7 @@ from .world import PopulationConfig, WarmStartConfig
 # Which artifact entry maps onto which place in the config tree.
 FITTED_ROUTES: dict[str, tuple[str, ...]] = {
     "amount": ("behavior", "amount"),
+    "amount_heterogeneity": ("behavior", "amount"),
     "arrival": ("behavior", "arrival"),
     "circadian": ("behavior", "circadian"),
     "fingerprint_fanout": ("population", "fanout"),
@@ -41,6 +42,7 @@ FITTED_ROUTES: dict[str, tuple[str, ...]] = {
 # Artifact keys that describe a fit rather than parameterise the simulation.
 FITTED_METADATA = {
     "median", "mean", "n_samples", "n_entities", "n_gaps", "n_nodes",
+    "grand_mean", "between_share", "n_events", "total_sd",
     "minimum", "resultant_length", "log_likelihood", "ks_statistic",
     "ks_pvalue", "converged", "branching_ratio",
 }

@@ -82,6 +82,7 @@ class Action:
     name: ActionName
     target_id: int | None = None
     secondary_id: int | None = None
+    device_id: int | None = None
     amount: float | None = None
     delay_minutes: int = 0
     category_cluster: int | None = None

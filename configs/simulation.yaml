@@ -61,7 +61,7 @@ behavior:
     dispute_rate: 0.0008
     password_reset_rate_yearly: 0.35
     gift_card_share: 0.02
-    shopping_session_share: 0.08
+    shopping_session_share: 0.012
 
 engine:
   fraud_base_rate: 0.005
@@ -75,10 +75,10 @@ engine:
     txn_count_1h: 3
     distinct_merchants_24h: 5
     amount_sum_24h: 1000.0
-    new_account_txn_count: 1
+    new_account_txn_count: 3
     new_account_days: 7
-    distinct_payment_methods_7d: 2
-    amount_ratio_30d: 3.0
+    distinct_payment_methods_7d: 4
+    amount_ratio_30d: 6.0
     declines_1h: 2
     distinct_ips_24h: 3
 

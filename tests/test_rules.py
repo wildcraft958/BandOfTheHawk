@@ -51,20 +51,34 @@ def test_all_eight_rules_are_present(engine) -> None:
     )
 
 
+def _just_over(threshold):
+    """A value that clears a configured threshold.
+
+    Derived rather than restated, since the thresholds are tuned against
+    generated traffic and a hardcoded copy here would break silently whenever
+    one moved.
+    """
+    return threshold + (1 if isinstance(threshold, int) else 1.0)
+
+
 @pytest.mark.parametrize(
-    "rule_id,overrides",
+    "rule_id,field,threshold_name,extra",
     [
-        ("R1", {"auths_last_1h": 4}),
-        ("R2", {"distinct_merchants_24h": 6}),
-        ("R3", {"amount_sum_24h": 1500.0}),
-        ("R4", {"account_age_days": 2, "auths_last_24h": 3}),
-        ("R5", {"card_n_devices": 4}),
-        ("R6", {"amount_vs_median": 5.0}),
-        ("R7", {"declines_last_1h": 3}),
-        ("R8", {"distinct_ips_24h": 5}),
+        ("R1", "auths_last_1h", "txn_count_1h", {}),
+        ("R2", "distinct_merchants_24h", "distinct_merchants_24h", {}),
+        ("R3", "amount_sum_24h", "amount_sum_24h", {}),
+        ("R4", "auths_last_24h", "new_account_txn_count", {"account_age_days": 2}),
+        ("R5", "card_n_devices", "distinct_payment_methods_7d", {}),
+        ("R6", "amount_vs_median", "amount_ratio_30d", {}),
+        ("R7", "declines_last_1h", "declines_1h", {}),
+        ("R8", "distinct_ips_24h", "distinct_ips_24h", {}),
     ],
 )
-def test_each_rule_fires_on_its_own_condition(engine, rule_id, overrides) -> None:
+def test_each_rule_fires_on_its_own_condition(
+    engine, rule_id, field, threshold_name, extra
+) -> None:
+    threshold = getattr(VelocityRuleConfig(), threshold_name)
+    overrides = {field: _just_over(threshold), **extra}
     assert rule_id in engine.evaluate(event(**overrides))
 
 
@@ -72,14 +86,22 @@ def test_r5_counts_devices_per_card_not_cards_per_device(engine) -> None:
     """Cards per device is the shared fingerprint fan-out, heavy tailed among
     ordinary holders by design. A rule keyed on it fires on half of legitimate
     traffic and measures the generator rather than the behaviour."""
+    threshold = VelocityRuleConfig().distinct_payment_methods_7d
     assert "R5" not in engine.evaluate(event(device_n_cards=400, card_n_devices=1))
-    assert "R5" in engine.evaluate(event(device_n_cards=1, card_n_devices=9))
+    assert "R5" in engine.evaluate(
+        event(device_n_cards=1, card_n_devices=threshold + 5)
+    )
 
 
 def test_r4_needs_both_a_new_account_and_activity(engine) -> None:
+    threshold = VelocityRuleConfig().new_account_txn_count
     assert "R4" not in engine.evaluate(event(account_age_days=2, auths_last_24h=1))
-    assert "R4" not in engine.evaluate(event(account_age_days=900, auths_last_24h=9))
-    assert "R4" in engine.evaluate(event(account_age_days=2, auths_last_24h=9))
+    assert "R4" not in engine.evaluate(
+        event(account_age_days=900, auths_last_24h=threshold + 6)
+    )
+    assert "R4" in engine.evaluate(
+        event(account_age_days=2, auths_last_24h=threshold + 6)
+    )
 
 
 def test_r6_stays_quiet_without_history(engine) -> None:
@@ -97,7 +119,7 @@ def test_thresholds_come_from_configuration(engine) -> None:
 
 def test_trigger_rates_report_each_rule_and_the_whole_set() -> None:
     engine = VelocityRuleEngine(VelocityRuleConfig())
-    events = [event() for _ in range(90)] + [event(auths_last_1h=9) for _ in range(10)]
+    events = [event() for _ in range(90)] + [event(auths_last_1h=99) for _ in range(10)]
     rates = engine.trigger_rates(events)
     assert rates.n_events == 100
     assert rates.per_rule["R1"] == pytest.approx(0.10)
@@ -106,7 +128,7 @@ def test_trigger_rates_report_each_rule_and_the_whole_set() -> None:
 
 def test_trigger_rates_count_an_event_once_however_many_rules_fire() -> None:
     engine = VelocityRuleEngine(VelocityRuleConfig())
-    noisy = event(auths_last_1h=9, distinct_merchants_24h=20, amount_sum_24h=9000.0)
+    noisy = event(auths_last_1h=99, distinct_merchants_24h=99, amount_sum_24h=9000.0)
     rates = engine.trigger_rates([noisy] * 10)
     assert rates.any_rule == pytest.approx(1.0)
     assert rates.per_rule["R1"] == pytest.approx(1.0)
@@ -119,9 +141,9 @@ def test_scorer_satisfies_the_scorer_protocol() -> None:
 def test_scorer_escalates_with_the_number_of_rules() -> None:
     scorer = VelocityRuleScorer(VelocityRuleConfig())
     assert scorer.score(event()).action is RiskAction.APPROVE
-    assert scorer.score(event(auths_last_1h=9)).action is RiskAction.STEP_UP
+    assert scorer.score(event(auths_last_1h=99)).action is RiskAction.STEP_UP
 
-    many = event(auths_last_1h=9, distinct_merchants_24h=20, amount_sum_24h=9000.0)
+    many = event(auths_last_1h=99, distinct_merchants_24h=99, amount_sum_24h=9000.0)
     assessment = scorer.score(many)
     assert assessment.action is RiskAction.DECLINE
     assert assessment.risk_score > 0.3

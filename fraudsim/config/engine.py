@@ -50,13 +50,18 @@ class VelocityRuleConfig(StrictModel):
     than asserted.
     """
 
+    # Thresholds are tuned against generated traffic rather than taken from the
+    # source they name. The published set fixes which quantity each rule reads,
+    # not where the line sits, and a line drawn before there was traffic to draw
+    # it against says nothing. These land the combined rate inside its target
+    # with no single rule carrying more than half of it.
     txn_count_1h: Annotated[int, Field(ge=1, le=100)] = 3
     distinct_merchants_24h: Annotated[int, Field(ge=1, le=100)] = 5
     amount_sum_24h: PositiveFloat = 1000.0
-    new_account_txn_count: Annotated[int, Field(ge=1, le=50)] = 1
+    new_account_txn_count: Annotated[int, Field(ge=1, le=50)] = 3
     new_account_days: Annotated[int, Field(ge=1, le=90)] = 7
-    distinct_payment_methods_7d: Annotated[int, Field(ge=1, le=50)] = 2
-    amount_ratio_30d: PositiveFloat = 3.0
+    distinct_payment_methods_7d: Annotated[int, Field(ge=1, le=50)] = 4
+    amount_ratio_30d: PositiveFloat = 6.0
     declines_1h: Annotated[int, Field(ge=1, le=50)] = 2
     distinct_ips_24h: Annotated[int, Field(ge=1, le=50)] = 3
 
