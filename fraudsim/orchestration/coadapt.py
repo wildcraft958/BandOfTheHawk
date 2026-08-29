@@ -74,6 +74,7 @@ class CoadaptReport:
     defender_positives_at_refit: list[int] = field(default_factory=list)
     zero_shot: dict[str, float] = field(default_factory=dict)
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
+    checkpoints: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Everything as plain data, for plotting and for the writeup.
@@ -94,6 +95,7 @@ class CoadaptReport:
             "top_sequences": [
                 {"sequence": seq, "count": count} for seq, count in self.top_sequences
             ],
+            "checkpoints": dict(self.checkpoints),
         }
 
     def render(self) -> str:
@@ -172,6 +174,25 @@ class CoadaptEngine:
         self._cards = [int(c) for c in graph.cards if graph.devices_of_card(c)]
         self._train_verticals = [v for v in VERTICALS if v not in ZERO_SHOT_HOLDOUTS]
         self.defender: RiskScorer = self.sim.scorer
+
+    # ----------------------------------------------------------- checkpoints
+
+    def save(self, directory) -> dict:
+        """Write the attacker and the defender, returning where each landed."""
+        from pathlib import Path
+
+        from ..defender.persist import save_defender
+
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+
+        attacker_path = directory / "attacker.pt"
+        self.trainer.save(attacker_path)
+
+        defender_path = directory / "defender.joblib"
+        save_defender(self.defender, defender_path)
+
+        return {"attacker": str(attacker_path), "defender": str(defender_path)}
 
     # ------------------------------------------------------------ env thunks
 
@@ -304,12 +325,17 @@ class CoadaptEngine:
             obs = env.reset()
             done = False
             while not done:
-                vec = torch.as_tensor(AttackEnv.encode(obs)).unsqueeze(0)
-                mask = torch.as_tensor(AttackEnv.mask_vector(obs)).unsqueeze(0)
+                # Built on the trainer's device, as everywhere the networks are
+                # called: a CPU tensor against GPU weights is a runtime error
+                # that only appears on a machine that has a GPU.
+                vec = torch.as_tensor(
+                    AttackEnv.encode(obs), device=self.trainer.device
+                ).unsqueeze(0)
+                mask = torch.as_tensor(
+                    AttackEnv.mask_vector(obs), device=self.trainer.device
+                ).unsqueeze(0)
                 with torch.no_grad():
-                    discrete, amount, delay = self.trainer.actor(
-                        vec.to(self.trainer.device), mask.to(self.trainer.device)
-                    )
+                    discrete, amount, delay = self.trainer.actor(vec, mask)
                     a_idx = int(discrete.probs.argmax().item())
                     a_amt = float(amount.mean.item())
                     a_dly = float(delay.mean.item())
@@ -363,8 +389,14 @@ class CoadaptEngine:
             names: list[str] = []
             done = False
             while not done:
-                vec = torch.as_tensor(AttackEnv.encode(obs)).unsqueeze(0)
-                mask = torch.as_tensor(AttackEnv.mask_vector(obs)).unsqueeze(0)
+                # On the trainer's device, so this matches the networks on a
+                # machine with a GPU as well as on one without.
+                vec = torch.as_tensor(
+                    AttackEnv.encode(obs), device=self.trainer.device
+                ).unsqueeze(0)
+                mask = torch.as_tensor(
+                    AttackEnv.mask_vector(obs), device=self.trainer.device
+                ).unsqueeze(0)
                 with torch.no_grad():
                     discrete, amount, delay = self.trainer.actor(vec, mask)
                     a_idx = int(discrete.probs.argmax().item())
@@ -399,8 +431,16 @@ def run_coadapt(
     ppo_config: PPOConfig | None = None,
     pool_path=None,
     cfpb_path=None,
+    checkpoint_dir=None,
 ) -> CoadaptReport:
-    """The whole thing, phases A through D, every scale a parameter."""
+    """The whole thing, phases A through D, every scale a parameter.
+
+    Both trained sides are written to `checkpoint_dir` when one is given: the
+    attacker's actor and critic, and the final refitted defender. A run of this
+    length produces models worth keeping — for re-scoring, for comparing across
+    runs, and for resuming — and without saving them they vanish with the
+    process.
+    """
     engine = CoadaptEngine(
         config, seed=seed, learned_defender=learned_defender, ppo_config=ppo_config,
         pool_path=pool_path, cfpb_path=cfpb_path,
@@ -412,4 +452,7 @@ def run_coadapt(
     report.initial_defender_positives = positives
     report.bc_final_loss = bc_loss
     report.critic_final_loss = critic_loss
+
+    if checkpoint_dir is not None:
+        report.checkpoints = engine.save(checkpoint_dir)
     return report

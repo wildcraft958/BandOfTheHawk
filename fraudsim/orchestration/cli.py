@@ -89,6 +89,7 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         ppo_config=ppo_cfg,
         pool_path=args.pool,
         cfpb_path=args.cfpb,
+        checkpoint_dir=args.checkpoint_dir,
     )
     print(report.render())
 
@@ -100,6 +101,8 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         args.metrics.parent.mkdir(parents=True, exist_ok=True)
         args.metrics.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
         print(f"\n  metrics written to {args.metrics}")
+    for name, where in report.checkpoints.items():
+        print(f"  {name} saved to {where}")
     return 0
 
 
@@ -137,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
                     default=ROOT / "Dataset" / "complaints" / "cfpb_payments_all.parquet")
     co.add_argument("--metrics", type=Path, default=ROOT / "artifacts" / "coadapt_metrics.json",
                     help="write the live curve and attacker sequences as JSON, for plotting")
+    co.add_argument("--checkpoint-dir", type=Path, default=ROOT / "artifacts" / "checkpoints",
+                    help="where the trained attacker and final defender are written")
     co.set_defaults(func=cmd_coadapt)
 
     args = parser.parse_args(argv)

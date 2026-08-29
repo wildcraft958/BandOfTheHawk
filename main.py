@@ -11,7 +11,12 @@ The stages, in the order the full run executes them:
     demo       build the benign world and warm it; prints the fidelity numbers
                (rule trip rate, fan-out, events per entity) — the sanity check
                that the simulation still matches its calibration
-    text       generate the text pool and score it; prints the tier ladder
+    text       generate the text pool with Qwen and embed it; prints the tier
+               ladder. Uses the real models unless --mock is passed. The pool is
+               written to artifacts/text_pool.json and REUSED on every later run
+               — an existing pool is never regenerated, so the models load once
+               and never again. Force a fresh corpus with:
+                   python -m fraudsim.generative.cli build --qwen --embed --rebuild
     fraud      add scripted fraud at the base rate; prints prevalence and the
                top scripted action sequences
     baseline   fit the flat gradient-boosted detector; prints PR-AUC, recall at
@@ -45,11 +50,18 @@ readable record:
     nohup python main.py --profile server > run.log 2>&1 &     # linux
     tail -f run.log
 
-Output flushes at each stage boundary, so `tail -f` follows it live. The
-co-adaptation stage additionally writes `artifacts/coadapt_metrics.json` — the
-live curve, the defender refit points, the zero-shot recalls, and the attacker's
-top action sequences as data, so charts can be drawn from a finished run without
-re-running it or scraping the log.
+Output flushes at each stage boundary, so `tail -f` follows it live.
+
+WHAT A RUN LEAVES BEHIND
+------------------------
+
+    artifacts/text_pool.json          the generated corpus and its embeddings,
+                                      reused by every later run
+    artifacts/coadapt_metrics.json    the live curve, the defender refit points,
+                                      the zero-shot recalls, and the attacker's
+                                      top action sequences, as data for plotting
+    artifacts/checkpoints/            the trained attacker (actor + critic) and
+                                      the final refitted defender, both loadable
 """
 
 from __future__ import annotations
@@ -108,8 +120,9 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
     if stage == "text":
         args = ["build", "--per-key", str(s["per_key"])]
         if use_models:
-            # The real generation and embedding models. Only on a machine that
-            # can hold them, which is what --models says.
+            # The real generation and embedding models, which is the default.
+            # The build skips itself if a pool already exists, so this loads
+            # nothing on a run where the corpus is already there.
             args += ["--qwen", "--embed", "--embed-dim", str(s["embed_dim"])]
         return "fraudsim.generative.cli", args
 
@@ -178,7 +191,8 @@ def main(argv: list[str] | None = None) -> int:
             "  python main.py                        the full pipeline\n"
             "  python main.py coadapt                only the live co-adaptation\n"
             "  python main.py --profile server       the full pipeline, GPU-box scale\n"
-            "  python main.py text --models          build the pool with Qwen + embeddings\n"
+            "  python main.py text                   build the pool with Qwen + embeddings\n"
+            "  python main.py --mock                 the pipeline with no models (no GPU)\n"
         ),
     )
     parser.add_argument(
@@ -187,9 +201,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--profile", choices=PROFILES, default="default")
     parser.add_argument(
-        "--models", action="store_true",
-        help="use the real Qwen generation and embedding models in the text stage "
-             "(needs the generative extra and a machine that can hold them)",
+        "--mock", action="store_true",
+        help="build the text pool with the deterministic stand-in instead of the "
+             "real models — for a machine without a GPU, or a quick check. The "
+             "real Qwen generation and embeddings are the default.",
     )
     args = parser.parse_args(argv)
 
@@ -200,14 +215,14 @@ def main(argv: list[str] | None = None) -> int:
     print(bar)
     print("  fraudsim")
     print(f"  profile: {args.profile}    population: {scales['holders']:,}")
-    print(f"  models:  {'real Qwen + embeddings' if args.models else 'deterministic stand-ins'}")
+    print(f"  models:  {'deterministic stand-ins' if args.mock else 'real Qwen + embeddings'}")
     print(f"  stages:  {' -> '.join(stages)}")
     print(f"  started: {datetime.now():%Y-%m-%d %H:%M:%S}")
     print(bar, flush=True)
 
     results = []
     for stage in stages:
-        module, stage_argv = _stage_args(stage, scales, args.models)
+        module, stage_argv = _stage_args(stage, scales, use_models=not args.mock)
         ok, elapsed = _run_stage(stage, module, stage_argv)
         results.append((stage, ok, elapsed))
 

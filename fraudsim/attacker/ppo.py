@@ -368,12 +368,25 @@ class PPOTrainer:
                 "actor": self.actor.state_dict(),
                 "critic": self.critic.state_dict(),
                 "updates": self._updates,
+                # The architecture the weights belong to. Without it a checkpoint
+                # can be loaded into a differently shaped network and fail with a
+                # key error that says nothing about the cause.
+                "obs_dim": self.actor.trunk[0].in_features,
+                "hidden_dim": self.config.hidden_dim,
+                "n_layers": self.config.n_layers,
             },
             path,
         )
 
     def load(self, path) -> None:
         ckpt = torch.load(path, map_location=self.device)
+        saved = (ckpt.get("hidden_dim"), ckpt.get("n_layers"))
+        current = (self.config.hidden_dim, self.config.n_layers)
+        if saved != (None, None) and saved != current:
+            raise ValueError(
+                f"checkpoint was trained with hidden_dim={saved[0]}, n_layers={saved[1]}; "
+                f"this trainer has hidden_dim={current[0]}, n_layers={current[1]}"
+            )
         self.actor.load_state_dict(ckpt["actor"])
         self.critic.load_state_dict(ckpt["critic"])
         self._updates = ckpt.get("updates", 0)

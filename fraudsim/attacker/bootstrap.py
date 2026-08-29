@@ -199,8 +199,14 @@ def _log_sequences(trainer, make_env, n_episodes: int, rng) -> Counter:
         names: list[str] = []
         done = False
         while not done:
-            vec = torch.as_tensor(AttackEnv.encode(obs)).unsqueeze(0)
-            mask = torch.as_tensor(AttackEnv.mask_vector(obs)).unsqueeze(0)
+            # On the trainer's device: the networks live there, and a tensor
+            # built on the CPU would not match them on a machine with a GPU.
+            vec = torch.as_tensor(
+                AttackEnv.encode(obs), device=trainer.device
+            ).unsqueeze(0)
+            mask = torch.as_tensor(
+                AttackEnv.mask_vector(obs), device=trainer.device
+            ).unsqueeze(0)
             with torch.no_grad():
                 discrete, amount, delay = trainer.actor(vec, mask)
                 a_idx = int(discrete.probs.argmax().item())

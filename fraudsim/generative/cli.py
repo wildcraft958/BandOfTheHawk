@@ -2,9 +2,11 @@
 
     python -m fraudsim.generative.cli build --out artifacts/text_pool.json
 
-Builds the pool with the mock generator by default — no model, runs anywhere.
-Pass --qwen to build the real corpus on a machine that can hold the model; that
-is the only path that loads one.
+An existing pool is reused rather than rebuilt: the corpus costs GPU hours to
+generate and nothing downstream changes while it stays the same, so a build is
+skipped unless --rebuild is passed. Pass --qwen --embed for the real corpus; the
+stand-in generator runs anywhere and is what the tests use. A stand-in build will
+not overwrite a real-model pool without --force.
 """
 
 from __future__ import annotations
@@ -39,11 +41,52 @@ def _tier_report(pool, scorer) -> str:
 
 
 def cmd_build(args: argparse.Namespace) -> int:
+    # The pool is a cached artifact, not something to rebuild every run. It costs
+    # GPU hours to generate for real and nothing downstream changes when it stays
+    # the same, so an existing pool is reused unless a rebuild is asked for. The
+    # check happens before any model is constructed, since loading a seven
+    # billion parameter model and then deciding to skip would defeat the point.
+    if args.out.exists() and not args.rebuild:
+        import json as _json
+
+        try:
+            existing = _json.loads(args.out.read_text(encoding="utf-8"))
+        except Exception:
+            existing = None
+        if existing and existing.get("entries"):
+            print(f"text pool  ({existing.get('generator')})")
+            print(f"  entries          {len(existing['entries']):>8,}")
+            print(f"  embed model      {existing.get('embed_model')}  "
+                  f"(dim {existing.get('embed_dim')})")
+            print(f"  fingerprint      {str(existing.get('fingerprint'))[:16]}")
+            print(f"\n  reusing {args.out} -- pass --rebuild to generate a new one")
+            return 0
+
+    # Rebuilding with the stand-in over a pool built with the real model would
+    # replace a real corpus with placeholder text, silently, and every downstream
+    # result would rest on it. Refuse unless that is what was asked for.
+    if not args.qwen and args.out.exists():
+        import json as _json
+
+        try:
+            existing = _json.loads(args.out.read_text(encoding="utf-8"))
+        except Exception:
+            existing = {}
+        if existing.get("generator") not in (None, "mock") and not args.force:
+            print(
+                f"refusing to overwrite {args.out}: it was built with "
+                f"'{existing.get('generator')}' and this build would replace it with "
+                f"the stand-in.\n  Pass --qwen to rebuild it for real, --out to "
+                f"write elsewhere, or --force to overwrite anyway."
+            )
+            return 1
+
     generator = None
     if args.qwen:
         from .pool import QwenGenerator
 
-        # The only path that loads a model. Reached only on an explicit flag.
+        # The only path that loads a model, and only once the checks above have
+        # decided a build is actually needed.
         generator = QwenGenerator()
 
     embedder = None
@@ -94,6 +137,16 @@ def main(argv: list[str] | None = None) -> int:
         "--embed",
         action="store_true",
         help="embed the text with Qwen3-Embedding-0.6B (semantic vectors for the text expert)",
+    )
+    build.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="regenerate the pool even though one already exists",
+    )
+    build.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing real-model pool with a stand-in build",
     )
     build.add_argument(
         "--embed-dim",

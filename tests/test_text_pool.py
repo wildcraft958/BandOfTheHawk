@@ -48,16 +48,25 @@ def test_entity_consistency_rises_with_tier():
 
 
 def test_template_similarity_falls_with_tier():
-    # Higher tiers diverge from the shared skeleton, so within-pool similarity
-    # drops. Measured against the pool itself, which is where a reused skeleton
-    # shows up as near-duplication.
+    """Higher tiers reuse less of the shared skeleton.
+
+    Each tier is scored against the OTHER tiers' text, never against itself. An
+    item compared to a reference containing that same item scores exactly 1.0
+    whatever it says, which measures nothing — the point is how close a tier's
+    text is to text it did not come from.
+    """
     pool = build_pool(per_key=8, seed=2)
-    scorer = _scorer_over(pool)
-    by_tier = {t: [] for t in (0, 1, 2, 3)}
-    for e in pool.entries:
-        by_tier[e.tier].append(scorer.template_similarity(e.text))
-    means = [np.mean(by_tier[t]) for t in (0, 1, 2, 3)]
-    assert means[0] >= means[3]
+    by_tier = {t: [e.text for e in pool.entries if e.tier == t] for t in (0, 1, 2, 3)}
+
+    means = []
+    for tier in (0, 1, 2, 3):
+        others = [t for k, texts in by_tier.items() if k != tier for t in texts]
+        scorer = TextScorer(reference=others)
+        scores = [scorer.template_similarity(t) for t in by_tier[tier]]
+        means.append(np.mean(scores))
+
+    # The lowest tier is the most templated, the highest the least.
+    assert means[0] > means[3]
 
 
 def test_pool_is_deterministic_under_seed():
