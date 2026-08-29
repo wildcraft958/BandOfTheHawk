@@ -82,6 +82,12 @@ ADVANCES: dict[tuple[Stage, ActionName], Stage] = {
     (Stage.ACQUIRED, ActionName.SUBMIT_KYC): Stage.BOUND,
     (Stage.ACQUIRED, ActionName.ADD_DEVICE_SELFSERVE): Stage.BOUND,
     (Stage.ACQUIRED, ActionName.SIM_SWAP): Stage.BOUND,
+    # Account takeover reaches a usable state without minting a device: the
+    # attacker resets the password and spends through the victim's own,
+    # already-aged binding. Without this transition every attacker had to
+    # add a fresh device, which handed the detector a device-age-zero tell
+    # that swamped every subtler signal.
+    (Stage.ACQUIRED, ActionName.RESET_PASSWORD): Stage.BOUND,
     (Stage.BOUND, ActionName.ATTEMPT_AUTH): Stage.MONETIZED,
     (Stage.BOUND, ActionName.TRANSFER_P2P): Stage.MONETIZED,
 }

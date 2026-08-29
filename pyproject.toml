@@ -21,6 +21,12 @@ dependencies = [
 [project.optional-dependencies]
 analysis = ["networkx>=3.6", "matplotlib>=3.10"]
 calibration = ["pandas>=2.2", "pyarrow>=17.0"]
+# Learned tiers, each isolated from the numpy-only simulation path by the import
+# firewall (tests/test_import_firewall.py). The defender's feature extraction is
+# numpy; only the models it fits reach into these.
+defender = ["scikit-learn>=1.5", "lightgbm>=4.5"]
+rl = ["torch>=2.4"]
+generative = ["torch>=2.4", "transformers>=4.44", "accelerate>=0.34"]
 dev = ["pytest>=8.0", "pytest-cov"]
 
 [tool.setuptools.packages.find]

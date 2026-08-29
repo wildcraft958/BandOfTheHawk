@@ -187,6 +187,23 @@ class EventLog:
             self.events[index].is_fraud = is_fraud
         return len(indices)
 
+    def stamp_unlabelled_benign(self) -> int:
+        """Label everything still unlabelled as benign.
+
+        Only adversarial episodes stamp fraud; the benign backdrop is never
+        wrapped in an episode, so its events stay unlabelled. In this simulator
+        an event that belonged to no adversarial episode is benign ground truth,
+        which is exactly the negative class a detector trains against. Called
+        once collection is complete, never mid-run — a benign label is only true
+        once no fraud episode can still claim the event.
+        """
+        stamped = 0
+        for event in self.events:
+            if getattr(event, "is_fraud", None) is None:
+                event.is_fraud = False
+                stamped += 1
+        return stamped
+
     def labelled(self) -> list[object]:
         return [e for e in self.events if getattr(e, "is_fraud", None) is not None]
 

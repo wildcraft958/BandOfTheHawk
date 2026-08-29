@@ -1,8 +1,12 @@
-"""The runtime tier must not reach the analysis or calibration tiers.
+"""The runtime tier must not reach any of the heavy tiers.
 
-A stray `import pandas` inside the simulation path would resolve fine in a dev
-environment where every tier is installed, and only fail much later in a clean
-install. This test makes that failure immediate.
+A stray `import pandas` or `import torch` inside the simulation path would
+resolve fine in a dev environment where every tier is installed, and only fail
+much later in a clean install. This test makes that failure immediate.
+
+The learned components (defender, attacker, generative) live behind the Protocol
+seams and carry their own heavy dependencies. They are exempt from the check,
+but the simulation path that runs without them must never import them.
 """
 
 from __future__ import annotations
@@ -20,9 +24,21 @@ FORBIDDEN = {
     "pyarrow": "calibration",
     "networkx": "analysis",
     "matplotlib": "analysis",
+    "sklearn": "defender",
+    "lightgbm": "defender",
+    "torch": "rl",
+    "transformers": "generative",
+    "accelerate": "generative",
 }
 
-EXEMPT_SUBPACKAGES = {"analysis", "calibration"}
+EXEMPT_SUBPACKAGES = {
+    "analysis",
+    "calibration",
+    "defender",
+    "attacker",
+    "generative",
+    "orchestration",
+}
 
 RUNTIME_MODULES = [
     "fraudsim",

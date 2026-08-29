@@ -38,6 +38,7 @@ from ..world.graph import EntityGraph
 from .actions import Action, ActionName, action_cost
 from .outcome import RISK_TO_OUTCOME, Outcome, OutcomeCode
 from .resolution import EVENT_FOR_ACTION, ActionResolver
+from ..defender.mitigation import apply_all
 from .stages import Stage, StageGate
 
 
@@ -137,6 +138,20 @@ class Simulator:
     def actor(self, actor_id: ActorId) -> Actor:
         return self._actors[actor_id]
 
+    def set_scorer(self, scorer: RiskScorer) -> None:
+        """Swap the defender in force.
+
+        Live co-adaptation refits the defender periodically and points the world
+        at the new one, so subsequent authorisations are scored and mitigated by
+        the model that has seen the most recent fraud. The attacker then faces a
+        moving defence within a single run rather than a frozen one.
+        """
+        self._scorer = scorer
+
+    @property
+    def scorer(self) -> RiskScorer:
+        return self._scorer
+
     def open_episode(self, actor_id: ActorId) -> int:
         episode_id = self._next_episode
         self._next_episode += 1
@@ -202,9 +217,16 @@ class Simulator:
             return Outcome(code=OutcomeCode.FAILED, stage=actor.stage, cost=cost)
 
         devices = self.graph.devices_of_card(card_id)
+        # A blocklisted device is refused whatever card it carries, so it drops
+        # out of the set an authorisation may run through. This is what makes the
+        # blocklist mitigation bite: the capability is not merely flagged, the
+        # device can no longer be used at all.
+        devices = frozenset(
+            d for d in devices if not self.graph.devices[d].blocklisted
+        )
         if not devices:
-            # No binding, so there is nothing to authorise through. This is the
-            # structural constraint the stage machine exists to express.
+            # No usable binding, so there is nothing to authorise through —
+            # either the card never had one, or mitigation removed the last one.
             return Outcome(code=OutcomeCode.FAILED, stage=actor.stage, cost=cost)
 
         rng = self._hub.stream("resolve")
@@ -258,6 +280,13 @@ class Simulator:
 
         extracted = amount if approved else 0.0
         actor.value_extracted += extracted
+
+        # A score changes nothing on its own; its mitigations are what mutate the
+        # world. Applied here, after the event is logged and before the stage is
+        # decided, so a deleted binding or a frozen card takes effect for every
+        # action the actor attempts next.
+        if assessment.mitigations:
+            apply_all(assessment.mitigations, self.graph, self.clock.now)
 
         stage = self.gate.advance(actor.stage, action.name, approved)
         if assessment.action is RiskAction.BLOCK:

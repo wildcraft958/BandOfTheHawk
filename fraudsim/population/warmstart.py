@@ -60,6 +60,7 @@ class WarmStartReport:
     hard_negatives: dict[str, int] = field(default_factory=dict)
     dormant_share: float = 0.0
     cards_with_median: float = 0.0
+    live: bool = False
 
     def render(self) -> str:
         lines = [
@@ -129,10 +130,20 @@ class WarmStartRunner:
         # with a device that already exists.
         self._next_device = 10_000_000
 
-    def run(self) -> WarmStartReport:
+    def run(self, live: bool = False) -> WarmStartReport:
+        """Fill the world with benign traffic.
+
+        The default run backdates history and flags it, so training can exclude
+        the feature-poor burn-in. A `live` run generates the same benign
+        behaviour forward from the current clock and leaves it unflagged: this
+        is the ordinary traffic that continues through the observation window,
+        and it is the negative class a detector trains against. The behavioural
+        machinery is identical either way — only the placement in time and the
+        warm-start flag differ.
+        """
         graph = self.simulator.graph
         warm = self.config.warm_start
-        self.simulator.builder.set_warm_start(True)
+        self.simulator.builder.set_warm_start(not live)
 
         cards = self._eligible_cards()
         # Each card gets its own amount level before any of them transacts, so
@@ -153,11 +164,19 @@ class WarmStartRunner:
 
         schedule = self._build_schedule(cards, warm.events_per_entity)
 
-        # History is backdated, so the clock has to start behind the
-        # observation window. Leaving it at the origin makes every event land
-        # at the same instant, since the clock refuses to move backwards, and
-        # the resulting traffic looks like one enormous burst.
-        if schedule:
+        if live:
+            # Forward of the current clock, not backdated. `_build_schedule`
+            # returns times ending near zero (the observation start); shifting
+            # them past `now` places the same shaped traffic into the live
+            # window without any of it moving the clock backwards.
+            lookback = warm.lookback_days * MINUTES_PER_DAY
+            now = self.simulator.clock.now
+            schedule = [(ts + lookback + now, card_id) for ts, card_id in schedule]
+        elif schedule:
+            # History is backdated, so the clock has to start behind the
+            # observation window. Leaving it at the origin makes every event land
+            # at the same instant, since the clock refuses to move backwards, and
+            # the resulting traffic looks like one enormous burst.
             self.simulator.clock.rewind_to(schedule[0][0])
 
         merchants = list(graph.merchants)
@@ -200,7 +219,9 @@ class WarmStartRunner:
             )
 
         self.simulator.builder.set_warm_start(False)
-        return self._report(counts, cards)
+        report = self._report(counts, cards)
+        report.live = live
+        return report
 
     # ------------------------------------------------------------ schedule
 
