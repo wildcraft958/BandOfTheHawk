@@ -62,6 +62,16 @@ NETWORK_FEATURES = (
     "device_age_days",
 )
 
+# The text expert reads the generated-text signal: the scalar scores plus the
+# embedding columns the artifact stamped on the event. The embedding names are
+# discovered from the table at fit time, since their count depends on the
+# embedding model, so only the scalar names are fixed here.
+TEXT_SCORE_FEATURES = (
+    "template_similarity",
+    "entity_consistency",
+    "perplexity_proxy",
+)
+
 
 class Expert:
     """One model over one view of the table.
@@ -103,20 +113,25 @@ class Expert:
             from sklearn.linear_model import LogisticRegression  # lazy; defender extra
 
             self._model = LogisticRegression(
-                max_iter=500, class_weight="balanced", C=1.0
+                max_iter=2000, class_weight="balanced", C=1.0
             )
             self._model.fit(X, y)
         else:
-            import lightgbm as lgb  # lazy; defender extra
+            from xgboost import XGBClassifier  # lazy; defender extra
 
-            self._model = lgb.LGBMClassifier(
+            self._model = XGBClassifier(
                 n_estimators=150,
-                num_leaves=15,
+                max_depth=4,
                 learning_rate=0.05,
                 scale_pos_weight=neg / pos,
-                min_child_samples=10,
+                min_child_weight=3,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                reg_lambda=1.0,
+                tree_method="hist",
                 random_state=0,
-                verbose=-1,
+                n_jobs=-1,
+                eval_metric="aucpr",
             )
             self._model.fit(X, y)
         return self
@@ -131,6 +146,14 @@ class Expert:
         """
         if self.name == "network":
             idx = [self._col_index[c] for c in NETWORK_FEATURES if c in self._col_index]
+            return X[:, idx] if idx else np.zeros((X.shape[0], 1))
+        if self.name == "text":
+            # The scalar text scores plus every embedding column, which are named
+            # emb_0, emb_1, ... The text expert reads meaning and surface stats
+            # together; nothing else on the row is its concern.
+            names = [c for c in TEXT_SCORE_FEATURES if c in self._col_index]
+            names += [c for c in self.columns if c.startswith("emb_")]
+            idx = [self._col_index[c] for c in names]
             return X[:, idx] if idx else np.zeros((X.shape[0], 1))
         return X
 

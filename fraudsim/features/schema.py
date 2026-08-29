@@ -145,6 +145,15 @@ class BindingEvent:
     device_age_days: int | None = None
     device_n_cards: int | None = None
 
+    # Text an action presented to a control, as an embedding plus the scalar
+    # scores. Only the text verticals (dispute, ticket, refund) carry these; on
+    # every other binding event they are empty, and the table treats an empty
+    # embedding as a missing block. This is where the generative layer reaches
+    # the text expert.
+    text_embedding: tuple = ()
+    text_scores: tuple = ()
+    text_score_names: tuple = ()
+
     is_fraud: bool | None = None
     episode_id: int | None = None
     is_warm_start: bool = False
@@ -154,11 +163,24 @@ class BindingEvent:
         return EventType(self.event_type_value)
 
     def scoring_fields(self) -> dict[str, object]:
-        return {
+        payload = {
             name: getattr(self, name)
             for name in self.__slots__
-            if name not in {"is_fraud", "episode_id", "event_type_value"}
+            if name
+            not in {
+                "is_fraud",
+                "episode_id",
+                "event_type_value",
+                "text_embedding",
+                "text_scores",
+                "text_score_names",
+            }
         }
+        # Text vectors expand into named columns the text expert reads, the same
+        # way the compound window features do on an authorisation.
+        payload.update({f"emb_{i}": v for i, v in enumerate(self.text_embedding)})
+        payload.update(zip(self.text_score_names, self.text_scores))
+        return payload
 
 
 @dataclass(slots=True)

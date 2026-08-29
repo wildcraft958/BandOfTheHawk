@@ -87,8 +87,19 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         episodes_per_update=args.episodes_per_update,
         refit_every=args.refit_every,
         ppo_config=ppo_cfg,
+        pool_path=args.pool,
+        cfpb_path=args.cfpb,
     )
     print(report.render())
+
+    # The same numbers as data, so the curve can be plotted and the attacker
+    # strategies inspected without re-running or scraping the log.
+    if args.metrics:
+        import json
+
+        args.metrics.parent.mkdir(parents=True, exist_ok=True)
+        args.metrics.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
+        print(f"\n  metrics written to {args.metrics}")
     return 0
 
 
@@ -120,6 +131,12 @@ def main(argv: list[str] | None = None) -> int:
     co.add_argument("--refit-every", type=int, default=10)
     co.add_argument("--hidden", type=int, default=256)
     co.add_argument("--minibatch", type=int, default=256)
+    co.add_argument("--pool", type=Path, default=ROOT / "artifacts" / "text_pool.json",
+                    help="text pool to feed dispute/ticket/refund text and embeddings")
+    co.add_argument("--cfpb", type=Path,
+                    default=ROOT / "Dataset" / "complaints" / "cfpb_payments_all.parquet")
+    co.add_argument("--metrics", type=Path, default=ROOT / "artifacts" / "coadapt_metrics.json",
+                    help="write the live curve and attacker sequences as JSON, for plotting")
     co.set_defaults(func=cmd_coadapt)
 
     args = parser.parse_args(argv)

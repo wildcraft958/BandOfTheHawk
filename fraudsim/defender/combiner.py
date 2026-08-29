@@ -66,7 +66,7 @@ class LearnedCombiner:
             self._model = None
             self._constant = float(y.mean()) if len(y) else 0.0
             return self
-        self._model = LogisticRegression(max_iter=500, class_weight="balanced")
+        self._model = LogisticRegression(max_iter=2000, class_weight="balanced")
         self._model.fit(X, y)
         return self
 
@@ -102,11 +102,20 @@ class MixtureScorer:
         self.bands = bands  # optional RiskBands; a default banding is used if None
 
     @classmethod
-    def fit(cls, table, learned: bool = True) -> "MixtureScorer":
+    def fit(cls, table, learned: bool = True, bands=None) -> "MixtureScorer":
+        """Fit the experts and combiner, and attach the banding.
+
+        The bands are what turn a score into a mitigation, so a scorer built
+        without them detects and never acts — the graph write-back would sit
+        dormant and the loop would not actually close. A default banding is
+        attached unless the caller supplies one it has searched.
+        """
+        from .bands import RiskBands
+
         bank = ExpertBank.build(table.columns).fit(table)
         scores, mask = bank.score_matrix(table)
         combiner = LearnedCombiner().fit(scores, mask, table.y) if learned else FixedAverageCombiner()
-        return cls(bank, combiner)
+        return cls(bank, combiner, bands=bands or RiskBands())
 
     def predict_scores(self, table) -> np.ndarray:
         scores, mask = self.bank.score_matrix(table)

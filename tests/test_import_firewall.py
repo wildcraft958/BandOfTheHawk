@@ -25,7 +25,7 @@ FORBIDDEN = {
     "networkx": "analysis",
     "matplotlib": "analysis",
     "sklearn": "defender",
-    "lightgbm": "defender",
+    "xgboost": "defender",
     "torch": "rl",
     "transformers": "generative",
     "accelerate": "generative",

@@ -49,6 +49,7 @@ class Artifact:
 
     scores: Mapping[str, float] = field(default_factory=dict)
     content: str | None = None
+    embedding: tuple[float, ...] = ()
 
     def score(self, name: str, default: float = 0.0) -> float:
         return self.scores.get(name, default)

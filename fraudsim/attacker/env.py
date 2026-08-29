@@ -55,21 +55,6 @@ class RewardWeights:
     value_scale: float = 0.01  # realised dollars are large; scale into reward range
 
 
-@dataclass(slots=True)
-class Transition:
-    """One step, everything PPO needs from it."""
-
-    obs: np.ndarray
-    mask: np.ndarray
-    action_idx: int
-    amount_raw: float
-    delay_raw: float
-    log_prob: float
-    value: float
-    reward: float
-    done: bool
-
-
 class AttackEnv:
     """One attacker episode against the simulator.
 

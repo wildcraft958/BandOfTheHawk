@@ -75,6 +75,27 @@ class CoadaptReport:
     zero_shot: dict[str, float] = field(default_factory=dict)
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
 
+    def to_dict(self) -> dict:
+        """Everything as plain data, for plotting and for the writeup.
+
+        The rendered text is for reading a log; this is for a chart. Written
+        beside the run so the curve can be replotted without re-running.
+        """
+        return {
+            "initial_defender_positives": self.initial_defender_positives,
+            "bc_final_loss": self.bc_final_loss,
+            "critic_final_loss": self.critic_final_loss,
+            "attacker_success": list(self.attacker_success),
+            "mean_return": list(self.mean_return),
+            "entropy": list(self.entropy),
+            "defender_refits": list(self.defender_refits),
+            "defender_positives_at_refit": list(self.defender_positives_at_refit),
+            "zero_shot": dict(self.zero_shot),
+            "top_sequences": [
+                {"sequence": seq, "count": count} for seq, count in self.top_sequences
+            ],
+        }
+
     def render(self) -> str:
         lines = [
             "live co-adaptation",
@@ -116,6 +137,8 @@ class CoadaptEngine:
         learned_defender: bool = False,
         benign_rounds: int = 3,
         ppo_config: PPOConfig | None = None,
+        pool_path=None,
+        cfpb_path=None,
     ) -> None:
         self.config = config
         self.seed = seed
@@ -133,7 +156,18 @@ class CoadaptEngine:
         builder = EventBuilder(
             graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
         )
-        self.sim = Simulator(graph, config, builder, scorer=VelocityRuleScorer(config.engine.rules))
+        # The text pool, if one is built, so dispute/ticket/refund actions carry
+        # real generated text and its embedding to the text expert. Absent, the
+        # simulator falls back to empty artifacts and the text expert sees no
+        # text columns — the pipeline still runs, just without that signal.
+        from ..generative.pool import load_artifact_source
+
+        artifacts = load_artifact_source(pool_path, cfpb_path, seed=seed) if pool_path else None
+        self.sim = Simulator(
+            graph, config, builder,
+            scorer=VelocityRuleScorer(config.engine.rules),
+            artifacts=artifacts,
+        )
         WarmStartRunner(self.sim, config, seed=config.seed).run()
         self._cards = [int(c) for c in graph.cards if graph.devices_of_card(c)]
         self._train_verticals = [v for v in VERTICALS if v not in ZERO_SHOT_HOLDOUTS]
@@ -244,18 +278,55 @@ class CoadaptEngine:
         return int((train.y == 1).sum())
 
     def _measure_success(self, episodes: int) -> float:
-        """Fraud approval rate under the current live defender.
+        """How much fraud the RL attacker gets through the defender in force.
 
-        A short scripted sweep against the defender in force, to read how much
-        fraud is getting through right now. A stronger defender lets less
-        through, so this falls when the defender refits and rises as the attacker
-        adapts against it.
+        The learned policy is what the curve is about, so this rolls out the
+        policy itself rather than the scripted red team, and counts the share of
+        its authorisations the defender approves. A stronger defender approves
+        fewer, so the number falls when the defender refits and rises as the
+        policy adapts against it.
+
+        The rollouts use the same world but are not what the defender trains on —
+        the training data is the policy's own collection batches. Running a full
+        episode sweep here instead would inject scripted fraud and a fresh benign
+        pass into the log every update, so the defender would be refitting partly
+        on data the measurement invented.
         """
-        runner = EpisodeRunner(
-            self.sim, self.config, seed=int(self.rng.integers(1 << 30)), train_only=True
-        )
-        report = runner.run(benign_seed=int(self.rng.integers(1 << 30)))
-        return report.fraud_approval_rate
+        import torch
+
+        from ..engine.outcome import OutcomeCode
+        from ..features.schema import EventType
+
+        approved = 0
+        total = 0
+        for _ in range(episodes):
+            env = self._make_env()
+            obs = env.reset()
+            done = False
+            while not done:
+                vec = torch.as_tensor(AttackEnv.encode(obs)).unsqueeze(0)
+                mask = torch.as_tensor(AttackEnv.mask_vector(obs)).unsqueeze(0)
+                with torch.no_grad():
+                    discrete, amount, delay = self.trainer.actor(
+                        vec.to(self.trainer.device), mask.to(self.trainer.device)
+                    )
+                    a_idx = int(discrete.probs.argmax().item())
+                    a_amt = float(amount.mean.item())
+                    a_dly = float(delay.mean.item())
+                before = len(self.sim.log)
+                obs, _, done, outcome = env.step(a_idx, a_amt, a_dly)
+                # Count only authorisations, which is where money moves and where
+                # the defender's decision is visible.
+                if (
+                    len(self.sim.log) > before
+                    and getattr(self.sim.log.events[-1], "event_type", None)
+                    == EventType.AUTH_ATTEMPT
+                ):
+                    total += 1
+                    if outcome.code is OutcomeCode.APPROVED:
+                        approved += 1
+            env.close()
+        return approved / total if total else 0.0
 
     def _zero_shot_recall(self) -> dict[str, float]:
         recalls: dict[str, float] = {}
@@ -326,10 +397,13 @@ def run_coadapt(
     episodes_per_update: int,
     refit_every: int,
     ppo_config: PPOConfig | None = None,
+    pool_path=None,
+    cfpb_path=None,
 ) -> CoadaptReport:
     """The whole thing, phases A through D, every scale a parameter."""
     engine = CoadaptEngine(
-        config, seed=seed, learned_defender=learned_defender, ppo_config=ppo_config
+        config, seed=seed, learned_defender=learned_defender, ppo_config=ppo_config,
+        pool_path=pool_path, cfpb_path=cfpb_path,
     )
     positives = engine.phase_a_defender()
     bc_loss = engine.phase_b_actor(demo_episodes, bc_epochs)

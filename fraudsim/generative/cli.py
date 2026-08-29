@@ -46,7 +46,17 @@ def cmd_build(args: argparse.Namespace) -> int:
         # The only path that loads a model. Reached only on an explicit flag.
         generator = QwenGenerator()
 
-    pool = build_pool(generator=generator, per_key=args.per_key, seed=args.seed)
+    embedder = None
+    if args.embed:
+        from .embed import Embedder
+
+        # The real sentence-transformer. The one heavy load here, and only on the
+        # flag; the default builds with the hash stand-in and downloads nothing.
+        embedder = Embedder(truncate_dim=args.embed_dim)
+
+    pool = build_pool(
+        generator=generator, per_key=args.per_key, seed=args.seed, embedder=embedder
+    )
     pool.save(args.out)
 
     reference: list[str] = []
@@ -57,6 +67,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     print(f"text pool  ({pool.generator_name})")
     print(f"  entries          {len(pool.entries):>8,}")
     print(f"  fingerprint      {pool.fingerprint[:16]}")
+    print(f"  embed model      {pool.embed_model}  (dim {pool.embed_dim})")
     print(f"  reference        {len(reference):>8,} CFPB narratives")
     print()
     print(_tier_report(pool, scorer))
@@ -77,7 +88,19 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument(
         "--qwen",
         action="store_true",
-        help="use the real model (loads Qwen; needs the generative extra and a capable machine)",
+        help="use the real generation model (loads Qwen-2.5-7B; needs the generative extra)",
+    )
+    build.add_argument(
+        "--embed",
+        action="store_true",
+        help="embed the text with Qwen3-Embedding-0.6B (semantic vectors for the text expert)",
+    )
+    build.add_argument(
+        "--embed-dim",
+        type=int,
+        default=256,
+        help="Matryoshka output width, 32-1024 (default 256; the text expert fits "
+             "on few rows, so the full 1024 is usually more columns than it can use)",
     )
     build.set_defaults(func=cmd_build)
 

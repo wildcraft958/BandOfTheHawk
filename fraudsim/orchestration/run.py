@@ -36,7 +36,7 @@ from ..engine.outcome import OutcomeCode
 from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage, StageGate
 from ..features.schema import EventType
-from ..ids import ActorId
+from ..ids import ActorId, CardId
 from ..protocols import ActorObservation, RiskScorer
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..population.warmstart import WarmStartRunner
@@ -149,6 +149,12 @@ class EpisodeRunner:
             if not getattr(e, "is_warm_start", False)
             and getattr(e, "event_type", None) == EventType.AUTH_ATTEMPT
         )
+        # Ordinary customers also dispute wrong charges, open real support
+        # tickets, and ask for genuine refunds. Without these the text expert
+        # sees only fraudulent disputes and has no honest ones to contrast — the
+        # text signal cannot be learned. This injects them, labelled benign,
+        # carrying real text from the pool.
+        self._benign_text_sweep(n=self._benign_text_count(benign_auths))
 
         report = RunReport(benign_auths=benign_auths)
         target_share = self.config.engine.fraud_base_rate
@@ -187,6 +193,79 @@ class EpisodeRunner:
 
         report.top_sequences = self._sequences.most_common(10)
         return report
+
+    # ----------------------------------------------------- benign text sweep
+
+    # Which benign text action each text vertical is expressed as. These are the
+    # legitimate counterparts of the fraud text verticals.
+    _BENIGN_TEXT_ACTIONS = (
+        ("friendly_fraud", "file_dispute"),
+        ("support_se", "open_ticket"),
+        ("refund_abuse", "request_refund"),
+    )
+
+    def _benign_text_count(self, benign_auths: int) -> int:
+        """How many benign text events to inject.
+
+        Scaled to the benign traffic so the text expert has a comparable number
+        of honest disputes to the fraudulent ones it will see, rather than a
+        published-rate trickle that leaves the class empty in a short window.
+        """
+        return max(20, benign_auths // 40)
+
+    def _benign_text_sweep(self, n: int) -> None:
+        """Have ordinary holders perform legitimate text actions.
+
+        Each draws a holder with a real transaction to dispute or refund, files
+        it through the same action an attacker would, and is labelled benign
+        because it belongs to no adversarial episode. The action requests text
+        from the pool, so the event carries a real embedding.
+        """
+        from ..engine.actions import Action, ActionName
+
+        graph = self.simulator.graph
+        action_names = {
+            "file_dispute": ActionName.FILE_DISPUTE,
+            "open_ticket": ActionName.OPEN_TICKET,
+            "request_refund": ActionName.REQUEST_REFUND,
+        }
+        cards_with_txn = [
+            int(c) for c in graph.cards if graph.merchants_of_card(c)
+        ] or [int(c) for c in graph.cards]
+        if not cards_with_txn:
+            return
+
+        for _ in range(n):
+            card_id = int(self.rng.choice(cards_with_txn))
+            holder_id = int(graph.cards[card_id].holder_id)
+            _, action_key = self._BENIGN_TEXT_ACTIONS[
+                int(self.rng.integers(len(self._BENIGN_TEXT_ACTIONS)))
+            ]
+            # FILE_DISPUTE is legal only at MONETIZED; the other two at BOUND.
+            stage = Stage.MONETIZED if action_key == "file_dispute" else Stage.BOUND
+            actor_id = self._benign_text_actor(holder_id, card_id, stage)
+            self.simulator.step(
+                actor_id,
+                Action(name=action_names[action_key], target_id=card_id),
+            )
+            # No episode is opened, so these stay unlabelled until the runner
+            # stamps the benign backdrop at the end — which is exactly right,
+            # since a legitimate dispute is benign ground truth.
+
+    def _benign_text_actor(self, holder_id: int, card_id: int, stage: Stage):
+        """A benign actor at the stage where the intended text action is legal."""
+        actor_id = ActorId(self._next_actor)
+        self._next_actor += 1
+        self.simulator.register_actor(
+            Actor(
+                actor_id=actor_id,
+                kind=ActorKind.BENIGN,
+                holder_id=holder_id,
+                cards=[CardId(card_id)],
+                stage=stage,
+            )
+        )
+        return actor_id
 
     # --------------------------------------------------------------- episode
 

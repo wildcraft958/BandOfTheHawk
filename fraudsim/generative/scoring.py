@@ -28,28 +28,11 @@ that names what a score cannot see is stronger than one that hides it.
 
 from __future__ import annotations
 
-import math
 import re
-from collections import Counter
 from dataclasses import dataclass
 
 _WORD = re.compile(r"[a-zA-Z']+")
 _MONEY = re.compile(r"\$?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+\.\d{2})")
-
-
-def _char_ngrams(text: str, n: int = 4) -> Counter:
-    text = re.sub(r"\s+", " ", text.lower()).strip()
-    return Counter(text[i : i + n] for i in range(max(0, len(text) - n + 1)))
-
-
-def _cosine(a: Counter, b: Counter) -> float:
-    if not a or not b:
-        return 0.0
-    common = set(a) & set(b)
-    dot = sum(a[k] * b[k] for k in common)
-    na = math.sqrt(sum(v * v for v in a.values()))
-    nb = math.sqrt(sum(v * v for v in b.values()))
-    return dot / (na * nb) if na and nb else 0.0
 
 
 @dataclass
@@ -59,24 +42,54 @@ class TextScorer:
     Built with a reference corpus (the real narratives) to score template
     similarity against. Without one it falls back to the items already scored in
     this run, so a pool still gets a similarity signal.
+
+    The reference is hashed into a fixed-width matrix once, so scoring a pool is
+    a single matrix product rather than a comparison per (item, reference) pair.
+    The pairwise form was quadratic and became the slowest thing in the pipeline
+    at a realistic pool size — twenty-four million Counter comparisons for a
+    twelve-thousand-item pool against two thousand narratives.
     """
 
     reference: list[str]
-    _ref_ngrams: list[Counter] | None = None
+    hash_dim: int = 4096
+    _ref_matrix: object = None
 
     def __post_init__(self) -> None:
-        # Precompute the reference n-grams once; a subsample keeps it cheap
-        # against a corpus of half a million narratives.
-        self._ref_ngrams = [_char_ngrams(t) for t in self.reference]
+        import numpy as np
+
+        if not self.reference:
+            self._ref_matrix = None
+            return
+        self._ref_matrix = self._hash_matrix(self.reference)
+
+    def _hash_matrix(self, texts: list[str]):
+        """Character n-grams hashed into a fixed width, row-normalised.
+
+        Normalising the rows means a dot product is the cosine, so the maximum
+        similarity over the whole reference is one matrix product and a row
+        maximum.
+        """
+        import numpy as np
+
+        out = np.zeros((len(texts), self.hash_dim), dtype=np.float32)
+        for i, text in enumerate(texts):
+            t = re.sub(r"\s+", " ", text.lower()).strip()
+            for j in range(len(t) - 3):
+                out[i, hash(t[j : j + 4]) % self.hash_dim] += 1.0
+        norms = np.linalg.norm(out, axis=1, keepdims=True)
+        np.divide(out, norms, out=out, where=norms > 0)
+        return out
 
     # ------------------------------------------------------------- the scores
 
     def template_similarity(self, text: str) -> float:
-        """Max n-gram cosine against the reference. Higher = more templated."""
-        if not self._ref_ngrams:
+        """Max cosine against the reference. Higher = more templated."""
+        import numpy as np
+
+        if self._ref_matrix is None:
             return 0.0
-        g = _char_ngrams(text)
-        return max(_cosine(g, r) for r in self._ref_ngrams)
+        vec = self._hash_matrix([text])[0]
+        return float(np.max(self._ref_matrix @ vec))
 
     def entity_consistency(self, text: str, facts: dict) -> float:
         """Share of the action's facts that actually appear in the text.

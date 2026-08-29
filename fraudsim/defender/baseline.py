@@ -12,8 +12,9 @@ signal is not known until a model is asked to separate fraud with and without
 them. That is what `feature_importance` and the ablation harness are for, and it
 should be answered before five experts are built on top of an assumption.
 
-LightGBM lives in the defender extra, imported inside the fit so the runtime
-path never reaches it.
+XGBoost lives in the defender extra, imported inside the fit so the runtime path
+never reaches it. The histogram tree method is used, which is the fast one on a
+table this wide and takes a GPU without changing anything else.
 """
 
 from __future__ import annotations
@@ -44,10 +45,16 @@ class GBDTBaseline:
     than returning a default that would look like a judgement.
     """
 
-    def __init__(self, columns: tuple[str, ...]):
+    def __init__(self, columns: tuple[str, ...], bands=None):
         self.columns = columns
         self._model = None
         self._col_index = {c: i for i, c in enumerate(columns)}
+        # The banding turns a score into an action and a graph mutation. Without
+        # it this detects and never acts, which would leave the mitigation layer
+        # dormant wherever the flat model is the defender in force.
+        from .bands import RiskBands
+
+        self.bands = bands or RiskBands()
 
     # ------------------------------------------------------------------- fit
 
@@ -58,7 +65,7 @@ class GBDTBaseline:
         same model, the same data, one feature group zeroed, so the delta in
         PR-AUC is attributable to those features and nothing else.
         """
-        import lightgbm as lgb  # lazy; defender extra
+        from xgboost import XGBClassifier  # lazy; defender extra
 
         X = self._prepare(table.X, drop_columns)
         y = table.y
@@ -68,16 +75,19 @@ class GBDTBaseline:
         neg = max(1, int((1 - y).sum()))
         scale = neg / pos
 
-        self._model = lgb.LGBMClassifier(
+        self._model = XGBClassifier(
             n_estimators=200,
-            num_leaves=31,
+            max_depth=6,
             learning_rate=0.05,
             scale_pos_weight=scale,
-            min_child_samples=20,
+            min_child_weight=5,
             subsample=0.8,
             colsample_bytree=0.8,
+            reg_lambda=1.0,
+            tree_method="hist",
             random_state=0,
-            verbose=-1,
+            n_jobs=-1,
+            eval_metric="aucpr",
         )
         self._model.fit(X, y)
         self._dropped = set(drop_columns)
@@ -119,7 +129,7 @@ class GBDTBaseline:
         """
         if self._model is None:
             raise RuntimeError("baseline is not fit")
-        importances = self._model.booster_.feature_importance(importance_type="gain")
+        importances = self._model.feature_importances_
         pairs = list(zip(self.columns, importances))
         pairs.sort(key=lambda p: p[1], reverse=True)
         return [(c, float(v)) for c, v in pairs]
@@ -145,7 +155,10 @@ class GBDTBaseline:
             if j is not None:
                 X[0, j] = row.X[0, i]
         score = float(self.predict_scores(X)[0])
-        return RiskAssessment(risk_score=score, action=_action_for(score))
+        action, mitigations = self.bands.decide(score, event)
+        return RiskAssessment(
+            risk_score=score, action=action, mitigations=tuple(mitigations)
+        )
 
 
 def _action_for(score: float) -> RiskAction:

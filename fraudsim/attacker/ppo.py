@@ -40,7 +40,8 @@ class PPOConfig:
     gae_lambda: float = 0.95
     clip_eps: float = 0.2
     entropy_coef: float = 0.01
-    value_coef: float = 0.5
+    # No value coefficient: the critic has its own optimiser and its loss is
+    # backpropagated separately, so there is no combined loss to weight it in.
     max_grad_norm: float = 0.5
     lr_actor: float = 3e-4
     lr_critic: float = 1e-3
@@ -51,7 +52,10 @@ class PPOConfig:
     # Behaviour-cloning regularisation, annealed over this many updates.
     bc_kl_coef: float = 0.5
     bc_kl_anneal_updates: int = 20
-    device: str = "cpu"
+    # "auto" takes the GPU when one is visible and falls back to the CPU when it
+    # is not, so CUDA_VISIBLE_DEVICES alone decides where this runs. An explicit
+    # "cpu" or "cuda" overrides that.
+    device: str = "auto"
 
 
 @dataclass
@@ -88,6 +92,18 @@ class RolloutBatch:
             )
 
 
+def _resolve_device(spec: str) -> str:
+    """Turn a device spec into a concrete device.
+
+    "auto" means take the GPU if one is visible. Nothing else in the system
+    chooses a device, so setting CUDA_VISIBLE_DEVICES is enough to place the
+    training where it is wanted.
+    """
+    if spec != "auto":
+        return spec
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 def compute_gae(rewards, values, dones, last_value, gamma, lam):
     """Generalised advantage estimation, in reverse as the reference does.
 
@@ -116,7 +132,7 @@ class PPOTrainer:
         net_cfg = NetConfig(
             obs_dim=obs_dim, hidden_dim=self.config.hidden_dim, n_layers=self.config.n_layers
         )
-        self.device = torch.device(self.config.device)
+        self.device = torch.device(_resolve_device(self.config.device))
         self.actor = Actor(net_cfg).to(self.device)
         self.critic = Critic(net_cfg).to(self.device)
         self.opt_actor = torch.optim.Adam(self.actor.parameters(), lr=self.config.lr_actor)

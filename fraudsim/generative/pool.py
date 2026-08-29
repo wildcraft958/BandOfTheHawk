@@ -53,6 +53,7 @@ class PoolEntry:
     persona: str
     text: str
     facts: dict
+    embedding: tuple = ()
 
 
 # ------------------------------------------------------------------ generators
@@ -135,6 +136,8 @@ class TextPool:
     entries: list[PoolEntry] = field(default_factory=list)
     generator_name: str = "mock"
     seed: int = 0
+    embed_model: str = "hash"
+    embed_dim: int = 0
     _index: dict[tuple[str, int, bool], list[int]] = field(default_factory=dict)
 
     def _rebuild_index(self) -> None:
@@ -146,6 +149,16 @@ class TextPool:
         if not self._index:
             self._rebuild_index()
         return [self.entries[i] for i in self._index.get((vertical, tier, fraudulent), [])]
+
+    def key_any_class(self, vertical: str, tier: int) -> list[PoolEntry]:
+        """Both classes of a vertical/tier.
+
+        The source draws from here, because at generation time nothing knows the
+        ground truth — a benign dispute and a fraudulent one request the same
+        tool, and the text differs by facts, not by a label the generator sees.
+        The episode's outcome sets the label; the text is just text.
+        """
+        return self.key(vertical, tier, True) + self.key(vertical, tier, False)
 
     @property
     def fingerprint(self) -> str:
@@ -176,9 +189,12 @@ class TextPool:
                     "persona": e.persona,
                     "text": e.text,
                     "facts": e.facts,
+                    "embedding": list(e.embedding),
                 }
                 for e in self.entries
             ],
+            "embed_model": self.embed_model,
+            "embed_dim": self.embed_dim,
         }
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -194,12 +210,15 @@ class TextPool:
                     persona=e["persona"],
                     text=e["text"],
                     facts=e["facts"],
+                    embedding=tuple(e.get("embedding", ())),
                 )
                 for e in payload["entries"]
             ],
             generator_name=payload["generator"],
             seed=payload["seed"],
         )
+        pool.embed_model = payload.get("embed_model", "hash")
+        pool.embed_dim = payload.get("embed_dim", 0)
         pool._rebuild_index()
         return pool
 
@@ -237,6 +256,7 @@ def build_pool(
     generator=None,
     per_key: int = 8,
     seed: int = 0,
+    embedder=None,
 ) -> TextPool:
     """Generate the full pool: every vertical, tier and class.
 
@@ -268,7 +288,22 @@ def build_pool(
                             },
                         )
                     )
-    pool = TextPool(entries=entries, generator_name=generator.name, seed=seed)
+    # Embed every item once, in one batch, so the vectors are computed here and
+    # stored rather than recomputed at run time. Defaults to the hash stand-in so
+    # the pool builds with no model; pass a real Embedder to store semantic
+    # vectors instead.
+    if embedder is None:
+        from .embed import HashEmbedder
+        embedder = HashEmbedder()
+    vectors = embedder.encode([e.text for e in entries])
+    for entry, vec in zip(entries, vectors):
+        entry.embedding = tuple(float(x) for x in vec)
+
+    pool = TextPool(
+        entries=entries, generator_name=generator.name, seed=seed
+    )
+    pool.embed_model = embedder.name
+    pool.embed_dim = int(vectors.shape[1]) if len(vectors) else 0
     pool._rebuild_index()
     return pool
 
@@ -294,21 +329,70 @@ class PoolArtifactSource:
         self._pool = pool
         self._scorer = scorer
         self._rng = np.random.default_rng(seed)
+        # A shuffled cursor per key. Sampling with replacement reuses a few items
+        # heavily and leaves most of the pool untouched, and a text expert
+        # reading embeddings would memorise the repeats rather than learn what
+        # generated text looks like. Cycling a shuffled order spreads the draws
+        # evenly and only repeats once a key is exhausted.
+        self._order: dict = {}
+        self._cursor: dict = {}
+
+    def _next_index(self, vertical: str, tier: int, n: int) -> int:
+        """The next item for this key, cycling a shuffled order.
+
+        Reshuffles when the key is exhausted, so a long run keeps drawing in a
+        different order rather than repeating the same cycle.
+        """
+        key = (vertical, tier)
+        order = self._order.get(key)
+        cursor = self._cursor.get(key, 0)
+        if order is None or cursor >= len(order) or len(order) != n:
+            order = self._rng.permutation(n)
+            cursor = 0
+        index = int(order[cursor])
+        self._order[key] = order
+        self._cursor[key] = cursor + 1
+        return index
 
     def generate(self, request: ArtifactRequest) -> Artifact:
         vertical = self._TOOL_TO_VERTICAL.get(request.tool_name)
         if vertical is None:
             return Artifact()
         tier = request.capability_tier
-        # The source does not know the ground-truth class, and must not — it is
-        # asked for an artifact, not for a label. It draws from the fraudulent
-        # side, since these tools are only invoked by an attacking action; the
-        # benign twins exist for training the text expert, drawn elsewhere.
-        items = self._pool.key(vertical, tier, fraudulent=True)
+        # The source does not know the ground-truth class, and must not. It draws
+        # across both classes of the vertical and tier, since a benign and a
+        # fraudulent request for the same tool are indistinguishable at
+        # generation time; the label comes from how the episode ends, not here.
+        items = self._pool.key_any_class(vertical, tier)
         if not items:
             return Artifact()
-        entry = items[int(self._rng.integers(len(items)))]
+        entry = items[self._next_index(vertical, tier, len(items))]
         scores = {}
         if self._scorer is not None:
             scores = self._scorer.score(entry)
-        return Artifact(scores=scores, content=entry.text)
+        return Artifact(scores=scores, content=entry.text, embedding=entry.embedding)
+
+
+def load_artifact_source(pool_path, cfpb_path=None, seed: int = 0):
+    """Load a saved pool as an ArtifactSource, scorer attached.
+
+    The convenience the simulators use: read the versioned pool, build a text
+    scorer against the real narratives where available, and return the source
+    ready to hand to a Simulator. Returns None if the pool is absent, so a run
+    without a pool falls back to the null source rather than failing.
+    """
+    from pathlib import Path
+
+    from .scoring import TextScorer
+
+    pool_path = Path(pool_path)
+    if not pool_path.exists():
+        return None
+    pool = TextPool.load(pool_path)
+    reference = []
+    if cfpb_path is not None and Path(cfpb_path).exists():
+        from .cfpb import load_reference
+
+        reference = load_reference(cfpb_path, limit=1500, seed=seed)
+    scorer = TextScorer(reference=reference or [e.text for e in pool.entries])
+    return PoolArtifactSource(pool, scorer=scorer, seed=seed)

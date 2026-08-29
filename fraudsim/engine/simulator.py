@@ -187,10 +187,19 @@ class Simulator:
 
         artifact = None
         if action.needs_artifact:
+            # The capability tier the action was taken at. An action may name one
+            # in its params; otherwise it is drawn across the range, so the run
+            # exercises the whole ladder rather than sitting at tier zero — which
+            # would draw every artifact from one corner of the pool and reuse the
+            # same handful of texts throughout.
+            tier = int(action.params.get("capability_tier", -1))
+            if tier < 0:
+                tier = int(self._hub.stream("artifact").integers(0, 4))
             artifact = self._artifacts.generate(
                 ArtifactRequest(
                     tool_name=action.artifact_tool or "",
                     target_ref=action.target_id,
+                    capability_tier=tier,
                 )
             )
 
@@ -201,7 +210,7 @@ class Simulator:
         if action.name is ActionName.ATTEMPT_AUTH:
             outcome = self._resolve_auth(actor, action, cost)
         else:
-            outcome = self._resolve_simple(actor, action, cost)
+            outcome = self._resolve_simple(actor, action, cost, artifact)
 
         actor.stage = outcome.stage
         return outcome
@@ -301,7 +310,7 @@ class Simulator:
             event_id=event.event_id,
         )
 
-    def _resolve_simple(self, actor: Actor, action: Action, cost: float) -> Outcome:
+    def _resolve_simple(self, actor: Actor, action: Action, cost: float, artifact=None) -> Outcome:
         """Everything that is not an authorisation.
 
         Delegates to the resolver registered for this action, which performs
@@ -328,6 +337,14 @@ class Simulator:
                     device_id=actor.devices[-1] if actor.devices else None,
                 )
                 event.episode_id = actor.episode_id
+                # Where the action presented rendered text to a control, its
+                # embedding and scores ride on the event, so the text expert sees
+                # what the control saw rather than only that a ticket was opened.
+                if artifact is not None and artifact.embedding:
+                    event.text_embedding = tuple(artifact.embedding)
+                    if artifact.scores:
+                        event.text_score_names = tuple(artifact.scores.keys())
+                        event.text_scores = tuple(artifact.scores.values())
                 self.builder.commit_binding(event)
                 self.log.append(event)
                 event_id = event.event_id
