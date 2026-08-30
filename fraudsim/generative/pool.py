@@ -120,6 +120,22 @@ class QwenGenerator:
         system, user = builder(facts, tier, fraudulent)
         return generate_one(self._checkpoint, system, user)
 
+    # A batch method, which is what `build_pool` uses. One prompt per forward
+    # pass leaves the model idle between items; a corpus of thousands is the
+    # difference between minutes and hours.
+    supports_batch = True
+
+    def generate_many(self, specs: list, batch_size: int = 16, progress: bool = True) -> list[str]:
+        from .loader import generate_batch  # lazy
+
+        prompts = [
+            PROMPT_FOR_VERTICAL[vertical](facts, tier, fraudulent)
+            for vertical, tier, fraudulent, facts in specs
+        ]
+        return generate_batch(
+            self._checkpoint, prompts, batch_size=batch_size, progress=progress
+        )
+
 
 # ----------------------------------------------------------------- the pool
 
@@ -257,6 +273,8 @@ def build_pool(
     per_key: int = 8,
     seed: int = 0,
     embedder=None,
+    batch_size: int = 16,
+    progress: bool = True,
 ) -> TextPool:
     """Generate the full pool: every vertical, tier and class.
 
@@ -265,29 +283,46 @@ def build_pool(
     """
     generator = generator or MockGenerator()
     rng = np.random.default_rng(seed)
-    entries: list[PoolEntry] = []
+
+    # Every item to generate, drawn first. Collecting the specifications before
+    # generating any of them is what lets a model-backed generator run them as
+    # batches rather than one at a time.
+    specs = []
     for vertical in TEXT_VERTICALS:
         for tier in TIERS:
             for fraudulent in (True, False):
                 for _ in range(per_key):
-                    facts = _draw_facts(rng, vertical)
-                    text = generator.generate(vertical, tier, fraudulent, facts)
-                    entries.append(
-                        PoolEntry(
-                            vertical=vertical,
-                            tier=tier,
-                            fraudulent=fraudulent,
-                            persona=facts.persona,
-                            text=text,
-                            facts={
-                                "amount": facts.amount,
-                                "merchant_name": facts.merchant_name,
-                                "bank_name": facts.bank_name,
-                                "date": facts.date,
-                                "detail": facts.detail,
-                            },
-                        )
-                    )
+                    specs.append((vertical, tier, fraudulent, _draw_facts(rng, vertical)))
+
+    if getattr(generator, "supports_batch", False):
+        print(f"  generating {len(specs):,} texts in batches of {batch_size} ...", flush=True)
+        texts = generator.generate_many(specs, batch_size=batch_size, progress=progress)
+    else:
+        texts = []
+        step = max(1, len(specs) // 10)
+        for i, (vertical, tier, fraudulent, facts) in enumerate(specs):
+            texts.append(generator.generate(vertical, tier, fraudulent, facts))
+            if progress and (i + 1) % step == 0:
+                print(f"    generated {i + 1:,}/{len(specs):,}", flush=True)
+
+    entries = [
+        PoolEntry(
+            vertical=vertical,
+            tier=tier,
+            fraudulent=fraudulent,
+            persona=facts.persona,
+            text=text,
+            facts={
+                "amount": facts.amount,
+                "merchant_name": facts.merchant_name,
+                "bank_name": facts.bank_name,
+                "date": facts.date,
+                "detail": facts.detail,
+            },
+        )
+        for (vertical, tier, fraudulent, facts), text in zip(specs, texts)
+    ]
+
     # Embed every item once, in one batch, so the vectors are computed here and
     # stored rather than recomputed at run time. Defaults to the hash stand-in so
     # the pool builds with no model; pass a real Embedder to store semantic
@@ -295,6 +330,8 @@ def build_pool(
     if embedder is None:
         from .embed import HashEmbedder
         embedder = HashEmbedder()
+    if progress:
+        print(f"  embedding {len(entries):,} texts ...", flush=True)
     vectors = embedder.encode([e.text for e in entries])
     for entry, vec in zip(entries, vectors):
         entry.embedding = tuple(float(x) for x in vec)

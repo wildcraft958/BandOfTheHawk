@@ -74,6 +74,10 @@ class CoadaptReport:
     defender_positives_at_refit: list[int] = field(default_factory=list)
     zero_shot: dict[str, float] = field(default_factory=dict)
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
+    # Strategies sampled through the run, not only at the end: the interesting
+    # thing is how the policy's approach changes after a defender refit, and a
+    # single final snapshot cannot show that.
+    strategy_history: list[dict] = field(default_factory=list)
     checkpoints: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -95,6 +99,7 @@ class CoadaptReport:
             "top_sequences": [
                 {"sequence": seq, "count": count} for seq, count in self.top_sequences
             ],
+            "strategy_history": list(self.strategy_history),
             "checkpoints": dict(self.checkpoints),
         }
 
@@ -123,7 +128,17 @@ class CoadaptReport:
         lines += ["", "  zero-shot recall on held-out verticals"]
         for name, recall in self.zero_shot.items():
             lines.append(f"    {name:<16}{recall:>8.3f}")
-        lines += ["", "  top action sequences (trained attacker)"]
+        if self.strategy_history:
+            lines += ["", "  how the attacker's strategy changed (sampled at each refit)"]
+            for snap in self.strategy_history:
+                top = snap["sequences"][0] if snap["sequences"] else None
+                if top:
+                    lines.append(
+                        f"    update {snap['update']:<4} {top['count']:>3}x  "
+                        f"{top['sequence'][:92]}"
+                    )
+
+        lines += ["", "  top action sequences (final trained attacker)"]
         for seq, count in self.top_sequences[:8]:
             lines.append(f"    {count:>4}  {seq}")
         return "\n".join(lines)
@@ -281,6 +296,18 @@ class CoadaptEngine:
             report.entropy.append(stats["entropy"])
 
             if (update + 1) % refit_every == 0:
+                # Record what the attacker was doing just before the defender
+                # retrains, so the strategy either side of a refit is visible.
+                report.strategy_history.append(
+                    {
+                        "update": update,
+                        "when": "before_refit",
+                        "sequences": [
+                            {"sequence": seq, "count": n}
+                            for seq, n in self._log_sequences(episodes=12)
+                        ],
+                    }
+                )
                 positives = self._refit_defender()
                 report.defender_refits.append(update)
                 report.defender_positives_at_refit.append(positives)

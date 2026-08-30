@@ -99,3 +99,78 @@ def generate_one(checkpoint: Checkpoint, system: str, user: str, max_new_tokens:
     input_len = inputs["input_ids"].shape[-1]
     gen_ids = output_ids[0][input_len:]
     return checkpoint.text_tokenizer.decode(gen_ids, skip_special_tokens=True).strip()
+
+
+def generate_batch(
+    checkpoint: Checkpoint,
+    prompts: list[tuple[str, str]],
+    max_new_tokens: int = 400,
+    batch_size: int = 16,
+    progress: bool = True,
+) -> list[str]:
+    """Many chat completions at once.
+
+    One prompt per forward pass leaves a large model almost idle: the cost of a
+    pass is dominated by moving the weights, not by the tokens in it, so a batch
+    of sixteen costs barely more than a batch of one. Generating a corpus one
+    item at a time is the difference between minutes and hours.
+
+    Prompts are left-padded so the generated continuations line up at the end of
+    the sequence, which is what a decoder-only model needs when a batch holds
+    prompts of different lengths.
+    """
+    import torch
+
+    tok = checkpoint.text_tokenizer
+    if tok.pad_token_id is None:
+        tok.pad_token = tok.eos_token
+    original_side = tok.padding_side
+    tok.padding_side = "left"
+
+    import time
+
+    out: list[str] = []
+    n_batches = (len(prompts) + batch_size - 1) // batch_size
+    started = time.perf_counter()
+    try:
+        for batch_i, start in enumerate(range(0, len(prompts), batch_size), 1):
+            chunk = prompts[start : start + batch_size]
+            texts = [
+                checkpoint.tokenizer.apply_chat_template(
+                    [{"role": "system", "content": sys}, {"role": "user", "content": usr}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+                for sys, usr in chunk
+            ]
+            inputs = tok(
+                texts, return_tensors="pt", padding=True, add_special_tokens=False
+            ).to(checkpoint.device)
+            with torch.no_grad():
+                ids = checkpoint.model.generate(
+                    **inputs,
+                    eos_token_id=tok.eos_token_id,
+                    pad_token_id=tok.pad_token_id,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=True,
+                    temperature=0.9,
+                    top_p=0.95,
+                )
+            prompt_len = inputs["input_ids"].shape[-1]
+            for row in ids:
+                out.append(tok.decode(row[prompt_len:], skip_special_tokens=True).strip())
+
+            if progress:
+                # Report every batch, with a running estimate, because a silent
+                # generation of this length is indistinguishable from a hang.
+                elapsed = time.perf_counter() - started
+                rate = len(out) / elapsed if elapsed else 0.0
+                remaining = (len(prompts) - len(out)) / rate if rate else 0.0
+                print(
+                    f"    batch {batch_i}/{n_batches}  {len(out):,}/{len(prompts):,} texts"
+                    f"  {rate:.1f}/s  eta {remaining/60:.1f} min",
+                    flush=True,
+                )
+    finally:
+        tok.padding_side = original_side
+    return out

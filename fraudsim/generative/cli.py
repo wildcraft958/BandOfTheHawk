@@ -98,7 +98,8 @@ def cmd_build(args: argparse.Namespace) -> int:
         embedder = Embedder(truncate_dim=args.embed_dim)
 
     pool = build_pool(
-        generator=generator, per_key=args.per_key, seed=args.seed, embedder=embedder
+        generator=generator, per_key=args.per_key, seed=args.seed, embedder=embedder,
+        batch_size=args.batch_size,
     )
     pool.save(args.out)
 
@@ -137,6 +138,13 @@ def main(argv: list[str] | None = None) -> int:
         "--embed",
         action="store_true",
         help="embed the text with Qwen3-Embedding-0.6B (semantic vectors for the text expert)",
+    )
+    build.add_argument(
+        "--batch-size",
+        type=int,
+        default=16,
+        help="prompts per forward pass when generating with the real model; raise "
+             "it on a card with memory to spare, lower it if generation runs out",
     )
     build.add_argument(
         "--rebuild",
