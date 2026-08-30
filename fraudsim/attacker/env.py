@@ -48,11 +48,17 @@ class RewardWeights:
     realised value so the policy optimises extraction, not the shaping.
     """
 
-    detection_penalty: float = 5.0
+    # These were mis-balanced in a way that made the optimal policy inaction: a
+    # three-hundred-dollar fraud scaled to three points of reward while being
+    # caught cost five, so attempting an attack had negative expected value once
+    # the defender was any good, and the policy correctly learned to stop trying.
+    # Extraction now outweighs a single detection, so pressing an attack is worth
+    # it when it works and the penalty shapes *how* rather than *whether*.
+    detection_penalty: float = 2.0
     failed_action_penalty: float = 0.25
     stage_bonus: float = 1.0
     terminal_bonus: float = 10.0
-    value_scale: float = 0.01  # realised dollars are large; scale into reward range
+    value_scale: float = 0.05  # a $300 fraud is worth 15, against a 2.0 detection cost
 
 
 class AttackEnv:

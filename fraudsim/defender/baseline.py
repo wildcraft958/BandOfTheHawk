@@ -129,10 +129,21 @@ class GBDTBaseline:
         """
         if self._model is None:
             raise RuntimeError("baseline is not fit")
-        importances = self._model.feature_importances_
-        pairs = list(zip(self.columns, importances))
+        # The booster's own gain, not `feature_importances_`. The latter is
+        # normalised to sum to one, which turns every number into a small
+        # fraction and makes the ranking hard to read against a run with a
+        # different feature count; gain is the actual reduction in loss the
+        # splits on a feature achieved.
+        booster = self._model.get_booster()
+        scores = booster.get_score(importance_type="gain")
+        # The booster names features f0, f1, ... in column order; a feature that
+        # was never split on is absent, which is a gain of zero.
+        pairs = [
+            (name, float(scores.get(f"f{i}", 0.0)))
+            for i, name in enumerate(self.columns)
+        ]
         pairs.sort(key=lambda p: p[1], reverse=True)
-        return [(c, float(v)) for c, v in pairs]
+        return pairs
 
     # ---------------------------------------------------------- scorer facade
 

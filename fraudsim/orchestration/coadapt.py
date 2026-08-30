@@ -42,6 +42,7 @@ import numpy as np
 from ..attacker.bootstrap import collect_demos
 from ..attacker.env import AttackEnv
 from ..attacker.ppo import PPOConfig, PPOTrainer
+from ..attacker.selection import ThompsonSelector, card_context
 from ..config.simulation import SimulationConfig
 from ..defender.baseline import GBDTBaseline
 from ..defender.combiner import MixtureScorer
@@ -78,6 +79,7 @@ class CoadaptReport:
     # thing is how the policy's approach changes after a defender refit, and a
     # single final snapshot cannot show that.
     strategy_history: list[dict] = field(default_factory=list)
+    selection: dict = field(default_factory=dict)
     checkpoints: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -100,6 +102,7 @@ class CoadaptReport:
                 {"sequence": seq, "count": count} for seq, count in self.top_sequences
             ],
             "strategy_history": list(self.strategy_history),
+            "selection": dict(self.selection),
             "checkpoints": dict(self.checkpoints),
         }
 
@@ -110,20 +113,20 @@ class CoadaptReport:
             f"  BC final loss            {self.bc_final_loss:>8.4f}",
             f"  critic final loss        {self.critic_final_loss:>8.4f}",
             "",
-            "  live phase  (attacker success = fraud approval rate through the live defender)",
-            "  update   success   return   entropy   defender",
+            "  live phase  (extracted = value the attacker takes per episode, all channels)",
+            "  update  extracted   return   entropy   defender",
         ]
         refit_set = set(self.defender_refits)
         for i, (succ, ret, ent) in enumerate(
             zip(self.attacker_success, self.mean_return, self.entropy)
         ):
             marker = "  <- refit" if i in refit_set else ""
-            lines.append(f"    {i:<7}{succ:>8.3f}{ret:>9.2f}{ent:>10.3f}{marker}")
+            lines.append(f"    {i:<7}{succ:>9.1f}{ret:>9.2f}{ent:>10.3f}{marker}")
         lines += ["", "  reads"]
         if self.attacker_success:
             lines.append(
-                f"    attacker success trend   {self.attacker_success[0]:.3f}"
-                f" -> {self.attacker_success[-1]:.3f}"
+                f"    value extracted per episode  {self.attacker_success[0]:.1f}"
+                f" -> {self.attacker_success[-1]:.1f}"
             )
         lines += ["", "  zero-shot recall on held-out verticals"]
         for name, recall in self.zero_shot.items():
@@ -138,10 +141,25 @@ class CoadaptReport:
                         f"{top['sequence'][:92]}"
                     )
 
+        if self.selection.get("describe"):
+            lines += ["", self.selection["describe"]]
+
         lines += ["", "  top action sequences (final trained attacker)"]
         for seq, count in self.top_sequences[:8]:
             lines.append(f"    {count:>4}  {seq}")
         return "\n".join(lines)
+
+
+def _mask_table(table, mask):
+    """A row subset of a feature table, keeping every aligned column."""
+    from ..defender.table import FeatureTable
+
+    return FeatureTable(
+        X=table.X[mask], y=table.y[mask], columns=table.columns,
+        event_type=table.event_type[mask], is_warm_start=table.is_warm_start[mask],
+        episode_id=table.episode_id[mask], group=table.group[mask],
+        events=table.events[mask],
+    )
 
 
 class CoadaptEngine:
@@ -156,14 +174,29 @@ class CoadaptEngine:
         ppo_config: PPOConfig | None = None,
         pool_path=None,
         cfpb_path=None,
+        candidates: int = 5,
+        selection_warmup: int = 10,
+        label_latency_minutes: int = 0,
+        fraud_rounds: int | None = None,
     ) -> None:
         self.config = config
         self.seed = seed
         self.learned_defender = learned_defender
         self.rng = np.random.default_rng(seed)
-        self.buffer = RetentionBuffer(benign_rounds=benign_rounds)
+        self.buffer = RetentionBuffer(
+            benign_rounds=benign_rounds, fraud_rounds=fraud_rounds
+        )
+        self.label_latency_minutes = label_latency_minutes
         self.ppo_config = ppo_config or PPOConfig()
         self.trainer = PPOTrainer(AttackEnv.obs_dim(), self.ppo_config)
+        # Victim choice is a contextual bandit, not part of the sequential
+        # policy: a card is picked, a return is observed, and nothing carries to
+        # the next episode. It selects on card-dump features only.
+        self.selector = ThompsonSelector(
+            warmup_updates=selection_warmup, seed=seed
+        )
+        self.candidates = candidates
+        self._pending_context = None
 
         # One persistent world. The defender in force is swapped as it refits;
         # the population and its history stay put, so the attacker adapts against
@@ -211,9 +244,32 @@ class CoadaptEngine:
 
     # ------------------------------------------------------------ env thunks
 
+    def _card_context(self, card_id: int) -> np.ndarray:
+        """The dump-knowable features of a card: BIN tier and age band."""
+        card = self.sim.graph.cards[card_id]
+        age_days = max(0.0, (self.sim.clock.now - card.issued_ts) / 1440.0)
+        return card_context(card.bin_tier, age_days)
+
     def _target(self) -> Target:
+        """Draw candidates, let the bandit choose among them, build the target.
+
+        A handful of candidates rather than the whole population: an attacker
+        buying a dump chooses among what the dump holds, not among every card
+        that exists, and a small candidate set keeps this a selection problem
+        rather than a ranking over thousands.
+        """
         graph = self.sim.graph
-        card_id = int(self.rng.choice(self._cards))
+        k = min(self.candidates, len(self._cards))
+        candidate_ids = [
+            int(c) for c in self.rng.choice(self._cards, size=k, replace=False)
+        ]
+        contexts = [self._card_context(c) for c in candidate_ids]
+        chosen = self.selector.select(contexts)
+        card_id = candidate_ids[chosen]
+        # Held so the realised return can be credited to the features that led
+        # to this choice once the episode closes.
+        self._pending_context = contexts[chosen]
+
         holder_id = int(graph.cards[card_id].holder_id)
         accounts = sorted(graph.accounts_of_holder(holder_id))
         merchants = list(graph.merchants)
@@ -226,7 +282,17 @@ class CoadaptEngine:
         )
 
     def _make_env(self) -> AttackEnv:
-        return AttackEnv(self.sim, self._target())
+        env = AttackEnv(self.sim, self._target())
+        # The context that chose this victim rides on the env, so the return can
+        # be credited back to it when the episode closes.
+        env.selection_context = self._pending_context
+        return env
+
+    def _credit_selection(self, env, total_reward: float) -> None:
+        """Fold one episode's return into the selector's posterior."""
+        context = getattr(env, "selection_context", None)
+        if context is not None:
+            self.selector.record(context, total_reward)
 
     def _make_env_and_policy(self):
         target = self._target()
@@ -288,8 +354,14 @@ class CoadaptEngine:
         for update in range(n_updates):
             # A fresh log window for this update, so the fraud attributed to the
             # refit is what the attacker produced since the last one.
-            batch = self.trainer.collect(self._make_env, episodes_per_update, self.rng)
+            batch = self.trainer.collect(
+                self._make_env, episodes_per_update, self.rng,
+                on_episode_end=self._credit_selection,
+            )
             stats = self.trainer.update(batch, self.rng)
+            # One update done: the selector counts these to decide when its
+            # warm-up is over and it may start choosing rather than sampling.
+            self.selector.end_update()
 
             report.attacker_success.append(self._measure_success(episodes=24))
             report.mean_return.append(float(batch.ret.mean().item()))
@@ -312,13 +384,34 @@ class CoadaptEngine:
                 report.defender_refits.append(update)
                 report.defender_positives_at_refit.append(positives)
 
+        report.selection = {
+            "describe": self.selector.describe(),
+            "weights": self.selector.weights().tolist(),
+            "active": self.selector.active,
+        }
         report.zero_shot = self._zero_shot_recall()
         report.top_sequences = self._log_sequences(episodes=40)
         return report
 
     def _refit_defender(self) -> int:
-        """Add the fraud seen so far to the buffer and refit the live defender."""
+        """Refit on the fraud that has had time to be labelled.
+
+        Labels arrive late in reality: a chargeback takes days to weeks, and a
+        detector is therefore always fitted to a picture of the attack that is
+        already stale. Modelling that lag is what leaves an adapting attacker
+        anything to exploit — with instant labels the detector sees each new
+        tactic the moment it appears and the contest is over before it starts.
+
+        The lag is expressed in simulated minutes and applied by withholding the
+        most recent events from the refit.
+        """
         table = build_table(self.sim.log, exclude_warm_start=True)
+        if self.label_latency_minutes > 0:
+            cutoff = self.sim.clock.now - self.label_latency_minutes
+            mature = np.array(
+                [getattr(e, "ts", 0) <= cutoff for e in table.events], dtype=bool
+            )
+            table = _mask_table(table, mature)
         self.buffer.add(table)
         train = self.buffer.training_table()
         self.defender = self._fit_defender(train)
@@ -326,35 +419,25 @@ class CoadaptEngine:
         return int((train.y == 1).sum())
 
     def _measure_success(self, episodes: int) -> float:
-        """How much fraud the RL attacker gets through the defender in force.
+        """What the attacker extracts per episode under the defender in force.
 
-        The learned policy is what the curve is about, so this rolls out the
-        policy itself rather than the scripted red team, and counts the share of
-        its authorisations the defender approves. A stronger defender approves
-        fewer, so the number falls when the defender refits and rises as the
-        policy adapts against it.
+        Not the authorisation approval rate. That reads only one monetisation
+        channel, and a policy that has learned to take value through disputes,
+        refunds and cash-outs scores zero on it while doing well — which is
+        exactly what happened: approval sat at zero while realised value climbed.
 
-        The rollouts use the same world but are not what the defender trains on —
-        the training data is the policy's own collection batches. Running a full
-        episode sweep here instead would inject scripted fraud and a fresh benign
-        pass into the log every update, so the defender would be refitting partly
-        on data the measurement invented.
+        Value extracted per episode covers every channel the action layer
+        provides, so it falls when the defender closes one and recovers when the
+        attacker finds another. That is the quantity the arms race is about.
         """
         import torch
 
-        from ..engine.outcome import OutcomeCode
-        from ..features.schema import EventType
-
-        approved = 0
-        total = 0
+        total_value = 0.0
         for _ in range(episodes):
             env = self._make_env()
             obs = env.reset()
             done = False
             while not done:
-                # Built on the trainer's device, as everywhere the networks are
-                # called: a CPU tensor against GPU weights is a runtime error
-                # that only appears on a machine that has a GPU.
                 vec = torch.as_tensor(
                     AttackEnv.encode(obs), device=self.trainer.device
                 ).unsqueeze(0)
@@ -363,23 +446,13 @@ class CoadaptEngine:
                 ).unsqueeze(0)
                 with torch.no_grad():
                     discrete, amount, delay = self.trainer.actor(vec, mask)
-                    a_idx = int(discrete.probs.argmax().item())
-                    a_amt = float(amount.mean.item())
-                    a_dly = float(delay.mean.item())
-                before = len(self.sim.log)
+                    a_idx = int(discrete.sample().item())
+                    a_amt = float(amount.sample().item())
+                    a_dly = float(delay.sample().item())
                 obs, _, done, outcome = env.step(a_idx, a_amt, a_dly)
-                # Count only authorisations, which is where money moves and where
-                # the defender's decision is visible.
-                if (
-                    len(self.sim.log) > before
-                    and getattr(self.sim.log.events[-1], "event_type", None)
-                    == EventType.AUTH_ATTEMPT
-                ):
-                    total += 1
-                    if outcome.code is OutcomeCode.APPROVED:
-                        approved += 1
+                total_value += float(outcome.value_extracted)
             env.close()
-        return approved / total if total else 0.0
+        return total_value / max(episodes, 1)
 
     def _zero_shot_recall(self) -> dict[str, float]:
         recalls: dict[str, float] = {}
@@ -459,6 +532,10 @@ def run_coadapt(
     pool_path=None,
     cfpb_path=None,
     checkpoint_dir=None,
+    candidates: int = 5,
+    selection_warmup: int = 10,
+    label_latency_minutes: int = 0,
+    fraud_rounds: int | None = None,
 ) -> CoadaptReport:
     """The whole thing, phases A through D, every scale a parameter.
 
@@ -471,6 +548,8 @@ def run_coadapt(
     engine = CoadaptEngine(
         config, seed=seed, learned_defender=learned_defender, ppo_config=ppo_config,
         pool_path=pool_path, cfpb_path=cfpb_path,
+        candidates=candidates, selection_warmup=selection_warmup,
+        label_latency_minutes=label_latency_minutes, fraud_rounds=fraud_rounds,
     )
     positives = engine.phase_a_defender()
     bc_loss = engine.phase_b_actor(demo_episodes, bc_epochs)

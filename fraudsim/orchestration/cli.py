@@ -90,6 +90,10 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         pool_path=args.pool,
         cfpb_path=args.cfpb,
         checkpoint_dir=args.checkpoint_dir,
+        candidates=args.candidates,
+        selection_warmup=args.selection_warmup,
+        label_latency_minutes=args.label_latency,
+        fraud_rounds=args.fraud_rounds,
     )
     print(report.render())
 
@@ -140,6 +144,16 @@ def main(argv: list[str] | None = None) -> int:
                     default=ROOT / "Dataset" / "complaints" / "cfpb_payments_all.parquet")
     co.add_argument("--metrics", type=Path, default=ROOT / "artifacts" / "coadapt_metrics.json",
                     help="write the live curve and attacker sequences as JSON, for plotting")
+    co.add_argument("--label-latency", type=int, default=0,
+                    help="simulated minutes before fraud is labelled and usable for a "
+                         "refit; models the lag before a chargeback lands, which is "
+                         "what leaves an adapting attacker room to exploit")
+    co.add_argument("--fraud-rounds", type=int, default=None,
+                    help="refits a fraud example is retained for (default: forever)")
+    co.add_argument("--candidates", type=int, default=5,
+                    help="cards the victim-selection bandit chooses among each episode")
+    co.add_argument("--selection-warmup", type=int, default=10,
+                    help="updates of uniform victim sampling before the bandit selects")
     co.add_argument("--checkpoint-dir", type=Path, default=ROOT / "artifacts" / "checkpoints",
                     help="where the trained attacker and final defender are written")
     co.set_defaults(func=cmd_coadapt)

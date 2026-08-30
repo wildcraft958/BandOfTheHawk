@@ -65,6 +65,13 @@ class RetentionBuffer:
     """
 
     benign_rounds: int = 2
+    # Fraud is kept for a bounded number of refits rather than forever. Keeping
+    # everything is right for guarding against catastrophic forgetting, but it
+    # also means a detector never loses a pattern, and an attacker that abandons
+    # a tactic can never profitably return to it. Real fraud models are retrained
+    # on windows and do age out attack patterns that stopped occurring. None
+    # keeps everything, which is the original behaviour.
+    fraud_rounds: int | None = None
     _fraud: list[FeatureTable] = field(default_factory=list)
     _benign: list[FeatureTable] = field(default_factory=list)
 
@@ -76,9 +83,13 @@ class RetentionBuffer:
         self._benign.append(_mask(table, benign_mask))
 
     def training_table(self) -> FeatureTable:
-        """All fraud ever seen, plus benign from the recent rounds only."""
+        """The retained fraud, plus benign from the recent rounds only."""
         recent_benign = self._benign[-self.benign_rounds :]
-        return _concat(self._fraud + recent_benign)
+        fraud = (
+            self._fraud if self.fraud_rounds is None
+            else self._fraud[-self.fraud_rounds :]
+        )
+        return _concat(fraud + recent_benign)
 
     @property
     def n_rounds(self) -> int:

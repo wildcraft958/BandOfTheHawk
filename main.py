@@ -93,18 +93,21 @@ def _scales(profile: str) -> dict:
             demo_episodes=40, bc_epochs=6, critic_rollouts=16, critic_epochs=8,
             updates=12, episodes_per_update=12, refit_every=4,
             hidden=128, minibatch=128, embed_dim=256,
+            label_latency=2880, fraud_rounds=3,
         ),
         "default": dict(
             holders=3000, fraud_rate=0.02, per_key=150,
             demo_episodes=300, bc_epochs=10, critic_rollouts=48, critic_epochs=20,
             updates=60, episodes_per_update=48, refit_every=10,
             hidden=256, minibatch=256, embed_dim=256,
+            label_latency=4320, fraud_rounds=4,
         ),
         "server": dict(
             holders=12000, fraud_rate=0.01, per_key=500,
             demo_episodes=800, bc_epochs=15, critic_rollouts=128, critic_epochs=40,
-            updates=200, episodes_per_update=96, refit_every=15,
+            updates=150, episodes_per_update=80, refit_every=12,
             hidden=512, minibatch=512, embed_dim=256,
+            label_latency=4320, fraud_rounds=4,
         ),
     }[profile]
 
@@ -152,6 +155,11 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
             "--refit-every", str(s["refit_every"]),
             "--hidden", str(s["hidden"]),
             "--minibatch", str(s["minibatch"]),
+            # The defender's handicaps: labels arrive late, and fraud examples
+            # age out. Without them the detector sees every new tactic instantly
+            # and keeps it forever, and there is no contest to observe.
+            "--label-latency", str(s["label_latency"]),
+            "--fraud-rounds", str(s["fraud_rounds"]),
         ]
 
     raise ValueError(f"unknown stage {stage!r}")

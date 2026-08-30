@@ -142,11 +142,22 @@ class PPOTrainer:
 
     # --------------------------------------------------------------- collect
 
-    def collect(self, make_env, n_episodes: int, rng: np.random.Generator) -> RolloutBatch:
+    def collect(
+        self,
+        make_env,
+        n_episodes: int,
+        rng: np.random.Generator,
+        on_episode_end=None,
+    ) -> RolloutBatch:
         """Run episodes with the current policy, returning a batch with GAE.
 
         `make_env` is a thunk producing a fresh `AttackEnv` per episode, so the
         trainer stays agnostic to how targets and the world are set up.
+
+        `on_episode_end`, where given, is called with the episode's env and its
+        total reward as each episode closes. The victim-selection bandit uses it
+        to credit the return to the features that chose that victim; the trainer
+        itself stays unaware of what the caller does with it.
         """
         obs_b, mask_b, act_b, amt_b, dly_b, lp_b, val_b = [], [], [], [], [], [], []
         adv_b, ret_b = [], []
@@ -192,6 +203,8 @@ class PPOTrainer:
                 obs = nxt
 
             env.close()
+            if on_episode_end is not None:
+                on_episode_end(env, float(sum(ep_rew)))
 
             # Bootstrap value at truncation is zero here: an episode ends either
             # terminal or at the action cap, and the cap's continuation value is
