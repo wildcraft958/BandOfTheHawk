@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..features.schema import AuthAttemptEvent
-from ..protocols import RiskAction, RiskAssessment
+from ..protocols import RiskAssessment
 from .table import FeatureTable
 
 
@@ -170,21 +170,3 @@ class GBDTBaseline:
         return RiskAssessment(
             risk_score=score, action=action, mitigations=tuple(mitigations)
         )
-
-
-def _action_for(score: float) -> RiskAction:
-    """A default banding, the same shape the mitigation layer will refine.
-
-    Placeholder thresholds — the real boundaries are grid-searched against the
-    business cost curve in the mitigation phase. Here they only let the baseline
-    act as a scorer end to end.
-    """
-    if score >= 0.95:
-        return RiskAction.BLOCK
-    if score >= 0.8:
-        return RiskAction.DECLINE
-    if score >= 0.6:
-        return RiskAction.HOLD
-    if score >= 0.3:
-        return RiskAction.STEP_UP
-    return RiskAction.APPROVE

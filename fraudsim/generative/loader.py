@@ -83,7 +83,7 @@ def generate_one(checkpoint: Checkpoint, system: str, user: str, max_new_tokens:
     prompt = checkpoint.tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
-    inputs = checkpoint.tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(
+    inputs = checkpoint.text_tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(
         checkpoint.device
     )
     with torch.no_grad():

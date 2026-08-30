@@ -28,8 +28,13 @@ that names what a score cannot see is stronger than one that hides it.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
+
+
+def _stable_hash(s: str) -> int:
+    return int.from_bytes(hashlib.md5(s.encode("utf-8")).digest()[:4], "little")
 
 _WORD = re.compile(r"[a-zA-Z']+")
 _MONEY = re.compile(r"\$?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+\.\d{2})")
@@ -75,7 +80,7 @@ class TextScorer:
         for i, text in enumerate(texts):
             t = re.sub(r"\s+", " ", text.lower()).strip()
             for j in range(len(t) - 3):
-                out[i, hash(t[j : j + 4]) % self.hash_dim] += 1.0
+                out[i, _stable_hash(t[j : j + 4]) % self.hash_dim] += 1.0
         norms = np.linalg.norm(out, axis=1, keepdims=True)
         np.divide(out, norms, out=out, where=norms > 0)
         return out

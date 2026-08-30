@@ -238,5 +238,17 @@ class EventLog:
         """
         return [e for e in self.events if not getattr(e, "is_warm_start", False)]
 
+    def truncate(self, n: int) -> None:
+        """Roll back to the first *n* events, undoing later appends."""
+        for event in self.events[n:]:
+            episode = getattr(event, "episode_id", None)
+            if episode is not None and episode in self._by_episode:
+                self._by_episode[episode] = [
+                    i for i in self._by_episode[episode] if i < n
+                ]
+                if not self._by_episode[episode]:
+                    del self._by_episode[episode]
+        del self.events[n:]
+
     def __len__(self) -> int:
         return len(self.events)

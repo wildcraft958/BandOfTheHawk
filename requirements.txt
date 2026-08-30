@@ -13,7 +13,7 @@
 #   -> 2.11.0+cu130 True
 #
 # Then run:
-#   CUDA_VISIBLE_DEVICES=0 python main.py --profile server --models
+#   CUDA_VISIBLE_DEVICES=0 python main.py --profile server
 #
 # Note on where the GPU is actually used: the generation and embedding models
 # run once, in the `text` stage, and their output is cached into the pool. The

@@ -393,6 +393,13 @@ class PPOTrainer:
 
     def load(self, path) -> None:
         ckpt = torch.load(path, map_location=self.device)
+        saved_obs = ckpt.get("obs_dim")
+        current_obs = self.actor.trunk[0].in_features
+        if saved_obs is not None and saved_obs != current_obs:
+            raise ValueError(
+                f"checkpoint was trained with obs_dim={saved_obs}; "
+                f"this trainer has obs_dim={current_obs}"
+            )
         saved = (ckpt.get("hidden_dim"), ckpt.get("n_layers"))
         current = (self.config.hidden_dim, self.config.n_layers)
         if saved != (None, None) and saved != current:

@@ -429,9 +429,14 @@ class CoadaptEngine:
         Value extracted per episode covers every channel the action layer
         provides, so it falls when the defender closes one and recovers when the
         attacker finds another. That is the quantity the arms race is about.
+
+        The rollouts use the same world but the log is truncated back to its
+        pre-measurement length afterward, so measurement events never reach the
+        defender's training data.
         """
         import torch
 
+        snapshot = len(self.sim.log)
         total_value = 0.0
         for _ in range(episodes):
             env = self._make_env()
@@ -452,6 +457,7 @@ class CoadaptEngine:
                 obs, _, done, outcome = env.step(a_idx, a_amt, a_dly)
                 total_value += float(outcome.value_extracted)
             env.close()
+        self.sim.log.truncate(snapshot)
         return total_value / max(episodes, 1)
 
     def _zero_shot_recall(self) -> dict[str, float]:
@@ -482,6 +488,7 @@ class CoadaptEngine:
 
         from ..engine.actions import ACTION_ORDER
 
+        snapshot = len(self.sim.log)
         counter: Counter = Counter()
         for _ in range(episodes):
             env = self._make_env()
@@ -489,8 +496,6 @@ class CoadaptEngine:
             names: list[str] = []
             done = False
             while not done:
-                # On the trainer's device, so this matches the networks on a
-                # machine with a GPU as well as on one without.
                 vec = torch.as_tensor(
                     AttackEnv.encode(obs), device=self.trainer.device
                 ).unsqueeze(0)
@@ -506,6 +511,7 @@ class CoadaptEngine:
                 obs, _, done, _ = env.step(a_idx, a_amt, a_dly)
             env.close()
             counter[">".join(names)] += 1
+        self.sim.log.truncate(snapshot)
         return counter.most_common(8)
 
 

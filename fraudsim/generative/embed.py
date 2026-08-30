@@ -13,7 +13,13 @@ the runtime path never touches it.
 
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
+
+
+def _stable_hash(s: str) -> int:
+    return int.from_bytes(hashlib.md5(s.encode("utf-8")).digest()[:4], "little")
 
 # A compact embedding model: strong sentence vectors, small enough to run beside
 # the rest rather than needing its own machine.
@@ -89,7 +95,7 @@ class HashEmbedder:
             t = text.lower()
             for j in range(len(t) - 2):
                 gram = t[j : j + 3]
-                out[i, hash(gram) % self.dim] += 1.0
+                out[i, _stable_hash(gram) % self.dim] += 1.0
             norm = np.linalg.norm(out[i])
             if norm > 0:
                 out[i] /= norm
