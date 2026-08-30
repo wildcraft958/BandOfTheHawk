@@ -1,0 +1,159 @@
+{
+  "created_utc": "2026-08-26T13:28:38+00:00",
+  "diagnostics": {
+    "arrival_holdout": {
+      "autocorrelation_observed": 0.020265504782938565,
+      "autocorrelation_target": 0.0378066165955314,
+      "burstiness_observed": 0.07853942761202651,
+      "burstiness_target": 0.07190455863075104,
+      "note": "checked on a seed the search did not use"
+    }
+  },
+  "fitted": {
+    "amount": {
+      "lognormal_mu": 4.244967354112219,
+      "lognormal_sigma": 0.8032703483714673,
+      "mean": 134.51166457849678,
+      "median": 68.5,
+      "n_samples": 569877.0,
+      "tail_fraction": 0.05,
+      "tail_index": 1.7941856607528015,
+      "tail_threshold": 435.0,
+      "upper_bound": 31937.391,
+      "whole_number_share": 0.5161306738120682
+    },
+    "amount_heterogeneity": {
+      "between_sd": 0.5662713190472879,
+      "between_share": 0.39162785108140025,
+      "grand_mean": 4.473216448146,
+      "n_entities": 12968.0,
+      "n_events": 569877.0,
+      "total_sd": 0.9048733149518163,
+      "within_sd": 0.7057850305414062
+    },
+    "arrival": {
+      "drift_persistence": 0.7,
+      "drift_sigma": 0.35,
+      "gap_shape": 0.8,
+      "n_entities": 7763.0,
+      "n_gaps": 480906.0,
+      "rate_log_mean": -12.992373080713248,
+      "rate_log_sigma": 0.9307363357468944,
+      "target_autocorrelation": 0.0378066165955314,
+      "target_burstiness": 0.07190455863075104,
+      "target_gap_median": 279436.5
+    },
+    "category_mix": {
+      "dining": 0.07082857251454232,
+      "entertainment": 0.07274531112678012,
+      "fuel_transit": 0.10164765054077472,
+      "grocery": 0.12970603543833276,
+      "health": 0.13674235108042468,
+      "online": 0.12271626140560314,
+      "retail": 0.33428278216432444,
+      "travel": 0.03133103572921781
+    },
+    "circadian": {
+      "concentrations": [
+        1.619079696279592,
+        2.2939380489498715
+      ],
+      "means": [
+        23.54869464337258,
+        16.865022543281633
+      ],
+      "n_samples": 569877,
+      "resultant_length": 0.43406614224941475,
+      "weights": [
+        0.5742020636888003,
+        0.42579793631120716
+      ]
+    },
+    "demographics": {
+      "age_p10": 26.700000000000003,
+      "age_p50": 47.0,
+      "age_p90": 74.0,
+      "n_holders": 908,
+      "n_jobs": 475
+    },
+    "fingerprint_fanout": {
+      "exponent": 1.8,
+      "maximum": 1642.0,
+      "minimum": 1.0,
+      "n_nodes": 9412.0,
+      "share_singleton": 0.5160433489162771,
+      "target_mean": 8.143540161495963,
+      "target_p99": 138.77999999999884,
+      "target_share_shared": 0.48395665108372293,
+      "target_variance_to_mean": 229.16525491798586
+    }
+  },
+  "noise_floors": {
+    "active_lifetime_w1": 58649.85504002646,
+    "amount_log_w1": 0.012707835755209562,
+    "amount_w1": 2.949214343817223,
+    "autocorrelation_gap": 0.003838435319546106,
+    "burst_length_w1_1800s": 0.03410812630779725,
+    "burst_length_w1_300s": 0.005170616841013387,
+    "burst_length_w1_60s": 0.003794973172207783,
+    "burstiness_gap": 0.005118233286868765,
+    "entity_activity_w1": 1.3906425879703948,
+    "hour_jsd": 4.666559466232848e-05,
+    "hour_w1": 0.03865605698913906,
+    "inter_event_log_w1": 0.12003871875331183,
+    "inter_event_w1": 5982.755780848998
+  },
+  "rejected": {},
+  "source": "ieee-cis train_transaction, benign rows",
+  "split_fingerprint": "457a2e82269a81b0c6441c6d2168f876",
+  "split_seed": 0,
+  "swept": {
+    "amount_by_category_spread": {
+      "high": 0.8,
+      "low": 0.1,
+      "reason": "per-category amounts in the taxonomy source are inverted, with travel below grocery, so the conditional cannot be taken from it",
+      "value": 0.35
+    },
+    "device_household_max": {
+      "high": 15,
+      "low": 4,
+      "reason": "upper bound on plausible household sharing of one device",
+      "value": 8
+    },
+    "device_household_mean": {
+      "high": 4.0,
+      "low": 1.5,
+      "reason": "no source separates a physical device from a configuration fingerprint, so household-scale sharing is assumed rather than measured",
+      "value": 2.1
+    },
+    "geo_home_radius_km": {
+      "high": 40.0,
+      "low": 3.0,
+      "reason": "the taxonomy source places merchants in a ring around each customer, with a tenth percentile distance of 35km and no local spend at all, so its geography cannot be fitted",
+      "value": 12.0
+    },
+    "merchant_popularity_exponent": {
+      "high": 2.2,
+      "low": 0.6,
+      "reason": "the taxonomy source's merchant traffic is nearly flat, and the judge dataset carries no merchant entity at all",
+      "value": 1.2
+    },
+    "recovery_chain_probability": {
+      "high": 0.0001,
+      "low": 1e-07,
+      "reason": "no published figure exists for how often a legitimate holder resets a password, calls support, and rebinds a device within an hour",
+      "value": 1e-05
+    }
+  },
+  "targets": {
+    "amount_median": 68.5,
+    "autocorrelation_mean": 0.0396671042559398,
+    "autocorrelation_share_positive": 0.5550717213114754,
+    "burst_mean_1800s": 1.2431844265913305,
+    "burst_mean_300s": 1.0913265365434022,
+    "burst_mean_60s": 1.0227441097004735,
+    "burstiness_mean": 0.06939371063109934,
+    "entity_activity_median": 2.0
+  },
+  "version": 1
+}

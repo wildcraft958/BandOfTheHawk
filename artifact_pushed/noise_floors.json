@@ -1,0 +1,41 @@
+{
+  "floors": {
+    "active_lifetime_w1": 58649.85504002646,
+    "amount_log_w1": 0.012707835755209562,
+    "amount_w1": 2.949214343817223,
+    "autocorrelation_gap": 0.003838435319546106,
+    "burst_length_w1_1800s": 0.03410812630779725,
+    "burst_length_w1_300s": 0.005170616841013387,
+    "burst_length_w1_60s": 0.003794973172207783,
+    "burstiness_gap": 0.005118233286868765,
+    "entity_activity_w1": 1.3906425879703948,
+    "hour_jsd": 4.666559466232848e-05,
+    "hour_w1": 0.03865605698913906,
+    "inter_event_log_w1": 0.12003871875331183,
+    "inter_event_w1": 5982.755780848998
+  },
+  "left_entities": 20433,
+  "left_rows": 289881,
+  "right_entities": 20433,
+  "right_rows": 279996,
+  "seed": 0,
+  "split_fingerprint": "457a2e82269a81b0c6441c6d2168f876",
+  "targets": {
+    "amount_median": 68.5,
+    "autocorrelation_mean": 0.0396671042559398,
+    "autocorrelation_share_positive": 0.5550717213114754,
+    "burst_mean_1800s": 1.2431844265913305,
+    "burst_mean_300s": 1.0913265365434022,
+    "burst_mean_60s": 1.0227441097004735,
+    "burstiness_mean": 0.06939371063109934,
+    "entity_activity_median": 2.0,
+    "fanout_hill_index": 1.0500272109603217,
+    "fanout_max": 1642.0,
+    "fanout_mean": 8.143540161495963,
+    "fanout_n_nodes": 9412.0,
+    "fanout_p99": 138.77999999999884,
+    "fanout_share_shared": 0.48395665108372293,
+    "fanout_variance": 1866.2164570440782,
+    "fanout_variance_to_mean": 229.16525491798586
+  }
+}
