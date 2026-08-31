@@ -22,7 +22,8 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from fraudsim.attacker.env import COOL_OFF_MINUTES, AttackEnv
+from fraudsim.attacker.env import AttackEnv
+from fraudsim.clock import MINUTES_PER_HOUR
 from fraudsim.attacker.nets import (
     N_STEALTH,
     STEALTH_AGED,
@@ -127,7 +128,8 @@ def test_cool_posture_advances_the_clock(world):
     # A large negative raw delay squashes to nearly zero minutes, so any advance
     # seen here comes from the cooling floor rather than from the sample.
     env.step(ACTION_INDEX[ActionName.BUY_CREDS], 0.0, -20.0, STEALTH_AGED_COOL)
-    assert world.clock.now - before >= COOL_OFF_MINUTES
+    cool_off = env.space.cool_off_hours * MINUTES_PER_HOUR
+    assert world.clock.now - before >= cool_off
     env.close()
 
 
