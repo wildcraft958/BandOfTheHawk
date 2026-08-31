@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.config.engine import VelocityRuleConfig
+from fraudsim.settings.engine import VelocityRuleConfig
 from fraudsim.features.schema import AuthAttemptEvent
 from fraudsim.protocols import RiskAction, RiskScorer
 from fraudsim.rules.engine import VelocityRuleEngine, VelocityRuleScorer

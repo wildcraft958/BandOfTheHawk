@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore

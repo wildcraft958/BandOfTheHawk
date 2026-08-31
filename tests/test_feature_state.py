@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.config.engine import WindowConfig
+from fraudsim.settings.engine import WindowConfig
 from fraudsim.features.state import CardFeatureState, FeatureStateStore
 from fraudsim.features.windows import CompoundKey
 

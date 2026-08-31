@@ -32,7 +32,7 @@ from fraudsim.attacker.nets import (
     NetConfig,
 )
 from fraudsim.attacker.nets import Actor as ActorNet
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import ACTION_INDEX, N_ACTIONS, ActionName
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
@@ -206,7 +206,7 @@ def test_fraud_loop_terminates_when_episodes_produce_no_auths(monkeypatch):
     hung for an hour in the evaluation afterwards, losing the whole run; a stack
     dump put it inside this loop.
     """
-    from fraudsim.config.simulation import SimulationConfig
+    from fraudsim.settings.simulation import SimulationConfig
     from fraudsim.engine.simulator import Simulator as Sim
     from fraudsim.orchestration.run import EpisodeRunner
     from fraudsim.population.warmstart import WarmStartRunner

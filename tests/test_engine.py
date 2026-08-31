@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import (
     ACTION_INDEX,
     ACTION_SPECS,

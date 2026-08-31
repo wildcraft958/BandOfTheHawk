@@ -17,18 +17,20 @@ authors = [
 ]
 keywords = ["payment-fraud", "adversarial-simulation", "red-team", "blue-team", "reinforcement-learning"]
 
-[project.urls]
-Repository = "https://github.com/wildcraft958/BandOfTheHawk"
-
 # Runtime tier. Deliberately excludes pandas/pyarrow/networkx so that a stray
 # import in the simulation path fails in a clean install instead of silently
 # resolving against a globally installed copy.
+# Must stay inside [project]: under [project.urls] it parses as
+# project.urls.dependencies and the package becomes uninstallable.
 dependencies = [
     "numpy>=2.5",
     "scipy>=1.18",
     "pydantic>=2.13",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/wildcraft958/BandOfTheHawk"
 
 [project.optional-dependencies]
 analysis = ["networkx>=3.6", "matplotlib>=3.10"]
@@ -42,6 +44,7 @@ generative = ["torch>=2.4", "transformers>=4.44", "accelerate>=0.34", "sentence-
 dev = ["pytest>=8.0", "pytest-cov"]
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["fraudsim*"]
 
 [tool.pytest.ini_options]

@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.bands import CostModel, RiskBands, grid_search_bands
 from fraudsim.defender.combiner import (
     FixedAverageCombiner,

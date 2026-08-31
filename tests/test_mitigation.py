@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.outcome import OutcomeCode
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator

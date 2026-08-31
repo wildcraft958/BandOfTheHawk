@@ -238,7 +238,7 @@ def test_matched_comparison_separates_bands() -> None:
 
 def arrival_panel(n_events, n_entities=1500, seed=0):
     """Gaps from one process, varying only how many each entity gets."""
-    from fraudsim.config.behavior import ArrivalConfig
+    from fraudsim.settings.behavior import ArrivalConfig
     from fraudsim.timing.arrival import DriftingRateProcess
 
     process = DriftingRateProcess(ArrivalConfig())

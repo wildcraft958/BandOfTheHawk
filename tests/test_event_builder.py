@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.config.behavior import CircadianConfig
-from fraudsim.config.engine import WindowConfig
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.behavior import CircadianConfig
+from fraudsim.settings.engine import WindowConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.features.builder import EventBuilder, haversine_km
 from fraudsim.features.schema import EventLog, EventType
 from fraudsim.features.state import FeatureStateStore

@@ -8,8 +8,8 @@ import pytest
 
 from fraudsim.behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
 from fraudsim.calibration.entity_stats import categorical_entity_concentration
-from fraudsim.config.behavior import LoyaltyConfig
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.behavior import LoyaltyConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.population.archetypes import build_profiles
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.world.entities import Archetype, CategoryCluster

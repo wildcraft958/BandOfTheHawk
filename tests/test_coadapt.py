@@ -14,7 +14,7 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from fraudsim.attacker.ppo import PPOConfig
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator
 from fraudsim.engine.stages import Stage

@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.baseline import PER_ENTITY_FEATURES, GBDTBaseline
 from fraudsim.defender.metrics import DetectionMetrics, pr_auc, recall_at_fpr
 from fraudsim.defender.split import entity_split

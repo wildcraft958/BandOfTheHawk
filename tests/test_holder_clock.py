@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from fraudsim.calibration.entity_stats import circular_entity_spread
-from fraudsim.config.behavior import CircadianConfig
+from fraudsim.settings.behavior import CircadianConfig
 from fraudsim.timing.circadian import CircadianClock, HolderClock, HolderClockModel
 
 TWO_PI = 2.0 * np.pi

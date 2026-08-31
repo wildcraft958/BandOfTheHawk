@@ -8,11 +8,11 @@ import pytest
 import yaml
 
 from fraudsim.calibration.artifact import FittedParams
-from fraudsim.config.base import Provenance, ProvenanceError
-from fraudsim.config.behavior import CategoryConfig, CircadianConfig
-from fraudsim.config.engine import WindowConfig
-from fraudsim.config.simulation import SimulationConfig, resolve
-from fraudsim.config.world import ActivityConfig, DeviceConfig, PopulationConfig
+from fraudsim.settings.base import Provenance, ProvenanceError
+from fraudsim.settings.behavior import CategoryConfig, CircadianConfig
+from fraudsim.settings.engine import WindowConfig
+from fraudsim.settings.simulation import SimulationConfig, resolve
+from fraudsim.settings.world import ActivityConfig, DeviceConfig, PopulationConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "configs" / "simulation.yaml"

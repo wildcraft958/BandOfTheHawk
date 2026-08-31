@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-PACKAGE = Path(__file__).resolve().parent.parent / "fraudsim"
+PACKAGE = Path(__file__).resolve().parent.parent / "src" / "fraudsim"
 
 FORBIDDEN = {
     "pandas": "calibration",
@@ -46,7 +46,7 @@ RUNTIME_MODULES = [
     "fraudsim.clock",
     "fraudsim.rng",
     "fraudsim.protocols",
-    "fraudsim.config.base",
+    "fraudsim.settings.base",
 ]
 
 

@@ -8,7 +8,7 @@ import pytest
 
 from fraudsim.behavior.amount import AmountModel, level_spread
 from fraudsim.calibration.fit_heterogeneity import entity_level_spread, fit_heterogeneity
-from fraudsim.config.behavior import AmountConfig
+from fraudsim.settings.behavior import AmountConfig
 from fraudsim.world.entities import Archetype
 
 

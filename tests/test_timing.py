@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.behavior import ArrivalConfig, CircadianConfig
+from fraudsim.settings.behavior import ArrivalConfig, CircadianConfig
 from fraudsim.timing.arrival import (
     ArrivalScheduler,
     DriftingRateProcess,

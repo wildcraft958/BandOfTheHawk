@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.world import DeviceConfig, FanoutConfig
+from fraudsim.settings.world import DeviceConfig, FanoutConfig
 from fraudsim.population.fanout import (
     CardDeviceAssigner,
     FingerprintDegreeSampler,

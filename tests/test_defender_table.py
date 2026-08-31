@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.table import MISSING_SUFFIX, build_table
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator

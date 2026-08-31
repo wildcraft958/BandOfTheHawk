@@ -17,7 +17,7 @@ torch = pytest.importorskip("torch")
 from fraudsim.attacker.env import AttackEnv, RewardWeights
 from fraudsim.attacker.nets import Actor, Critic, NetConfig, squash_amount, squash_delay
 from fraudsim.attacker.ppo import PPOConfig, PPOTrainer, compute_gae
-from fraudsim.config.simulation import SimulationConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import N_ACTIONS
 from fraudsim.protocols import ActorObservation
 
