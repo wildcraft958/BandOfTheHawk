@@ -1,110 +1,110 @@
 {
   "initial_defender_positives": 233,
-  "bc_final_loss": 4.5675225257873535,
-  "critic_final_loss": 780.4005737304688,
+  "bc_final_loss": 4.616318702697754,
+  "critic_final_loss": 1432.000732421875,
   "attacker_success": [
-    3164.828019173941,
-    3717.1513608800046,
-    2489.2285675609414,
-    2811.334160210292,
-    3282.4338688074217,
-    4439.156817503044,
-    2050.585183726152,
-    2518.223374405867,
-    3331.410464900335,
-    6724.257843648727,
-    5085.424402215127,
-    6171.8766905967395,
-    7135.573166017821,
-    11027.82038308064,
-    9172.822757994576,
-    7710.367130253464,
-    12621.051943460572,
-    12112.041709118683,
-    9834.149271970495,
-    10539.525453618104,
-    9932.875948667526,
-    12606.256142036007,
-    10072.594396971066,
-    13455.168523903689
+    1796.5041970547038,
+    2335.225507842194,
+    2761.92177107003,
+    4037.7071517412855,
+    3921.2453381972027,
+    4184.917830151452,
+    4282.153385794561,
+    3384.7718497135843,
+    3542.6075312611792,
+    4929.132335391046,
+    6830.6405120372765,
+    6112.9260111342655,
+    6798.257366787592,
+    10367.652126872938,
+    7232.874810735385,
+    8086.086747806923,
+    5595.034483723641,
+    5963.1185718388015,
+    9382.645336730282,
+    11970.030818113484,
+    12501.324715849558,
+    14250.975694363116,
+    12592.701193312803,
+    13654.923906553586
   ],
   "mean_return": [
-    25.19972038269043,
-    55.398704528808594,
-    34.489234924316406,
-    45.94291687011719,
-    46.606163024902344,
-    40.97053909301758,
-    67.86231994628906,
-    50.22709655761719,
-    75.73290252685547,
-    105.04517364501953,
-    101.31255340576172,
-    112.19977569580078,
-    130.30694580078125,
-    136.90921020507812,
-    157.65853881835938,
-    148.68539428710938,
-    182.39276123046875,
-    190.22296142578125,
-    181.715087890625,
-    217.4276885986328,
-    188.0499267578125,
-    208.8154296875,
-    201.03854370117188,
-    211.27525329589844
+    23.80612564086914,
+    56.300785064697266,
+    63.206092834472656,
+    48.99980926513672,
+    49.53165817260742,
+    53.26020431518555,
+    88.97808837890625,
+    83.61447143554688,
+    70.91790771484375,
+    97.18782043457031,
+    93.50608825683594,
+    89.19221496582031,
+    135.5489501953125,
+    136.41317749023438,
+    138.3878936767578,
+    132.28570556640625,
+    142.549560546875,
+    130.24542236328125,
+    187.0473175048828,
+    183.3469696044922,
+    208.64730834960938,
+    205.75579833984375,
+    197.0562744140625,
+    204.5812225341797
   ],
   "entropy": [
-    5.612391293048859,
-    5.590636432170868,
-    5.534739673137665,
-    5.529278039932251,
-    5.492180407047272,
-    5.446444869041443,
-    5.4146116971969604,
-    5.386342525482178,
-    5.27104640007019,
-    5.221197009086609,
-    5.1572020053863525,
-    5.092438340187073,
-    4.982872903347015,
-    4.862998425960541,
-    4.7448678612709045,
-    4.6318899393081665,
-    4.637401342391968,
-    4.6205796003341675,
-    4.641137361526489,
-    4.663179993629456,
-    4.667771399021149,
-    4.5734816789627075,
-    4.533156037330627,
-    4.4590829610824585
+    5.673478007316589,
+    5.588096916675568,
+    5.496001124382019,
+    5.5333863496780396,
+    5.453311085700989,
+    5.395336449146271,
+    5.443338394165039,
+    5.3526291847229,
+    5.39824903011322,
+    5.23347544670105,
+    5.236737489700317,
+    5.166134238243103,
+    5.007639288902283,
+    4.9941794872283936,
+    5.0152236223220825,
+    5.0332828760147095,
+    4.880139112472534,
+    4.803926050662994,
+    4.785700440406799,
+    4.697089076042175,
+    4.6743234395980835,
+    4.5829731822013855,
+    4.454329788684845,
+    4.365177154541016
   ],
   "critic_relative": [
-    1.121167372417303,
-    1.4362283958267221,
-    1.1545681654835718,
-    1.2606689122935164,
-    1.1679016474890151,
-    1.1754576118403923,
-    1.2593254291326013,
-    1.1832327149396937,
-    1.431251250358156,
-    1.4718869810114878,
-    1.3741107545659879,
-    1.616072406720226,
-    1.668021163172527,
-    1.6039118982071432,
-    1.7948480757628869,
-    1.520433623919809,
-    1.9215940089587136,
-    1.7523202964588862,
-    1.7857276199964254,
-    1.8660134341485528,
-    1.6206774365027061,
-    1.7332482296902536,
-    1.640538051966399,
-    1.6341075033222965
+    1.0890113440192355,
+    1.282535649665401,
+    1.3485526655342321,
+    1.2963820857137602,
+    1.3402602427303087,
+    1.2321646183281063,
+    1.5509358823710968,
+    1.3354542256260327,
+    1.2138323947542267,
+    1.516427762762876,
+    1.409136832973955,
+    1.1982664162008891,
+    1.6825463263329643,
+    1.5709247469427015,
+    1.7121152493485643,
+    1.6117136510439778,
+    1.4847109801513394,
+    1.5224171501823076,
+    1.6772041925324337,
+    1.6475402247028181,
+    1.791985333250896,
+    1.7274318431070146,
+    1.7434914294865083,
+    1.6172589243136173
   ],
   "defender_refits": [
     5,
@@ -114,24 +114,52 @@
   ],
   "defender_positives_at_refit": [
     141,
-    184,
-    175,
-    124
+    183,
+    176,
+    126
   ],
   "zero_shot": {
-    "sim_swap": 0.03993344425956739,
-    "refund_abuse": 0.002127659574468085
+    "sim_swap": 0.0017406440382941688,
+    "refund_abuse": 0.0
   },
   "false_positive_rate": [
-    0.0025,
     0.0,
-    0.0,
+    0.0075,
+    0.005,
     0.0025
   ],
   "top_sequences": [
     {
-      "sequence": "buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]",
-      "count": 40
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 5
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 3
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 3
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 2
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 2
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed",
+      "count": 2
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 2
+    },
+    {
+      "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+      "count": 2
     }
   ],
   "strategy_history": [
@@ -140,8 +168,24 @@
       "when": "before_refit",
       "sequences": [
         {
-          "sequence": "buy_creds[aged_cool]>add_device_selfserve[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_cool]",
-          "count": 12
+          "sequence": "buy_creds>add_device_selfserve>attempt_auth",
+          "count": 5
+        },
+        {
+          "sequence": "buy_creds>add_device_selfserve>attempt_auth>attempt_auth",
+          "count": 4
+        },
+        {
+          "sequence": "buy_creds>add_device_selfserve>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>add_device_selfserve>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>add_device_selfserve>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
         }
       ]
     },
@@ -150,8 +194,12 @@
       "when": "before_refit",
       "sequences": [
         {
-          "sequence": "buy_creds[rotate]>add_device_selfserve[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
-          "count": 12
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+          "count": 10
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[aged]",
+          "count": 2
         }
       ]
     },
@@ -160,8 +208,36 @@
       "when": "before_refit",
       "sequences": [
         {
-          "sequence": "buy_creds[aged]>add_device_selfserve[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]",
-          "count": 12
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
         }
       ]
     },
@@ -170,27 +246,47 @@
       "when": "before_refit",
       "sequences": [
         {
-          "sequence": "buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]",
-          "count": 12
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed",
+          "count": 6
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed>attempt_auth[rotate]!failed",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds[rotate]>sim_swap[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed>attempt_auth[rotate]>attempt_auth[rotate]>attempt_auth[rotate]!failed",
+          "count": 1
         }
       ]
     }
   ],
   "selection": {
-    "describe": "  victim selection (posterior mean by feature)\n    (coefficients are differences from the reference level)\n    bin tier 0       reference\n    bin tier 1      -156.081\n    bin tier 2       -91.821\n    bin tier 3      -380.103\n    age under 6m     reference\n    age 6m to 1y      +0.000\n    age 1y to 3y     -47.754\n    age over 3y     +287.989\n    observations        288\n    selecting      yes",
+    "describe": "  victim selection (posterior mean by feature)\n    (coefficients are differences from the reference level)\n    bin tier 0       reference\n    bin tier 1      +206.670\n    bin tier 2      +338.311\n    bin tier 3      +192.098\n    age under 6m     reference\n    age 6m to 1y      +0.000\n    age 1y to 3y     -76.958\n    age over 3y     +118.710\n    observations        288\n    selecting      yes",
     "weights": [
-      -156.08081584473297,
-      -91.82089670779838,
-      -380.10260325732514,
+      206.67010730304898,
+      338.31145500001185,
+      192.09837430899458,
       0.0,
-      -47.75357484620513,
-      287.9888028150885,
-      240.2352279692764
+      -76.95848069426847,
+      118.70967150572069,
+      41.75119081105219
     ],
     "active": true
   },
   "checkpoints": {
-    "attacker": "/private/tmp/claude-501/-Users-bakasur-Desktop-MC-Hackathon/2a56358a-2c76-4e46-bdb6-f9b6a3e8725f/scratchpad/verify_abl/checkpoints/attacker.pt",
-    "defender": "/private/tmp/claude-501/-Users-bakasur-Desktop-MC-Hackathon/2a56358a-2c76-4e46-bdb6-f9b6a3e8725f/scratchpad/verify_abl/checkpoints/defender.joblib"
+    "attacker": "/Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/attacker.pt",
+    "defender": "/Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/defender.joblib"
   }
 }

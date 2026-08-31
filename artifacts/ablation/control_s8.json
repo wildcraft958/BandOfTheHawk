@@ -1,0 +1,280 @@
+{
+  "initial_defender_positives": 230,
+  "bc_final_loss": 4.641717910766602,
+  "critic_final_loss": 171.3760528564453,
+  "attacker_success": [
+    938.4461599040031,
+    1128.2051455406347,
+    324.94383293390274,
+    1596.277528472477,
+    2433.549901747306,
+    2222.2104170656203,
+    556.7425195365482,
+    1260.2546690420309,
+    888.424200515747,
+    987.6874089145662,
+    1457.8113382021586,
+    1806.4082618545162,
+    4404.544263802635,
+    2206.9494999202084,
+    2819.9410165068075,
+    2821.42421585083,
+    2804.6396783044606,
+    4745.508258013894,
+    9904.439517321587,
+    5373.5472733434035,
+    4975.958736521404,
+    2701.032235145569,
+    3608.7200028991697,
+    7382.20756426239
+  ],
+  "mean_return": [
+    20.68626594543457,
+    5.542403221130371,
+    17.200632095336914,
+    30.433996200561523,
+    23.599016189575195,
+    21.76141357421875,
+    12.915302276611328,
+    11.21673583984375,
+    13.50243854522705,
+    23.946617126464844,
+    24.6942195892334,
+    28.943771362304688,
+    49.718589782714844,
+    53.30256271362305,
+    33.69197082519531,
+    50.65739440917969,
+    46.321353912353516,
+    68.13583374023438,
+    163.5441436767578,
+    170.55801391601562,
+    173.67196655273438,
+    164.5697021484375,
+    145.0017547607422,
+    117.48191833496094
+  ],
+  "entropy": [
+    4.3963727951049805,
+    4.401021242141724,
+    4.3007224798202515,
+    4.131907761096954,
+    4.243600964546204,
+    4.111620366573334,
+    4.189394474029541,
+    4.163593530654907,
+    4.099922060966492,
+    4.069985806941986,
+    4.0550457239151,
+    4.07124936580658,
+    4.021579474210739,
+    3.936944842338562,
+    3.915148377418518,
+    3.828997015953064,
+    3.834134876728058,
+    3.8397833704948425,
+    3.656845062971115,
+    3.537378340959549,
+    3.543678432703018,
+    3.475252330303192,
+    3.4336528182029724,
+    3.374004364013672
+  ],
+  "critic_relative": [
+    1.1504342597969326,
+    0.9816531252709464,
+    1.0534811752334985,
+    1.333004300592286,
+    1.0690375026232584,
+    1.0328967376681766,
+    1.0050335193791307,
+    1.0257949552100545,
+    1.0008917196020812,
+    1.0420195758212276,
+    1.0364838563443717,
+    1.0542054428621908,
+    1.1762457097556962,
+    1.1962443685536515,
+    1.0460599822193342,
+    1.1024142463944742,
+    1.1027525933437612,
+    1.2235057513069676,
+    1.5964591853110284,
+    1.6913364366292387,
+    1.5963198069232885,
+    1.3294959029787685,
+    1.3018123845898517,
+    1.1762705210789852
+  ],
+  "defender_refits": [
+    5,
+    11,
+    17,
+    23
+  ],
+  "defender_positives_at_refit": [
+    136,
+    178,
+    173,
+    123
+  ],
+  "zero_shot": {
+    "refund_abuse": 0.0020161290322580645,
+    "sim_swap": 0.0344275420336269
+  },
+  "false_positive_rate": [
+    0.0025,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "top_sequences": [
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 9
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 8
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth",
+      "count": 6
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 4
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 4
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 3
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 2
+    },
+    {
+      "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 2
+    }
+  ],
+  "strategy_history": [
+    {
+      "update": 5,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "update": 11,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 4
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "update": 17,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 3
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "update": 23,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+          "count": 6
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 4
+        },
+        {
+          "sequence": "buy_creds>sim_swap>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "describe": "  victim selection (posterior mean by feature)\n    (coefficients are differences from the reference level)\n    bin tier 0       reference\n    bin tier 1      +106.292\n    bin tier 2      +185.222\n    bin tier 3      +255.847\n    age under 6m     reference\n    age 6m to 1y      +0.000\n    age 1y to 3y     -96.076\n    age over 3y      +74.104\n    observations        288\n    selecting      yes",
+    "weights": [
+      106.29225253740235,
+      185.22229649653565,
+      255.84699149649185,
+      0.0,
+      -96.07596277120126,
+      74.10443619106859,
+      -21.971526580124962
+    ],
+    "active": true
+  },
+  "checkpoints": {
+    "attacker": "/Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/attacker.pt",
+    "defender": "/Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/defender.joblib"
+  }
+}

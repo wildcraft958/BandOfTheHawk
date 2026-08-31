@@ -222,12 +222,18 @@ comparison and the figures on a fresh clone without running anything first. The 
 regenerates them in place.
 
 These are a reproduction on the current code, not the recorded runs behind the solution
-document's Section 8 tables. They agree on the finding and not on the magnitude: the
-document reports a mean paired difference of +1639 with a 95% interval of [+219, +2764],
-and these give +3740 with [+2032, +5066]. Both intervals exclude zero, so both support the
-same conclusion, that the posture head and the multi-card dump improve the attacker inside
-the loop. Four seeds is a small sample and the spread between two such sets is what that
-sample size buys.
+document's Section 8 tables, and they run twelve paired seeds rather than four. The
+document reports a mean paired difference of +1639 with a 95% interval of [+219, +2764]
+over four seeds; these give +3100 with [+1662, +4462] over twelve. Both exclude zero and
+support the same conclusion, that the posture head and the multi-card dump improve the
+attacker inside the loop.
+
+The larger sample is deliberate. Extraction per episode is heavy-tailed, so a paired
+difference over four seeds carries enough sampling error that the interval can span zero
+on one draw and sit well clear of it on the next. Twelve seeds narrows it to where the
+finding holds rather than depending on which seeds were chosen, which is the check the
+document's own caveat invites when it notes that four seeds would not detect a much
+smaller effect.
 
 A seeded `coadapt` or `control` run files its own metrics into `artifacts/ablation/` under
 the name the ablation reader expects, so the commands above work in that order with
