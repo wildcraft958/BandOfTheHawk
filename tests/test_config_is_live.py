@@ -25,26 +25,14 @@ from fraudsim.settings.simulation import SimulationConfig
 PACKAGE = Path(__file__).resolve().parent.parent / "src" / "fraudsim"
 
 # Fields the config declares that the package does not name directly, each with
-# the reason. Anything added here needs a reason a reviewer would accept, and the
-# first two below are the only kind that is actually fine.
-ALLOWED_UNREAD: dict[str, str] = {
-    # Read through an accessor rather than directly: the field is optional and
-    # derived from the fan-out target when unset, so resolved_fingerprint_count()
-    # is the interface and reading the raw field is the bug (it was, once).
-    "population.fingerprint_count": "read via resolved_fingerprint_count()",
-
-    # Populated by the calibration artifact as a swept route
-    # (SWEPT_ROUTES -> amount_by_category_spread) but not yet consumed by the
-    # amount model. The sweep records a value nothing acts on. Left in place
-    # because removing it would change the artifact contract; it should either
-    # be wired into behavior.amount or dropped from SWEPT_ROUTES.
-    "behavior.amount.category_spread": "swept into the artifact, not yet consumed",
-
-    # Declared and validated, never implemented. Pre-existing; listed rather than
-    # deleted so the gap is visible instead of silently carried.
-    "behavior.circadian.min_history_days": "declared, never implemented",
-    "population.households.single_occupant_share": "declared, never implemented",
-}
+# the reason. Anything added here needs a reason a reviewer would accept.
+#
+# Deliberately empty. It held four entries once: three were config that had been
+# declared and never implemented, which is exactly the "the YAML says one thing
+# and the code does another" trap this suite exists to catch, so they were
+# deleted rather than documented. The fourth was this test's own blind spot,
+# now handled by the accessor rule in names_used_outside_settings().
+ALLOWED_UNREAD: dict[str, str] = {}
 
 
 def leaf_fields(model: type[BaseModel], prefix: str = "") -> dict[str, str]:
@@ -98,7 +86,13 @@ def test_every_configured_field_is_read_somewhere(dotted: str) -> None:
     attribute = ALL_FIELDS[dotted]
     if dotted in ALLOWED_UNREAD:
         pytest.skip(ALLOWED_UNREAD[dotted])
-    assert attribute in names_used_outside_settings(), (
+    used = names_used_outside_settings()
+    # A field may be optional and derived when unset, in which case the accessor
+    # is the interface and reading the raw field is the bug (it was, once). That
+    # still counts as live, but only because something outside settings/ calls
+    # the accessor -- which is what this checks, rather than exempting the field.
+    assert attribute in used or f"resolved_{attribute}" in used, (
         f"{dotted} is declared and validated but nothing outside settings/ reads "
-        f"it. Either wire it up, delete it, or record why in ALLOWED_UNREAD."
+        f"it, directly or through a resolved_{attribute}() accessor. Either wire "
+        f"it up, delete it, or record why in ALLOWED_UNREAD."
     )

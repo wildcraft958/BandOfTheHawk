@@ -15,7 +15,6 @@ population:
 
   households:
     mean_size: 2.5
-    single_occupant_share: 0.28
 
   devices:
     emulator_share: 0.01

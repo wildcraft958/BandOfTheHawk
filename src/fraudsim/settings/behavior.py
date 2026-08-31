@@ -42,7 +42,6 @@ class AmountConfig(StrictModel):
     tail_fraction: UnitInterval = 0.05
     upper_bound: PositiveFloat = 31937.39
     whole_number_share: UnitInterval = 0.516
-    category_spread: Annotated[float, Field(ge=0.05, le=1.0)] = 0.35
 
 
 class ArrivalConfig(StrictModel):
@@ -84,7 +83,6 @@ class CircadianConfig(StrictModel):
     concentrations: tuple[float, ...] = (1.62, 2.29)
     weights: tuple[float, ...] = (0.55, 0.45)
     confidence: UnitInterval = 0.95
-    min_history_days: Annotated[int, Field(ge=1, le=90)] = 7
 
     # Per-holder habits, which the mixture above cannot express.
     #

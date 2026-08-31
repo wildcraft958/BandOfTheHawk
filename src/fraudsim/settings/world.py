@@ -52,10 +52,15 @@ class DeviceConfig(StrictModel):
 
 
 class HouseholdConfig(StrictModel):
-    """Households are what make device sharing organic rather than stamped in."""
+    """Households are what make device sharing organic rather than stamped in.
+
+    Sizes come from `mean_size` alone: the builder splits holders into
+    `n / mean_size` households and assigns uniformly. A `single_occupant_share`
+    was declared here for a while and never implemented, so it advertised
+    control the model did not have.
+    """
 
     mean_size: Annotated[float, Field(ge=1.0, le=8.0)] = 2.5
-    single_occupant_share: UnitInterval = 0.28
 
 
 class ActivityConfig(StrictModel):
