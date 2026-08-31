@@ -4,6 +4,7 @@ import { Chrome } from './app/Chrome'
 import { Landing } from './screens/Landing'
 import { Dashboard } from './screens/Dashboard'
 import { Simulator } from './screens/Simulator'
+import { Loop } from './screens/Loop'
 import { Demo } from './screens/Demo'
 import './index.css'
 
@@ -16,6 +17,7 @@ const router = createHashRouter([
       { path: '/', element: <Landing /> },
       { path: '/dashboard', element: <Dashboard /> },
       { path: '/simulator', element: <Simulator /> },
+      { path: '/loop', element: <Loop /> },
       { path: '/demo', element: <Demo /> },
     ],
   },

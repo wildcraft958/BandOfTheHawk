@@ -7,6 +7,7 @@ const ROUTES = [
   { to: '/', label: 'Home' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/simulator', label: 'Simulator' },
+  { to: '/loop', label: 'The Loop' },
   { to: '/demo', label: 'Demo' },
 ]
 
