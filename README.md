@@ -34,31 +34,52 @@ server, so it replays one real run rather than pretending to launch another.
 
 ## Key Results
 
+Two regimes are reported and they are not interchangeable. Static benchmarks run at 12,000
+cardholders against the fixed scripted red team, which is what makes an architectural
+ablation interpretable. Co-adaptation runs at 600 cardholders across four paired seeds,
+because that regime needs many independent runs rather than one large one.
+
+**Static detection, `--profile server`**
+
 | Metric | Value |
 |--------|-------|
 | Flat GBDT PR-AUC | 0.9879 |
 | Flat GBDT ROC-AUC | 0.9998 |
 | Recall @ 0.1% FPR | 0.9727 |
 | Rule-engine PR-AUC (the baseline it beats) | 0.0266 |
-| Stealth ablation, mean post-refit extraction | +1639, 95% CI [+219, +2764] |
-| Co-adaptation updates | 150 |
-| Defender refits during co-adaptation | 12 |
+| Learned combiner over fixed average | +0.0108 PR-AUC |
+| Per-entity feature ablation | +0.0003 PR-AUC (a null result, reported as it came out) |
+
+**Co-adaptation, `--profile ablation`, four paired seeds**
+
+| Metric | Value |
+|--------|-------|
+| Stealth ablation, mean paired difference | +1639, 95% CI [+219, +2764] |
+| Runs showing full co-evolution | 5 of 8 |
+| Genuine authorisations refused | 0.67% |
+
+Removing the attacker's posture head and multi-card dump costs it 1,639 in mean post-refit
+extraction, and the bootstrap interval excludes zero. Four seeds is a small sample, one
+seed runs the other way, and an interval of this width would not detect an effect much
+smaller than the one measured. The co-evolution itself appears in both arms, so it is a
+property of the loop rather than of any one attacker capability.
+
+The defender is measured on what it costs as well as what it catches: 0.67% of genuine
+authorisations refused. Without that, the cheapest winning move is to refuse everything.
+
+**Taxonomy**
+
+| Metric | Value |
+|--------|-------|
 | Attack families simulated | 9, of which 2 are held out of training |
 | Attack families identified | 11 (merchant collusion and bust-out described, not simulated) |
-| Full pipeline runtime | 63.7 min |
 
-The stealth ablation is the headline claim: across four paired seeds, removing the
-attacker's posture head costs it 1,639 in mean post-refit extraction, and the bootstrap
-interval excludes zero. Four seeds is a small n and the interval is wide, so it would not
-detect an effect much smaller than this one.
-
-**Zero-shot recall is deliberately not reported.** SIM swap is a held-out vertical, but
-`sim_swap` is also a legal action in the learned attacker's space and the policy uses it;
-the same is true of `request_refund` and held-out refund abuse, and refund abuse is in
-fact the strategy the policy converges on. The defender therefore trains on that traffic
-and is then asked whether it generalises to it. High recall could not be credited to
-generalisation, nor low recall blamed on it, so the measurement is withheld rather than
-explained away. Removing the held-out actions from the attacker's legality mask would
+**Zero-shot recall is not reported.** SIM swap is designated a held-out vertical, but the
+SIM swap action is also legal in the learned attacker's action space and the policy uses
+it. The defender therefore trains on SIM swap traffic and is then asked whether it
+generalises to SIM swap. High recall could not be credited to generalisation and low
+recall could not be blamed on it, so the measurement is withheld rather than explained
+away. Removing the held-out actions from the learned attacker's legality mask would
 restore it.
 
 ## Architecture
@@ -157,38 +178,42 @@ pip install -e .
 pip install -e ".[dev]"
 
 # Run the full pipeline
-python main.py --profile server    # 12k holders, 150 updates -- 63.7 min measured
-python main.py --profile quick     # 600 holders, 12 updates  -- 45.5 s measured
+python main.py                     # the default profile
+python main.py --profile server    # 12k holders, 150 updates: the static benchmarks
+python main.py --profile quick     # a fast smoke of every stage
 
 # Run a single stage
 python main.py baseline
-python main.py coadapt --profile server
 
-# Run the stealth ablation: four paired seeds, then read it
+# The stealth ablation: four paired seeds, then read it
 for s in 1 2 3 4; do
-  python main.py coadapt --profile gpu --seed $s
-  python main.py control --profile gpu --seed $s
+  python main.py coadapt --profile ablation --seed $s
+  python main.py control --profile ablation --seed $s
 done
 python -m fraudsim.orchestration.ablation
-python make_figures.py            # regenerates the paper's five measured figures
+python make_figures.py             # regenerates the five measured figures
 
 # Run tests
 pytest tests/ -q
 ```
 
-A seeded `coadapt` or `control` run files its own metrics into
-`artifacts/ablation/` under the name the ablation reader looks for, so the four
-commands above work in that order with nothing copied by hand. `make_figures.py`
-reads the same files and takes its statistics from the ablation module itself,
-so a figure and the number quoted beside it cannot drift apart. It needs the
-analysis extra (`pip install -e ".[analysis]"`).
+Profiles set sizes and never which stages run or what they print. There are five:
+`quick`, `ablation`, `default`, `gpu` and `server`. A bare `python main.py` runs
+`default`; every static detection benchmark comes from `server`; the paired co-adaptation
+comparison comes from four seeds under `ablation`, which fixes 600 cardholders, 24 updates
+and a refit every 6.
 
-Both durations are measured, not estimated. The 63.7 min is the run that produced every
-number in this README, on the GPU box; the 45.5 s is `--profile quick --mock` on an
-Apple-silicon laptop with no GPU. Neither includes building the text corpus, because the
-pool ships in `artifacts/` and is reused rather than regenerated. Pass `--rebuild` to
-`fraudsim.generative.cli` if you want it built from scratch, which is the one step that
-genuinely wants a GPU.
+A seeded `coadapt` or `control` run files its own metrics into `artifacts/ablation/` under
+the name the ablation reader expects, so the commands above work in that order with
+nothing copied by hand. The reader recomputes the paired comparison and its bootstrap
+interval from those stored files, and `make_figures.py` draws the figures from the same
+files, taking its statistics from the ablation module rather than recomputing them, so a
+figure and the number quoted beside it cannot drift apart. It needs the analysis extra
+(`pip install -e ".[analysis]"`).
+
+No GPU is needed. The text corpus ships prebuilt in `artifacts/` and is reused rather than
+regenerated; pass `--rebuild` to `fraudsim.generative.cli` to build it from scratch, which
+is the one step that genuinely wants one.
 
 The package must be installed (`pip install -e .`) before anything runs: the
 code lives under `src/`, so it is not importable from the checkout alone.

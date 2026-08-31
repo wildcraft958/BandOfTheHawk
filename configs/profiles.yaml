@@ -4,12 +4,10 @@
 #
 #   python main.py --profile quick
 #
-# These lived in main.py as four dicts of fifteen keys, a fourth parameter table
-# alongside the config, the two CLIs, and PPOConfig. Note `fraud_rate`: it
-# overrides the configured engine.fraud_base_rate of 0.005 by between two and
-# twelve times, so on a profiled run the YAML value never applies. That is
-# deliberate — a 0.5% base rate needs an impractically large population to
-# yield enough positives — but it was invisible while it lived in Python.
+# Note `fraud_rate`: it overrides the configured engine.fraud_base_rate of 0.005
+# by between two and twelve times, so on a profiled run the YAML value does not
+# apply. That is deliberate. A 0.5% base rate needs an impractically large
+# population to yield enough positives for a stable comparison.
 #
 # Each key is the command-line flag the pipeline passes to the stage that owns
 # it, so a profile is exactly "what main.py would have typed for you". Anything
@@ -35,15 +33,15 @@ quick:
   fraud_rounds: 3
   target_prevalence: 0.02
 
-# The stealth ablation's size, and the one the paper's Section 8 reports. Same as
-# quick except for the run length and the refit spacing.
+# The stealth ablation. These are the values the solution document's Table 9
+# reports for the co-adaptation runs, and Section 8's paired comparison comes
+# from four seeds of this profile against its --stealth-frozen control.
 #
-# It exists because neither of those could be borrowed. The reader in
-# orchestration/ablation.py splits each curve at REFIT_AT = 6, so an arm run at
-# any other refit spacing is summarised across the wrong updates and reports a
-# paired difference that looks fine and is not. quick refits every 4, and gpu is
-# the right spacing at ten times the population. Reproducing the published
-# comparison needs both numbers together, so they get a name.
+# The refit spacing is load-bearing rather than a size. orchestration/ablation.py
+# splits each curve at REFIT_AT to form the pre and post means the paired
+# difference is built from, so an arm run at a different spacing is summarised
+# across the wrong updates and reports a difference that looks sound and is not.
+# tests/test_profiles.py holds the two in agreement.
 ablation:
   holders: 600
   fraud_rate: 0.06
@@ -55,8 +53,8 @@ ablation:
   updates: 24
   episodes_per_update: 12
   refit_every: 6
-  hidden: 128
-  minibatch: 128
+  hidden: 256
+  minibatch: 256
   embed_dim: 256
   label_latency: 2880
   fraud_rounds: 3
@@ -82,14 +80,10 @@ default:
   target_prevalence: 0.02
 
 # A middle size: sixty updates at a refit every six gives ten refit points, most
-# of the arms-race curve, on half the population.
-#
-# This profile was added to dodge a projected forty-hour server run, estimated at
-# ~19 min per update before anything had been measured. The measurement came in
-# at 22 seconds per update -- the whole server profile finished in 63.7 min --
-# so the estimate was wrong by roughly fifty times and the schedule pressure it
-# was avoiding never existed. The profile stays because a smaller run is still
-# useful; it is no longer the one to reach for on time grounds.
+# of the arms-race curve, on half the population. The solution document's
+# emergent-strategy table and victim-selection posterior come from this profile,
+# which is why sixty updates matter: they trace the progression at higher
+# resolution than the twenty-four of the ablation runs.
 gpu:
   holders: 6000
   fraud_rate: 0.02
@@ -108,10 +102,10 @@ gpu:
   fraud_rounds: 4
   target_prevalence: 0.02
 
-# The full thing, and the profile that produced every headline number. Measured
-# at 63.7 min end to end on the GPU box (12,000 holders, 150 updates, 12 refits),
-# with the text pool already built -- which it is in a fresh clone, since the
-# pool ships in artifacts/.
+# The full thing: 12,000 cardholders, 150 updates, 12 refits. Every static
+# detection benchmark in the solution document comes from this profile. The text
+# pool is reused rather than regenerated, and it ships in artifacts/, so a fresh
+# clone runs this without a model download.
 server:
   holders: 12000
   fraud_rate: 0.01

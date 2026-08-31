@@ -59,15 +59,10 @@ The stages, in the order the full run executes them:
                bootstrap interval of [+219, +2764] over 20,000 resamples. The
                interval excludes zero, so the posture head earns its place.
 
-               This reverses an earlier reading, and the reason matters more
-               than the number. That comparison ran before three of the five
-               anti-reward-hacking controls were enforced: the per-merchant
-               value cap, the episode duration cap and the per-episode
-               threshold jitter were all declared in configuration and applied
-               nowhere. With the caps off, both arms could farm one merchant
-               without bound, which swamped the difference between them.
-               Anything measured before those were wired up is not comparable
-               to anything measured after.
+               The comparison is only meaningful with all five episode
+               integrity controls enforced. With the per-merchant value cap
+               off, either arm can farm a single merchant without bound, and
+               that swamps the difference between them.
 
                The effect is real but small-n: four seeds, a wide interval, and
                one seed running the other way. It would not detect an effect
@@ -77,16 +72,14 @@ SCALE
 -----
 
     --profile quick     a fast smoke of every stage
+    --profile ablation  the stealth ablation: 600 holders, 24 updates,
+                        refit every 6. Section 8's paired comparison
     --profile default   a real run, a middling population
-    --profile gpu       half the server population, ten refit points
-    --profile server    the full thing, and the profile behind every
-                        headline number: measured at 63.7 min end to
-                        end on the GPU box
-
-Only the server profile has a measured wall clock; the rest are strictly
-smaller. Earlier versions of this file projected forty hours for the server
-run, from a per-update estimate that turned out to be about fifty times too
-high. Sizes here are honest; treat any duration not marked measured as a guess.
+    --profile gpu       6,000 holders, sixty updates, ten refit points.
+                        The emergent strategies and the victim-selection
+                        posterior come from here
+    --profile server    12,000 holders, 150 updates. Every static
+                        detection benchmark comes from here
 
 Scale only changes sizes — population, training length — never which stages run
 or what they print.

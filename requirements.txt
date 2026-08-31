@@ -6,12 +6,6 @@
 # CPython 3.14.7 (macOS, arm64), checked with `pip check`, and used to run the
 # full test suite and the quick pipeline profile.
 #
-# The previous contents of this file could not be installed at all: it pinned
-# numpy==2.0.2 and scipy==1.14.1, neither of which publishes a wheel for the
-# interpreter this project requires, and it contradicted pyproject.toml, which
-# asks for numpy>=2.5. The instructions below therefore failed at their first
-# command. They are now run before being written down.
-#
 # ---------------------------------------------------------------------------
 # INSTALL
 #

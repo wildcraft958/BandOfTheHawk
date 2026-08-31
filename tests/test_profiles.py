@@ -59,12 +59,9 @@ def test_ablation_profile_refits_where_the_reader_splits() -> None:
     """The ablation profile and the ablation reader must agree on the first refit.
 
     `orchestration.ablation` splits every curve at REFIT_AT to form the pre and
-    post means that the paired comparison is built from. If a run refits on a
-    different cadence the split lands mid-block, and the reported difference is
-    computed over the wrong updates while still looking entirely plausible.
-    That is how this went unnoticed: the published comparison needs 600 holders
-    and a refit every 6, and no profile supplied both, so the documented
-    commands could not reproduce Section 8.
+    post means the paired comparison is built from. An arm run on a different
+    refit cadence is summarised across the wrong updates, and reports a paired
+    difference that looks entirely sound and is not.
     """
     from fraudsim.orchestration.ablation import REFIT_AT
 
@@ -72,3 +69,46 @@ def test_ablation_profile_refits_where_the_reader_splits() -> None:
     assert profile["refit_every"] == REFIT_AT
     # And the run has to be long enough for a post-refit block to exist at all.
     assert profile["updates"] > REFIT_AT
+
+
+# The co-adaptation configuration reported in the solution document, Table 9.
+# The paired comparison in Section 8 is only reproducible if `--profile ablation`
+# resolves to exactly these, so they are pinned rather than described.
+PUBLISHED_ABLATION = {
+    "holders": 600,
+    "updates": 24,
+    "episodes_per_update": 12,
+    "refit_every": 6,
+    "label_latency": 2880,
+    "fraud_rounds": 3,
+    "target_prevalence": 0.02,
+    "demo_episodes": 40,
+    "bc_epochs": 6,
+    "critic_rollouts": 16,
+    "critic_epochs": 8,
+    "hidden": 256,
+    "minibatch": 256,
+}
+
+
+@pytest.mark.parametrize("key", sorted(PUBLISHED_ABLATION))
+def test_ablation_profile_matches_the_published_table(key: str) -> None:
+    profile = yaml.safe_load(PROFILES.read_text())["ablation"]
+    assert profile[key] == PUBLISHED_ABLATION[key], (
+        f"--profile ablation sets {key}={profile[key]}, but the solution document "
+        f"reports {PUBLISHED_ABLATION[key]} for the runs behind Section 8."
+    )
+
+
+def test_published_dump_size_and_candidates_come_from_config() -> None:
+    """Table 9's dump size and selection candidates are config, not profile keys.
+
+    The ablation profile does not set them, so they have to resolve from
+    configs/simulation.yaml or the published run cannot be reproduced from the
+    profile alone.
+    """
+    from fraudsim.settings.simulation import resolve
+
+    loop = resolve().config.training.loop
+    assert loop.dump_size == 3
+    assert loop.candidates == 5

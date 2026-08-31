@@ -100,10 +100,8 @@ warm_start:
 # ---------------------------------------------------------------------------
 # The learned tiers.
 #
-# Everything below used to be a literal in Python, spread across PPOConfig, the
-# argparse defaults of two different CLIs that disagreed with each other, and a
-# profile table in main.py. It is all design choice, never fitted, which is why
-# none of it carries provenance beyond `free`.
+# Everything below is design choice, never fitted, which is why none of it
+# carries provenance beyond `free`.
 #
 # Sizes for a given run come from configs/profiles.yaml, which overrides these.
 # ---------------------------------------------------------------------------
