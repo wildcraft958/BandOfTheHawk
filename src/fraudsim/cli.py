@@ -82,8 +82,12 @@ def add_scale_flags(
                             help="override population.n_holders")
         declared.append("holders")
     if fraud_rate:
-        parser.add_argument("--fraud-rate", type=float, default=None,
-                            help="override engine.fraud_base_rate")
+        parser.add_argument(
+            "--fraud-rate", type=float, default=None,
+            help="override engine.fraud_base_rate. A measurement may need a "
+                 "higher prevalence than deployment, to get enough positives "
+                 "for a stable estimate",
+        )
         declared.append("fraud_rate")
     if seed:
         parser.add_argument(

@@ -183,12 +183,6 @@ def main(argv: list[str] | None = None) -> int:
 
     base = subparsers.add_parser("baseline", help="fit the baseline and answer H.6")
     add_scale_flags(base, fraud_rate=True)
-    base.add_argument(
-        "--fraud-rate",
-        type=float,
-        default=None,
-        help="prevalence for the H.6 measurement (higher than deployment, for enough positives)",
-    )
     base.set_defaults(func=cmd_baseline)
 
     mix = subparsers.add_parser("mixture", help="fit experts + combiner, report vs baseline")
