@@ -216,10 +216,18 @@ Profiles set sizes and never which stages run or what they print. There are five
 comparison comes from four seeds under `ablation`, which fixes 600 cardholders, 24 updates
 and a refit every 6.
 
-The paired runs behind the reported comparison ship in `artifacts/ablation/`, so
-`python -m fraudsim.orchestration.ablation` and `python make_figures.py` produce the
+A set of paired runs ships in `artifacts/ablation/`, so
+`python -m fraudsim.orchestration.ablation` and `python make_figures.py` produce a
 comparison and the figures on a fresh clone without running anything first. The loop above
 regenerates them in place.
+
+These are a reproduction on the current code, not the recorded runs behind the solution
+document's Section 8 tables. They agree on the finding and not on the magnitude: the
+document reports a mean paired difference of +1639 with a 95% interval of [+219, +2764],
+and these give +3740 with [+2032, +5066]. Both intervals exclude zero, so both support the
+same conclusion, that the posture head and the multi-card dump improve the attacker inside
+the loop. Four seeds is a small sample and the spread between two such sets is what that
+sample size buys.
 
 A seeded `coadapt` or `control` run files its own metrics into `artifacts/ablation/` under
 the name the ablation reader expects, so the commands above work in that order with
