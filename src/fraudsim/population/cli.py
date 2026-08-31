@@ -8,8 +8,8 @@ from __future__ import annotations
 import argparse
 import time
 
-from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_artifact, load_config
+from ..logs import emit
 from .builder import PopulationBuilder
 
 
@@ -21,7 +21,7 @@ def cmd_preview(args: argparse.Namespace) -> int:
     config = load_config(args)
 
     started = time.perf_counter()
-    graph, report = PopulationBuilder(config).build()
+    _graph, report = PopulationBuilder(config).build()
     elapsed = time.perf_counter() - started
 
     emit(report.render())

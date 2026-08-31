@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..settings.engine import VelocityRuleConfig
 from ..features.schema import AuthAttemptEvent
 from ..protocols import RiskAction, RiskAssessment
+from ..settings.engine import VelocityRuleConfig
 from .definitions import VelocityRule, build_rules
 
 
@@ -106,7 +106,7 @@ class VelocityRuleScorer:
     one above another.
     """
 
-    __slots__ = ("_engine", "_step_up_at", "_decline_at")
+    __slots__ = ("_decline_at", "_engine", "_step_up_at")
 
     def __init__(
         self,

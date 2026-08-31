@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import (
     ACTION_INDEX,
     ACTION_SPECS,
@@ -20,6 +19,7 @@ from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.rules.engine import VelocityRuleScorer
+from fraudsim.settings.simulation import SimulationConfig
 
 
 @pytest.fixture

@@ -25,7 +25,6 @@ torch = pytest.importorskip(
 )
 
 from fraudsim.attacker.env import AttackEnv
-from fraudsim.clock import MINUTES_PER_HOUR
 from fraudsim.attacker.nets import (
     N_STEALTH,
     STEALTH_AGED,
@@ -35,14 +34,15 @@ from fraudsim.attacker.nets import (
     NetConfig,
 )
 from fraudsim.attacker.nets import Actor as ActorNet
-from fraudsim.settings.simulation import SimulationConfig
+from fraudsim.clock import MINUTES_PER_HOUR
 from fraudsim.engine.actions import ACTION_INDEX, N_ACTIONS, ActionName
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
-from fraudsim.protocols import Target
 from fraudsim.population.builder import PopulationBuilder
-from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.protocols import AlwaysApproveScorer, Target
+from fraudsim.settings.simulation import SimulationConfig
+
 
 @pytest.fixture(scope="module")
 def world():
@@ -68,7 +68,7 @@ def _target_for(graph, card_id, extra=()):
         holder_id=holder,
         account_id=None,
         merchants=merchants,
-        card_ids=(int(card_id),) + tuple(int(c) for c in extra),
+        card_ids=(int(card_id), *tuple(int(c) for c in extra)),
     )
 
 # --------------------------------------------------------------- resolution
@@ -195,10 +195,10 @@ def test_fraud_loop_terminates_when_episodes_produce_no_auths(monkeypatch):
     hung for an hour in the evaluation afterwards, losing the whole run; a stack
     dump put it inside this loop.
     """
-    from fraudsim.settings.simulation import SimulationConfig
     from fraudsim.engine.simulator import Simulator as Sim
     from fraudsim.orchestration.run import EpisodeRunner
     from fraudsim.population.warmstart import WarmStartRunner
+    from fraudsim.settings.simulation import SimulationConfig
 
     config = SimulationConfig.model_validate(
         {"population": {"n_holders": 200}, "engine": {"fraud_base_rate": 0.06}}

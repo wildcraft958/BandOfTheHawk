@@ -97,8 +97,8 @@ def fit_heterogeneity(
         between_sd=between,
         within_sd=within,
         between_share=float(between**2 / total) if total else float("nan"),
-        n_entities=int(len(usable)),
-        n_events=int(len(logs)),
+        n_entities=len(usable),
+        n_events=len(logs),
     )
 
 

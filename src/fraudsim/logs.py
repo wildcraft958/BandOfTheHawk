@@ -25,6 +25,7 @@ import logging.config
 import os
 import sys
 from pathlib import Path
+from typing import TextIO
 
 import yaml
 
@@ -35,7 +36,7 @@ REPORT_LOGGER = "fraudsim.report"
 _configured = False
 
 
-class StdoutHandler(logging.StreamHandler):
+class StdoutHandler(logging.StreamHandler[TextIO]):
     """A stream handler that looks up sys.stdout on every write.
 
     logging.config binds `ext://sys.stdout` once, at configure time. Anything
@@ -75,7 +76,7 @@ def configure(path: Path | None = None, level: str | None = None) -> None:
 
     config_path = path or DEFAULT_LOGGING
     if config_path.is_file():
-        config: dict = yaml.safe_load(config_path.read_text())
+        config: dict[str, object] = yaml.safe_load(config_path.read_text())
     else:
         config = _fallback()
     logging.config.dictConfig(config)
@@ -86,7 +87,7 @@ def configure(path: Path | None = None, level: str | None = None) -> None:
     _configured = True
 
 
-def _fallback() -> dict:
+def _fallback() -> dict[str, object]:
     """Enough configuration to run from an installed copy with no configs/ tree."""
     return {
         "version": 1,

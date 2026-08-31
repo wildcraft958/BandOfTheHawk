@@ -143,7 +143,7 @@ def run_calibration(
             "age_p10": float(ages.quantile(0.1)),
             "age_p50": float(ages.quantile(0.5)),
             "age_p90": float(ages.quantile(0.9)),
-            "n_holders": int(len(demographics)),
+            "n_holders": len(demographics),
             "n_jobs": int(demographics["job"].nunique()),
         },
     )

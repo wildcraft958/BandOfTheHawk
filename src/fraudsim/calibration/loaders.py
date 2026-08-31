@@ -17,10 +17,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from ..paths import DATASET_DIR
+from typing import ClassVar
 
 import pandas as pd
 
+from ..paths import DATASET_DIR
 
 # card1 alone over-merges; pairing it with card2 and addr1 is the standard
 # reconstruction of a cardholder in this dataset.
@@ -125,7 +126,7 @@ class IeeeCisLoader:
 class SparkovLoader:
     """Reads Sparkov for taxonomy and demographics only."""
 
-    CATEGORY_CLUSTERS = {
+    CATEGORY_CLUSTERS: ClassVar[dict[str, str]] = {
         "grocery_pos": "grocery",
         "grocery_net": "grocery",
         "gas_transport": "fuel_transit",

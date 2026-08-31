@@ -47,7 +47,7 @@ class NoiseFloors:
         return path
 
     @classmethod
-    def load(cls, path: Path | str) -> "NoiseFloors":
+    def load(cls, path: Path | str) -> NoiseFloors:
         return cls(**json.loads(Path(path).read_text(encoding="utf-8")))
 
     def render(self) -> str:

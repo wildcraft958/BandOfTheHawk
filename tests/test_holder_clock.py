@@ -10,7 +10,6 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.calibration.entity_stats import circular_entity_spread
 from fraudsim.settings.behavior import CircadianConfig
 from fraudsim.timing.circadian import CircadianClock, HolderClock, HolderClockModel

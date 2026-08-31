@@ -10,21 +10,21 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
-from fraudsim.engine.outcome import OutcomeCode
-from fraudsim.engine.simulator import Actor, ActorKind, Simulator
-from fraudsim.engine.stages import Stage
-from fraudsim.features.builder import EventBuilder
-from fraudsim.features.state import FeatureStateStore
 from fraudsim.engine.mitigation import (
     BlocklistDevice,
     FreezeCard,
     UnbindDevice,
     apply_all,
 )
+from fraudsim.engine.outcome import OutcomeCode
+from fraudsim.engine.simulator import Actor, ActorKind, Simulator
+from fraudsim.engine.stages import Stage
+from fraudsim.features.builder import EventBuilder
+from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import RiskAction, RiskAssessment
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.world.entities import CardStatus
 
 

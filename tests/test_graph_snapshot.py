@@ -10,20 +10,19 @@ pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.analysis.graph_snapshot import (
     DegreeSummary,
     GraphSnapshot,
     Projection,
     compare_degrees,
 )
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.population.warmstart import WarmStartRunner
 from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.settings.simulation import SimulationConfig
 
 
 @pytest.fixture(scope="module")

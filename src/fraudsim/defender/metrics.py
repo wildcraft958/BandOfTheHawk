@@ -99,7 +99,7 @@ class DetectionMetrics:
     def compute(
         cls, y_true: np.ndarray, scores: np.ndarray,
         settings: MetricsConfig | None = None,
-    ) -> "DetectionMetrics":
+    ) -> DetectionMetrics:
         settings = settings or MetricsConfig()
         budgets = settings.false_positive_budgets
         alert_budget = settings.alert_budget

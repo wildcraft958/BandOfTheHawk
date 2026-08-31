@@ -75,7 +75,7 @@ class MerchantProfile:
 class LoyaltyModel:
     """Category mixes and merchant habits for a population of cards."""
 
-    __slots__ = ("_config", "_by_cluster", "_popularity", "_categories", "_merchants")
+    __slots__ = ("_by_cluster", "_categories", "_config", "_merchants", "_popularity")
 
     def __init__(
         self,

@@ -19,15 +19,15 @@ action enum.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from .engine.actions import ActionName
 
 
-class Vertical(str, Enum):
+class Vertical(StrEnum):
     """The attack families the simulation covers.
 
-    A str enum so a value compares equal to the name it replaced; every existing
+    A StrEnum so a value compares equal to the name it replaced; every existing
     call site that passed a plain string keeps working.
     """
 
@@ -61,6 +61,18 @@ class VerticalSpec:
     @property
     def is_text(self) -> bool:
         return self.text_action is not None
+
+    @property
+    def text_assets(self) -> tuple[ActionName, str, str]:
+        """The action, tool and skeleton of a text vertical.
+
+        A checker cannot narrow the three optional fields through `is_text`, and
+        `__post_init__` has already guaranteed they are present together, so the
+        guarantee is stated here where it can be read.
+        """
+        if self.text_action is None or self.tool is None or self.skeleton is None:
+            raise TypeError(f"{self.vertical.value} is not a text vertical")
+        return self.text_action, self.tool, self.skeleton
 
     def __post_init__(self) -> None:
         # A text vertical without its full set would fail later, in the middle
@@ -116,16 +128,17 @@ HELD_OUT: frozenset[str] = frozenset(
 TEXT_VERTICALS: tuple[str, ...] = tuple(
     spec.vertical.value for spec in SPECS.values() if spec.is_text
 )
+_TEXT_SPECS: tuple[VerticalSpec, ...] = tuple(
+    spec for spec in SPECS.values() if spec.is_text
+)
 TOOL_TO_VERTICAL: dict[str, str] = {
-    spec.tool: spec.vertical.value for spec in SPECS.values() if spec.is_text
+    spec.text_assets[1]: spec.vertical.value for spec in _TEXT_SPECS
 }
 SKELETONS: dict[str, str] = {
-    spec.vertical.value: spec.skeleton for spec in SPECS.values() if spec.is_text
+    spec.vertical.value: spec.text_assets[2] for spec in _TEXT_SPECS
 }
 TEXT_ACTIONS: tuple[tuple[str, str], ...] = tuple(
-    (spec.vertical.value, spec.text_action.value)
-    for spec in SPECS.values()
-    if spec.is_text
+    (spec.vertical.value, spec.text_assets[0].value) for spec in _TEXT_SPECS
 )
 
 

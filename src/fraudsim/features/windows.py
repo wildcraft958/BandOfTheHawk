@@ -35,7 +35,7 @@ class OutOfOrderError(RuntimeError):
 class RingWindow:
     """Timestamps within a horizon, counted over any shorter span."""
 
-    __slots__ = ("_horizon", "_capacity", "_events", "_last_ts")
+    __slots__ = ("_capacity", "_events", "_horizon", "_last_ts")
 
     def __init__(self, horizon_seconds: int, capacity: int = 512) -> None:
         self._horizon = horizon_seconds
@@ -77,7 +77,7 @@ class RingWindow:
 class RollingSum:
     """Amounts within a horizon, summed over any shorter span."""
 
-    __slots__ = ("_horizon", "_events")
+    __slots__ = ("_events", "_horizon")
 
     def __init__(self, horizon_seconds: int, capacity: int = 512) -> None:
         self._horizon = horizon_seconds
@@ -111,7 +111,7 @@ class RollingSum:
 class DistinctWindow:
     """How many distinct values appeared within a horizon."""
 
-    __slots__ = ("_horizon", "_events")
+    __slots__ = ("_events", "_horizon")
 
     def __init__(self, horizon_seconds: int, capacity: int = 512) -> None:
         self._horizon = horizon_seconds
@@ -186,7 +186,7 @@ class CompoundWindowIndex:
     three ways on every read.
     """
 
-    __slots__ = ("_windows", "_criteria", "_horizon", "_capacity", "_buckets")
+    __slots__ = ("_buckets", "_capacity", "_criteria", "_horizon", "_windows")
 
     def __init__(
         self,
@@ -280,7 +280,7 @@ class RunningMedian:
     tell "no history yet" from "history says zero".
     """
 
-    __slots__ = ("_values", "_minimum")
+    __slots__ = ("_minimum", "_values")
 
     def __init__(self, capacity: int = 256, minimum: int = 5) -> None:
         self._values: deque[float] = deque(maxlen=capacity)

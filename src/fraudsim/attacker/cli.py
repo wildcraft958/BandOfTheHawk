@@ -15,12 +15,12 @@ from pathlib import Path
 
 import numpy as np
 
-from ..logs import emit
+from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..cli import add_scale_flags, base_parser, load_config, overlay
-from ..settings.training import seeded
+from ..logs import emit
 from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
-from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
+from ..settings.training import seeded
 from .bootstrap import bootstrap_and_train
 from .env import AttackEnv
 from .ppo import PPOTrainer

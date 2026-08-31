@@ -39,26 +39,26 @@ import time
 
 import numpy as np
 
-from ..logs import get_logger
 from ..attacker.bootstrap import collect_demos
 from ..attacker.env import AttackEnv
 from ..attacker.ppo import PPOConfig, PPOTrainer
-from ..settings.training import seeded
+from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..attacker.selection import ThompsonSelector, card_context
-from ..settings.simulation import SimulationConfig
 from ..defender.baseline import GBDTBaseline
-from ..engine.bands import CostModel, grid_search_bands
 from ..defender.combiner import MixtureScorer
 from ..defender.table import build_table
+from ..engine.bands import CostModel, grid_search_bands
 from ..engine.simulator import Simulator
 from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
+from ..logs import get_logger
 from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
 from ..protocols import RiskScorer, Target
 from ..rules.engine import VelocityRuleScorer
+from ..settings.simulation import SimulationConfig
+from ..settings.training import seeded
 from ..timing.circadian import HolderClockModel
-from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .coadapt_eval import (
     log_sequences,
     mask_table,
@@ -234,7 +234,7 @@ class CoadaptEngine:
             holder_id=holder_id,
             account_id=int(accounts[0]) if accounts else None,
             merchants=tuple(int(m) for m in pool),
-            card_ids=(card_id,) + spares,
+            card_ids=(card_id, *spares),
         )
 
     def _make_env(self) -> AttackEnv:

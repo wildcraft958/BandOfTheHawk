@@ -5,6 +5,7 @@ indices for O(1) traversal. Every mutation goes through EntityGraph methods
 so the indices stay consistent.
 """
 
+from .edges import AddedEdge, BindMethod, ProvisionedEdge, TransactsEdge, UsedByEdge
 from .entities import (
     Account,
     ActivityTier,
@@ -18,7 +19,6 @@ from .entities import (
     Payee,
     RiskTier,
 )
-from .edges import AddedEdge, BindMethod, ProvisionedEdge, TransactsEdge, UsedByEdge
 from .graph import EntityGraph, GraphInvariantError
 
 __all__ = [

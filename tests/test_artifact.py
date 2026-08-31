@@ -7,7 +7,6 @@ import json
 
 import pytest
 
-
 from fraudsim.calibration.artifact import ARTIFACT_VERSION, FittedParams
 
 

@@ -141,8 +141,8 @@ def circular_entity_spread(
         within_r_raw=float(raw.mean()),
         between_r=between_r,
         preferred=(preferred_angles % TWO_PI) * period / TWO_PI,
-        n_entities=int(len(usable)),
-        n_events=int(len(angles)),
+        n_entities=len(usable),
+        n_events=len(angles),
         min_events=min_events,
     )
 
@@ -303,7 +303,7 @@ def categorical_entity_concentration(
         null_ratio_mean=float(null.mean()) if len(null) else float("nan"),
         null_ratio_sd=float(null.std(ddof=1)) if len(null) > 1 else float("nan"),
         n_entities=int((sizes >= min_events).sum()),
-        n_events=int(len(values)),
+        n_events=len(values),
     )
 
 

@@ -13,8 +13,9 @@ object nothing distinguishes them unless something tracked it on the way in.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Any, Mapping
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -82,7 +83,7 @@ class SimulationConfig(StrictModel):
     @classmethod
     def from_yaml(
         cls, path: Path | str, overrides: Mapping[str, Any] | None = None
-    ) -> "SimulationConfig":
+    ) -> SimulationConfig:
         payload = load_yaml(path)
         if overrides:
             payload = deep_merge(payload, overrides)
@@ -92,7 +93,7 @@ class SimulationConfig(StrictModel):
 class ResolvedConfig:
     """A validated config plus the provenance of every field that was set."""
 
-    __slots__ = ("config", "ledger", "artifact_fingerprint")
+    __slots__ = ("artifact_fingerprint", "config", "ledger")
 
     def __init__(
         self,
@@ -225,11 +226,11 @@ def _walk(payload: Mapping[str, Any], prefix: str = "") -> list[str]:
 
 
 __all__ = [
-    "SimulationConfig",
-    "ResolvedConfig",
-    "resolve",
-    "Provenance",
-    "ProvenanceError",
     "FITTED_ROUTES",
     "SWEPT_ROUTES",
+    "Provenance",
+    "ProvenanceError",
+    "ResolvedConfig",
+    "SimulationConfig",
+    "resolve",
 ]

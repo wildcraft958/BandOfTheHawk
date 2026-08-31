@@ -10,7 +10,6 @@ particular value, since that is a finding, not an invariant.
 from __future__ import annotations
 
 import pytest
-
 from conftest import requires_sklearn, requires_xgboost
 
 # The tree and linear models are imported inside fit(), so this module
@@ -19,7 +18,6 @@ pytestmark = [requires_xgboost, requires_sklearn]
 
 import numpy as np
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.baseline import PER_ENTITY_FEATURES, GBDTBaseline
 from fraudsim.defender.metrics import DetectionMetrics, pr_auc, recall_at_fpr
 from fraudsim.defender.split import entity_split
@@ -31,6 +29,7 @@ from fraudsim.orchestration.run import EpisodeRunner
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.population.warmstart import WarmStartRunner
 from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.timing.circadian import HolderClockModel
 
 

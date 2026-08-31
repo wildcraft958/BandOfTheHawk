@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import argparse
 
-from ..logs import emit
 from ..cli import base_parser, load_artifact, load_resolved
+from ..logs import emit
+from .simulation import ResolvedConfig
 
 
-def _load(args: argparse.Namespace):
+def _load(args: argparse.Namespace) -> ResolvedConfig:
     if load_artifact(args) is None:
         emit(f"no artifact at {args.artifact}; showing configured values only")
         emit("run: python -m fraudsim.calibration.cli fit\n")

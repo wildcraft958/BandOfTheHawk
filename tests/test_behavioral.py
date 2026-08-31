@@ -11,7 +11,6 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.calibration.behavioral import (
     burst_stats,
     fanout_stats,

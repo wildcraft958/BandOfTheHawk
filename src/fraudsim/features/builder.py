@@ -18,18 +18,25 @@ import math
 from ..clock import (
     MINUTES_PER_DAY,
     SECONDS_PER_MINUTE,
+)
+from ..clock import (
     SECONDS_PER_DAY as DAY,
+)
+from ..clock import (
     SECONDS_PER_HOUR as HOUR,
+)
+from ..clock import (
     SECONDS_PER_WEEK as WEEK,
 )
+from ..ids import CardId, DeviceId, HolderId, MerchantId
 from ..settings.engine import WindowConfig
-from ..ids import CardId, DeviceId, MerchantId
 from ..timing.circadian import HolderClockModel
 from ..world.entities import CategoryCluster, RiskTier
 from ..world.graph import EntityGraph
 from .schema import AuthAttemptEvent, BindingEvent, EventType
 from .state import FeatureStateStore
 from .windows import CompoundKey
+
 EARTH_RADIUS_KM = 6371.0
 
 _CLUSTER_INDEX = {cluster: index for index, cluster in enumerate(CategoryCluster)}
@@ -47,7 +54,7 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 class EventBuilder:
     """Builds events from graph facts and rolling state."""
 
-    __slots__ = ("_graph", "_states", "_config", "_clocks", "_next_id", "_warm_start")
+    __slots__ = ("_clocks", "_config", "_graph", "_next_id", "_states", "_warm_start")
 
     def __init__(
         self,
@@ -175,7 +182,7 @@ class EventBuilder:
         event_type: EventType,
         actor_id: int,
         target_id: int,
-        holder_id: int,
+        holder_id: HolderId,
         method: int = 0,
         channel: int = 0,
         device_id: DeviceId | None = None,

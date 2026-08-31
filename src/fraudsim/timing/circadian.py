@@ -68,7 +68,7 @@ def _bessel_i0(kappa: float) -> float:
 class CircadianClock:
     """A von Mises mixture over hour of day."""
 
-    __slots__ = ("_means", "_kappas", "_weights", "_confidence", "_cutoff")
+    __slots__ = ("_confidence", "_cutoff", "_kappas", "_means", "_weights")
 
     def __init__(self, config: CircadianConfig) -> None:
         self._means = np.asarray(config.means, dtype=float)
@@ -110,7 +110,7 @@ class CircadianClock:
         """
         angles = _to_angle(np.atleast_1d(hours))
         total = np.zeros_like(angles, dtype=float)
-        for mean, kappa, weight in zip(self._means, self._kappas, self._weights):
+        for mean, kappa, weight in zip(self._means, self._kappas, self._weights, strict=False):
             centred = angles - _to_angle(mean)
             total += weight * np.exp(kappa * np.cos(centred)) / (TWO_PI * _bessel_i0(kappa))
         return total * (TWO_PI / HOURS_PER_DAY)
@@ -224,7 +224,7 @@ class HolderClockModel:
     population's.
     """
 
-    __slots__ = ("_config", "_clocks")
+    __slots__ = ("_clocks", "_config")
 
     def __init__(self, config: CircadianConfig) -> None:
         self._config = config

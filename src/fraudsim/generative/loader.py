@@ -49,8 +49,8 @@ def load_checkpoint(model_name: str = DEFAULT_MODEL) -> Checkpoint:
     hold the model never reaches this, because the pool is built from the mock
     generator instead.
     """
-    import torch  # noqa: PLC0415 — lazy so the import firewall's ban never trips on the default path
-    from transformers import (  # noqa: PLC0415
+    import torch
+    from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
         ProcessorMixin,
@@ -78,7 +78,7 @@ def generate_one(checkpoint: Checkpoint, system: str, user: str, max_new_tokens:
     tokenise, generate, and decode only the newly generated ids. Sampling is on
     (text needs variety) with a fixed generator set by the caller's seed.
     """
-    import torch  # noqa: PLC0415
+    import torch
 
     messages = [
         {"role": "system", "content": system},

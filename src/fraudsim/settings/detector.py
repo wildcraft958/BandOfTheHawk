@@ -55,7 +55,7 @@ class BandConfig(StrictModel):
     block_at: UnitInterval = 0.95
 
     @model_validator(mode="after")
-    def _ascending(self) -> "BandConfig":
+    def _ascending(self) -> BandConfig:
         edges = (self.step_up_at, self.hold_at, self.decline_at, self.block_at)
         if list(edges) != sorted(edges):
             raise ValueError(f"bands must ascend, got {edges}")

@@ -115,7 +115,7 @@ def overrides_from(args: argparse.Namespace) -> dict | None:
     return overrides or None
 
 
-def overlay(section: _ModelT, **flags: object) -> _ModelT:
+def overlay[ModelT: BaseModel](section: _ModelT, **flags: object) -> _ModelT:
     """A config section with any flag the user actually passed applied on top.
 
     Flags default to None so that "not given" is distinguishable from a value.

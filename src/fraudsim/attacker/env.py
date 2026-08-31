@@ -36,12 +36,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..clock import MINUTES_PER_HOUR
+from ..clock import MINUTES_PER_DAY, MINUTES_PER_HOUR
 from ..engine.actions import ACTION_ORDER, Action
 from ..engine.outcome import Outcome, OutcomeCode
 from ..engine.simulator import Actor, ActorKind, Simulator
-from ..ids import CardId
 from ..engine.stages import Stage, StageGate
+from ..ids import CardId
 from ..protocols import ActorObservation
 from .nets import (
     STEALTH_AGED,
@@ -73,14 +73,6 @@ _FEATURE_KEYS = (
     "hours_elapsed",
     "hour_of_day",
 )
-
-# How long "cool off" waits, at minimum. Long enough to read as a separate
-# session rather than a continuation of the same one, and deliberately not a
-# whole number of days: a floor of exactly twenty-four hours lands the action at
-# the same hour it would have run at anyway, so the wait would buy separation in
-# the velocity windows while leaving the time-of-day tell exactly where it was.
-from ..clock import MINUTES_PER_DAY
-
 
 
 @dataclass(slots=True)

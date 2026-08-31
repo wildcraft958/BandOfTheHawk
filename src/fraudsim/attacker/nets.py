@@ -30,14 +30,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
-
-from ..clock import MINUTES_PER_HOUR
-from ..settings.training import ActionSpaceConfig
 import torch.nn as nn
 from torch.distributions import Categorical, Normal
 
+from ..clock import MINUTES_PER_HOUR
 from ..engine.actions import N_ACTIONS
 from ..engine.stages import Stage
+from ..settings.training import ActionSpaceConfig
 
 N_STAGES = len(Stage)
 

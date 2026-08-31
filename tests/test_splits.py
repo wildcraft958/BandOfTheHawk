@@ -10,7 +10,6 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.calibration.splits import entity_level_split, row_level_split
 
 

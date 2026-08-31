@@ -91,7 +91,7 @@ class FeatureTable:
         """Rows with a stamped label, the only ones a supervised fit may use."""
         return self.y >= 0
 
-    def view(self, event_types: frozenset[EventType]) -> "FeatureTable":
+    def view(self, event_types: frozenset[EventType]) -> FeatureTable:
         """The rows for one expert's event types, columns unchanged.
 
         Kept as the full column set so a per-expert model can drop the columns

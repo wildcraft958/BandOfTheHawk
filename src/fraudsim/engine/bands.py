@@ -89,7 +89,7 @@ class CostModel:
     review_cost: float = 8.0
 
     @classmethod
-    def from_config(cls, cost: CostConfig) -> "CostModel":
+    def from_config(cls, cost: CostConfig) -> CostModel:
         """Built from configured costs rather than the defaults above."""
         return cls(friction_cost=cost.friction_cost, review_cost=cost.review_cost)
 

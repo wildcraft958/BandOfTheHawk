@@ -7,9 +7,10 @@ a field supplied by both sources raises unless the override is explicit.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Mapping
+from typing import Annotated, Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field

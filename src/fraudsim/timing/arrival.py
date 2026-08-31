@@ -88,7 +88,7 @@ class DriftingRateProcess:
 class ArrivalScheduler:
     """Holds arrival state for a whole population."""
 
-    __slots__ = ("_process", "_states", "_rate_scale")
+    __slots__ = ("_process", "_rate_scale", "_states")
 
     def __init__(
         self,

@@ -138,7 +138,7 @@ class CardDeviceAssigner:
             raise ValueError("card_ids and card_households must be the same length")
 
         by_household: dict[int, list[int]] = {}
-        for card_id, household in zip(card_ids.tolist(), card_households.tolist()):
+        for card_id, household in zip(card_ids.tolist(), card_households.tolist(), strict=False):
             by_household.setdefault(int(household), []).append(int(card_id))
         for cards in by_household.values():
             self._rng.shuffle(cards)

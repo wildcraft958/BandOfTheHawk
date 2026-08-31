@@ -11,8 +11,8 @@ from pathlib import Path
 
 import numpy as np
 
-from ..logs import emit
 from ..cli import base_parser, load_config
+from ..logs import emit
 from ..paths import DEFAULT_FLOORS
 from .arrival import DriftingRateProcess, burstiness, lag1_autocorrelation
 from .circadian import CircadianClock, resultant_length

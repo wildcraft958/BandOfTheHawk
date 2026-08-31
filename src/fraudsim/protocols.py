@@ -8,9 +8,10 @@ implementation.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from .ids import ActorId
 
@@ -125,9 +126,7 @@ class Target:
         if not self.card_ids:
             self.card_ids = (self.card_id,)
         elif self.card_ids[0] != self.card_id:
-            self.card_ids = (self.card_id,) + tuple(
-                c for c in self.card_ids if c != self.card_id
-            )
+            self.card_ids = (self.card_id, *tuple(c for c in self.card_ids if c != self.card_id))
 
 
 class AlwaysApproveScorer:

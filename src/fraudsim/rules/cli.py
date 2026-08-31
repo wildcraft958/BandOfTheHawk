@@ -10,10 +10,10 @@ import argparse
 
 import numpy as np
 
-from ..logs import emit
 from ..cli import base_parser, load_config
 from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
+from ..logs import emit
 from ..population.builder import PopulationBuilder
 from ..timing.arrival import DriftingRateProcess
 from ..timing.circadian import HolderClockModel

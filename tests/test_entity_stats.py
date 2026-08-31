@@ -16,15 +16,14 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.calibration.distances import circular_w1, w1
 from fraudsim.calibration.entity_stats import (
+    _bessel_ratio,
     categorical_entity_concentration,
     circular_entity_spread,
     matched_by_event_count,
     resultant_to_kappa,
     unbiased_simpson,
-    _bessel_ratio,
 )
 
 TWO_PI = 2.0 * np.pi

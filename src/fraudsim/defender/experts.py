@@ -27,7 +27,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..features.schema import EventType
 from ..features.columns import (
     CARD_N_DEVICES,
     DEVICE_AGE_DAYS,
@@ -35,6 +34,7 @@ from ..features.columns import (
     DEVICE_NEW_TO_CARD,
     TEXT_SCORE_COLUMNS,
 )
+from ..features.schema import EventType
 from ..settings.detector import DetectorConfig, LogisticConfig, TreeConfig
 from .table import FeatureTable
 
@@ -105,7 +105,7 @@ class Expert:
 
     # ------------------------------------------------------------------- fit
 
-    def fit(self, table: FeatureTable) -> "Expert":
+    def fit(self, table: FeatureTable) -> Expert:
         view = table.view(self.event_types)
         if len(view) == 0 or view.y.sum() == 0 or (1 - view.y).sum() == 0:
             # Nothing to separate. The expert becomes the base rate, an honest
@@ -193,7 +193,7 @@ class ExpertBank:
 
     @classmethod
     def build(cls, columns: tuple[str, ...],
-              detector: DetectorConfig | None = None) -> "ExpertBank":
+              detector: DetectorConfig | None = None) -> ExpertBank:
         d = detector or DetectorConfig()
         return cls(
             experts=[
@@ -205,7 +205,7 @@ class ExpertBank:
             ]
         )
 
-    def fit(self, table: FeatureTable) -> "ExpertBank":
+    def fit(self, table: FeatureTable) -> ExpertBank:
         for expert in self.experts:
             expert.fit(table)
         return self

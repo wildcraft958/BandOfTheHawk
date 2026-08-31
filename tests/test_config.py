@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 import yaml
+from pydantic import ValidationError
 
 from fraudsim.calibration.artifact import FittedParams
 from fraudsim.settings.base import Provenance, ProvenanceError
@@ -37,12 +37,12 @@ def test_defaults_are_valid() -> None:
 
 
 def test_unknown_key_is_refused() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="not_a_field"):
         SimulationConfig.model_validate({"population": {"not_a_field": 1}})
 
 
 def test_out_of_range_is_refused() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="household_mean"):
         DeviceConfig(household_mean=99.0)
 
 
@@ -150,7 +150,7 @@ def test_swept_values_carry_their_default() -> None:
 
 def test_config_is_immutable() -> None:
     config = SimulationConfig()
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="frozen"):
         config.seed = 5
 
 

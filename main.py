@@ -241,7 +241,8 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
             # that balance is solving a much easier problem, and the contest was
             # decided by the mixture rather than by either side.
             "--target-prevalence", str(s["target_prevalence"]),
-        ] + ablation
+            *ablation,
+        ]
 
     raise ValueError(f"unknown stage {stage!r}")
 
@@ -262,7 +263,7 @@ def _run_stage(name: str, module: str, argv: list[str]) -> tuple[bool, float]:
     started = time.perf_counter()
     try:
         ok = importlib.import_module(module).main(argv) == 0
-    except Exception:  # noqa: BLE001 — one stage must not sink the run
+    except Exception:
         _log.exception("stage %s raised", name)
         ok = False
     elapsed = time.perf_counter() - started

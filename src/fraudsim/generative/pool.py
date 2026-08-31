@@ -215,7 +215,7 @@ class TextPool:
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     @classmethod
-    def load(cls, path: Path | str) -> "TextPool":
+    def load(cls, path: Path | str) -> TextPool:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         pool = cls(
             entries=[
@@ -320,7 +320,7 @@ def build_pool(
                 "detail": facts.detail,
             },
         )
-        for (vertical, tier, fraudulent, facts), text in zip(specs, texts)
+        for (vertical, tier, fraudulent, facts), text in zip(specs, texts, strict=False)
     ]
 
     # Embed every item once, in one batch, so the vectors are computed here and
@@ -333,7 +333,7 @@ def build_pool(
     if progress:
         _log.info("embedding %s texts ...", f"{len(entries):,}")
     vectors = embedder.encode([e.text for e in entries])
-    for entry, vec in zip(entries, vectors):
+    for entry, vec in zip(entries, vectors, strict=False):
         entry.embedding = tuple(float(x) for x in vec)
 
     pool = TextPool(

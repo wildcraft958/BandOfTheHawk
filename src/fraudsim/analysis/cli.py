@@ -10,8 +10,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
+from ..logs import emit
 from ..population.builder import PopulationBuilder
 from ..population.factory import build_warm_world
 from .entity_report import render_entity_report

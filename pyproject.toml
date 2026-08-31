@@ -45,7 +45,7 @@ calibration = ["pandas>=2.2", "pyarrow>=17.0"]
 defender = ["scikit-learn>=1.5", "xgboost>=2.1"]
 rl = ["torch>=2.4"]
 generative = ["torch>=2.4", "transformers>=4.44", "accelerate>=0.34", "sentence-transformers>=3.0"]
-dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.11"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.11", "types-PyYAML>=6.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -62,3 +62,76 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+
+# Before this, [tool.ruff] set only the two lines above and no `select`, so only
+# ruff's default E4/E7/E9/F rules ran. T201 (print), the annotation rules and
+# PLC0415 (import-outside-top-level) were all off, which is how 186 prints and
+# 105 nested imports accumulated without complaint.
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle, pyflakes
+    "I",             # import sorting
+    "UP",            # pyupgrade
+    "B",             # bugbear: zip without strict, blind excepts, mutable defaults
+    "SIM", "C4", "PIE", "RET",
+    "RUF",
+    "T20",           # no print: the two logging channels are the only output path
+    "PLC0415",       # imports at top level, except where a tier is deferred
+]
+ignore = [
+    # A cast that is redundant for a python float and load-bearing for a numpy
+    # scalar, whose __round__ returns a numpy type rather than an int.
+    "RUF046",
+    # Line length is checked by the formatter's own wrapping, and the long lines
+    # left are tables and URLs in docstrings where breaking them hurts.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The learned tiers defer their heavy imports into the function that needs them,
+# so `pip install fraudsim` stays importable without the extras and a torch
+# import does not cost seconds on the simulation path. Each of these carries a
+# comment at the import saying so.
+"src/fraudsim/attacker/*.py" = ["PLC0415"]
+"src/fraudsim/defender/*.py" = ["PLC0415"]
+"src/fraudsim/generative/*.py" = ["PLC0415"]
+"src/fraudsim/orchestration/*.py" = ["PLC0415"]
+"src/fraudsim/calibration/*.py" = ["PLC0415"]
+"src/fraudsim/analysis/*.py" = ["PLC0415"]
+# engine and features defer only to break an import cycle, which is local.
+"src/fraudsim/engine/*.py" = ["PLC0415"]
+# main.py dispatches stages by module name, which is the whole design.
+"main.py" = ["PLC0415"]
+# A test that guards on an optional tier must import the package after the
+# guard, which is exactly what E402 forbids. RUF059 flags an unpacked value a
+# test deliberately ignores, and PT011/B017 are relaxed nowhere: those were
+# fixed rather than ignored.
+"tests/*.py" = ["E402", "RUF059", "PLC0415"]
+
+# Type checking, scoped to the subpackages that are already fully annotated. The
+# rest carry 148 incomplete signatures; widening this before they are annotated
+# would mean either a permanently red check or blanket ignores that assert
+# nothing. engine/ at 58% and attacker/ at 46% need an Actor protocol defined
+# first, which is design work, not typing work.
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = [
+    "src/fraudsim/world",
+    "src/fraudsim/features",
+    "src/fraudsim/timing",
+    "src/fraudsim/settings",
+    "src/fraudsim/clock.py",
+    "src/fraudsim/ids.py",
+    "src/fraudsim/rng.py",
+    "src/fraudsim/paths.py",
+    "src/fraudsim/logs.py",
+    "src/fraudsim/taxonomy.py",
+    "src/fraudsim/protocols.py",
+]
+
+[[tool.mypy.overrides]]
+# numpy and scipy stubs disagree with real usage often enough that chasing them
+# costs more than it catches.
+module = ["numpy.*", "scipy.*"]
+ignore_missing_imports = true

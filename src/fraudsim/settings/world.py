@@ -45,7 +45,7 @@ class DeviceConfig(StrictModel):
     age_days_spread: PositiveFloat = 1.2
 
     @model_validator(mode="after")
-    def _mean_within_max(self) -> "DeviceConfig":
+    def _mean_within_max(self) -> DeviceConfig:
         if self.household_mean > self.household_max:
             raise ValueError("household_mean cannot exceed household_max")
         return self
@@ -84,7 +84,7 @@ class ActivityConfig(StrictModel):
     )
 
     @model_validator(mode="after")
-    def _weights_sum_to_one(self) -> "ActivityConfig":
+    def _weights_sum_to_one(self) -> ActivityConfig:
         total = sum(self.tier_weights.values())
         if abs(total - 1.0) > 1e-6:
             raise ValueError(f"tier_weights must sum to 1, got {total}")
@@ -158,7 +158,7 @@ class PopulationConfig(StrictModel):
     )
 
     @model_validator(mode="after")
-    def _archetype_weights_sum_to_one(self) -> "PopulationConfig":
+    def _archetype_weights_sum_to_one(self) -> PopulationConfig:
         total = sum(self.archetype_weights.values())
         if abs(total - 1.0) > 1e-6:
             raise ValueError(f"archetype_weights must sum to 1, got {total}")

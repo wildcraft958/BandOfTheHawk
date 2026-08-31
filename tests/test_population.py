@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
-from fraudsim.settings.world import PopulationConfig
 from fraudsim.population.archetypes import build_profiles
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.rng import RngHub
+from fraudsim.settings.simulation import SimulationConfig
+from fraudsim.settings.world import PopulationConfig
 from fraudsim.world.entities import Archetype, CategoryCluster
 
 

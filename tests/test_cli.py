@@ -6,7 +6,6 @@ import argparse
 
 import pytest
 
-
 from fraudsim.cli import add_scale_flags, base_parser, load_config, overrides_from
 from fraudsim.paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 

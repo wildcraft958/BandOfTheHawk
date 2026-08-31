@@ -10,7 +10,6 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.behavior.amount import AmountModel, level_spread
 from fraudsim.calibration.fit_heterogeneity import entity_level_spread, fit_heterogeneity
 from fraudsim.settings.behavior import AmountConfig

@@ -161,7 +161,7 @@ class TrainReport:
             lines.append(f"  critic final loss   {self.critic_losses[-1]:>10.4f}")
         lines.append("")
         lines.append("  update   policy_loss   entropy   bc_coef   mean_return")
-        for i, (st, ret) in enumerate(zip(self.update_stats, self.mean_return)):
+        for i, (st, ret) in enumerate(zip(self.update_stats, self.mean_return, strict=False)):
             lines.append(
                 f"    {i:<7}{st['policy_loss']:>10.3f}"
                 f"{st['entropy']:>10.3f}{st['bc_coef']:>10.3f}{ret:>13.3f}"

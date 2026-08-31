@@ -20,10 +20,8 @@ world permits.
 from __future__ import annotations
 
 import pytest
-
 from conftest import requires_torch
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.outcome import OutcomeCode
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator
@@ -32,6 +30,7 @@ from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer, RiskAction, RiskAssessment
+from fraudsim.settings.simulation import SimulationConfig
 
 
 def _world(overrides: dict | None = None):

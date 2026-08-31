@@ -23,20 +23,20 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..settings.simulation import SimulationConfig
+from ..behavior.amount import AmountModel
+from ..behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
+from ..clock import MINUTES_PER_DAY, SECONDS_PER_MINUTE
 from ..engine.actions import Action, ActionName
 from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage
 from ..features.schema import EventType
 from ..ids import ActorId, BucketId, CardId, DeviceId
+from ..population.archetypes import build_profiles
+from ..settings.simulation import SimulationConfig
 from ..timing.arrival import DriftingRateProcess
 from ..timing.circadian import HolderClockModel
 from ..world.edges import BindMethod, ProvisionedEdge
 from ..world.entities import ActivityTier, CategoryCluster, Device
-from ..behavior.amount import AmountModel
-from ..behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
-from ..population.archetypes import build_profiles
-from ..clock import MINUTES_PER_DAY, SECONDS_PER_MINUTE
 from .negatives import NegativeInjector
 
 # Which action produces each non-payment event.

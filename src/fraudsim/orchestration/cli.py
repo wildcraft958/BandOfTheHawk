@@ -13,11 +13,11 @@ import argparse
 import time
 from pathlib import Path
 
-from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config, overlay
-from ..settings.training import seeded
+from ..logs import emit
 from ..paths import DEFAULT_CFPB, DEFAULT_CHECKPOINTS, DEFAULT_METRICS, DEFAULT_POOL
 from ..population.factory import build_warm_world
+from ..settings.training import seeded
 from .coadapt import run_coadapt
 from .run import EpisodeRunner
 

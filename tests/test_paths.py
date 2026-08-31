@@ -42,8 +42,8 @@ def test_artifact_dir_follows_its_environment_variable(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     p = reloaded(monkeypatch, GAUNTLET_ARTIFACTS=str(tmp_path))
-    assert p.ARTIFACT_DIR == tmp_path.resolve()
-    assert p.DEFAULT_ARTIFACT == tmp_path.resolve() / "fitted_params.json"
+    assert tmp_path.resolve() == p.ARTIFACT_DIR
+    assert tmp_path.resolve() / "fitted_params.json" == p.DEFAULT_ARTIFACT
 
 
 def test_directories_move_independently(
@@ -58,6 +58,6 @@ def test_root_relocates_every_derived_directory(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     p = reloaded(monkeypatch, GAUNTLET_ROOT=str(tmp_path))
-    assert p.CONFIG_DIR == tmp_path.resolve() / "configs"
-    assert p.ARTIFACT_DIR == tmp_path.resolve() / "artifacts"
-    assert p.DATASET_DIR == tmp_path.resolve() / "Dataset"
+    assert tmp_path.resolve() / "configs" == p.CONFIG_DIR
+    assert tmp_path.resolve() / "artifacts" == p.ARTIFACT_DIR
+    assert tmp_path.resolve() / "Dataset" == p.DATASET_DIR

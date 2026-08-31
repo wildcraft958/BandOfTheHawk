@@ -10,7 +10,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.settings.world import DeviceConfig, FanoutConfig
 from fraudsim.population.fanout import (
     CardDeviceAssigner,
     FingerprintDegreeSampler,
@@ -18,6 +17,7 @@ from fraudsim.population.fanout import (
     independent_assignment_degrees,
     summarise,
 )
+from fraudsim.settings.world import DeviceConfig, FanoutConfig
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ def test_assignment_fills_the_requested_degrees(rng) -> None:
     degrees = np.array([1, 2, 3, 5, 8], dtype=np.int64)
     assigned = CardDeviceAssigner(rng).assign(degrees, cards, households)
     assert len(assigned) == len(degrees)
-    for wanted, got in zip(degrees.tolist(), assigned):
+    for wanted, got in zip(degrees.tolist(), assigned, strict=False):
         assert len(got) <= wanted
 
 

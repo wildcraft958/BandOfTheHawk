@@ -163,7 +163,7 @@ def build_profiles(
 class ActivitySampler:
     """Assigns activity tiers and the rate multiplier each implies."""
 
-    __slots__ = ("_tiers", "_weights", "_multipliers")
+    __slots__ = ("_multipliers", "_tiers", "_weights")
 
     def __init__(self, tier_weights: dict[str, float], multipliers: dict[str, float]) -> None:
         self._tiers = tuple(ActivityTier(name) for name in tier_weights)

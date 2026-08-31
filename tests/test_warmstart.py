@@ -10,7 +10,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
@@ -18,6 +17,7 @@ from fraudsim.population.builder import PopulationBuilder
 from fraudsim.population.warmstart import WarmStartRunner
 from fraudsim.protocols import AlwaysApproveScorer
 from fraudsim.rules.engine import VelocityRuleEngine
+from fraudsim.settings.simulation import SimulationConfig
 
 MINUTES_PER_DAY = 1440
 

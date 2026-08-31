@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Protocol
 
 
 class EventType(Enum):
@@ -110,7 +111,7 @@ class AuthAttemptEvent:
                 "compound_feature_names",
             }
         }
-        payload.update(zip(self.compound_feature_names, self.compound_features))
+        payload.update(zip(self.compound_feature_names, self.compound_features, strict=False))
         return payload
 
 
@@ -150,9 +151,9 @@ class BindingEvent:
     # every other binding event they are empty, and the table treats an empty
     # embedding as a missing block. This is where the generative layer reaches
     # the text expert.
-    text_embedding: tuple = ()
-    text_scores: tuple = ()
-    text_score_names: tuple = ()
+    text_embedding: tuple[float, ...] = ()
+    text_scores: tuple[float, ...] = ()
+    text_score_names: tuple[str, ...] = ()
 
     is_fraud: bool | None = None
     episode_id: int | None = None
@@ -179,8 +180,18 @@ class BindingEvent:
         # Text vectors expand into named columns the text expert reads, the same
         # way the compound window features do on an authorisation.
         payload.update({f"emb_{i}": v for i, v in enumerate(self.text_embedding)})
-        payload.update(zip(self.text_score_names, self.text_scores))
+        payload.update(zip(self.text_score_names, self.text_scores, strict=False))
         return payload
+
+
+class Labellable(Protocol):
+    """What the log requires of an event: a fraud label it can stamp.
+
+    The log was typed `list[object]`, which meant every read of `.is_fraud` was
+    unchecked. Only the label is needed here, so only the label is demanded.
+    """
+
+    is_fraud: bool | None
 
 
 @dataclass(slots=True)
@@ -191,10 +202,10 @@ class EventLog:
     written, because at the moment of scoring nothing knows the answer.
     """
 
-    events: list[object] = field(default_factory=list)
+    events: list[Labellable] = field(default_factory=list)
     _by_episode: dict[int, list[int]] = field(default_factory=dict)
 
-    def append(self, event: object) -> int:
+    def append(self, event: Labellable) -> int:
         index = len(self.events)
         self.events.append(event)
         episode = getattr(event, "episode_id", None)

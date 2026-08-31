@@ -9,27 +9,27 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.engine import VelocityRuleConfig
 from fraudsim.features.schema import AuthAttemptEvent
 from fraudsim.protocols import RiskAction, RiskScorer
 from fraudsim.rules.engine import VelocityRuleEngine, VelocityRuleScorer
+from fraudsim.settings.engine import VelocityRuleConfig
 
 
 def event(**overrides) -> AuthAttemptEvent:
     """A quiet authorisation that trips nothing."""
-    base = dict(
-        event_id=0, ts=0, card_id=1, merchant_id=1, device_id=1,
-        amount=50.0, category_cluster=0, entry_mode=0, merchant_risk_tier=0,
-        is_high_liquidity=False,
-        device_age_days=200, device_new_to_card=False, device_n_cards=2,
-        card_n_devices=1, ip_asn=10, geo_distance_km=5.0,
-        auths_last_60s=0, auths_last_1h=0, auths_last_24h=1,
-        distinct_categories_1h=0, distinct_merchants_24h=1, distinct_ips_24h=1,
-        amount_sum_24h=50.0, declines_last_1h=0, seconds_since_last_auth=3600,
-        is_first_txn_this_merchant=False, hour_of_day=14, is_weekend=False,
-        within_usual_hours=True, amount_vs_median=1.0,
-        account_age_days=900, holder_tenure_days=900,
-    )
+    base = {
+        "event_id": 0, "ts": 0, "card_id": 1, "merchant_id": 1, "device_id": 1,
+        "amount": 50.0, "category_cluster": 0, "entry_mode": 0, "merchant_risk_tier": 0,
+        "is_high_liquidity": False,
+        "device_age_days": 200, "device_new_to_card": False, "device_n_cards": 2,
+        "card_n_devices": 1, "ip_asn": 10, "geo_distance_km": 5.0,
+        "auths_last_60s": 0, "auths_last_1h": 0, "auths_last_24h": 1,
+        "distinct_categories_1h": 0, "distinct_merchants_24h": 1, "distinct_ips_24h": 1,
+        "amount_sum_24h": 50.0, "declines_last_1h": 0, "seconds_since_last_auth": 3600,
+        "is_first_txn_this_merchant": False, "hour_of_day": 14, "is_weekend": False,
+        "within_usual_hours": True, "amount_vs_median": 1.0,
+        "account_age_days": 900, "holder_tenure_days": 900,
+    }
     base.update(overrides)
     return AuthAttemptEvent(**base)
 

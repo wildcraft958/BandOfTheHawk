@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from ..clock import SimClock
-from ..settings.simulation import SimulationConfig
 from ..features.builder import EventBuilder
 from ..features.schema import EventLog
 from ..ids import ActorId, CardId, DeviceId, MerchantId
@@ -34,11 +33,12 @@ from ..protocols import (
     RiskScorer,
 )
 from ..rng import RngHub
+from ..settings.simulation import SimulationConfig
 from ..world.graph import EntityGraph
 from .actions import Action, ActionName, action_cost
+from .mitigation import apply_all
 from .outcome import RISK_TO_OUTCOME, Outcome, OutcomeCode
 from .resolution import EVENT_FOR_ACTION, ActionResolver
-from .mitigation import apply_all
 from .stages import Stage, StageGate
 
 
@@ -105,8 +105,18 @@ class Simulator:
     """Runs actions against the world and reports what happened."""
 
     __slots__ = (
-        "graph", "clock", "config", "builder", "log", "gate", "resolver",
-        "_artifacts", "_scorer", "_hub", "_actors", "_next_episode",
+        "_actors",
+        "_artifacts",
+        "_hub",
+        "_next_episode",
+        "_scorer",
+        "builder",
+        "clock",
+        "config",
+        "gate",
+        "graph",
+        "log",
+        "resolver",
     )
 
     def __init__(

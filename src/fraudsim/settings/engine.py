@@ -28,7 +28,7 @@ class WindowConfig(StrictModel):
     max_events_per_window: Annotated[int, Field(ge=16, le=4096)] = 512
 
     @model_validator(mode="after")
-    def _windows_increase(self) -> "WindowConfig":
+    def _windows_increase(self) -> WindowConfig:
         if list(self.windows_seconds) != sorted(self.windows_seconds):
             raise ValueError("windows_seconds must be ascending")
         if len(set(self.compound_criteria)) != len(self.compound_criteria):

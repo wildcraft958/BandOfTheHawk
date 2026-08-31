@@ -16,7 +16,6 @@ pytest.importorskip(
 )
 
 from fraudsim.attacker.ppo import PPOConfig
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator
 from fraudsim.engine.stages import Stage
@@ -25,6 +24,8 @@ from fraudsim.features.state import FeatureStateStore
 from fraudsim.orchestration.coadapt import run_coadapt
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer, RiskAction, RiskAssessment
+from fraudsim.settings.simulation import SimulationConfig
+
 
 def test_simulator_scorer_is_swappable():
     config = SimulationConfig.model_validate({"population": {"n_holders": 200}})
@@ -82,7 +83,7 @@ def test_defender_refit_on_cadence(coadapt_report):
     assert r.defender_refits == [2, 5]
     # Each refit trained on at least as much fraud as the last (cumulative).
     assert all(
-        b >= a for a, b in zip(r.defender_positives_at_refit, r.defender_positives_at_refit[1:])
+        b >= a for a, b in zip(r.defender_positives_at_refit, r.defender_positives_at_refit[1:], strict=False)
     )
 
 def test_zero_shot_present(coadapt_report):

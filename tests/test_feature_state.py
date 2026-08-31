@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.engine import WindowConfig
 from fraudsim.features.state import CardFeatureState, FeatureStateStore
 from fraudsim.features.windows import CompoundKey
+from fraudsim.settings.engine import WindowConfig
 
 HOUR = 3600
 DAY = 86_400

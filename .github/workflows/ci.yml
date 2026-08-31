@@ -1,0 +1,131 @@
+name: ci
+
+# The import firewall is the repository's most valuable structural property and
+# was enforced only when somebody remembered to run pytest locally. These jobs
+# enforce it on every push.
+#
+# The tiers run as separate jobs for two reasons. The core job proves the claim
+# the firewall makes: that the simulation runs on numpy alone. And splitting them
+# is what keeps torch and xgboost out of one process, which segfaults on macOS
+# from two copies of libomp; Linux tolerates it, but a job per tier means the
+# suite never depends on that tolerance.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint:
+    name: ruff + mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install -e ".[dev]"
+      - name: Ruff
+        run: ruff check src tests main.py
+      - name: Mypy
+        run: mypy
+
+  test-core:
+    name: core tier only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      # Nothing optional. If a runtime module reaches for pandas, sklearn or
+      # torch, this job fails, which is the firewall's whole point. It caught
+      # calibration/__init__ pulling pandas into every CLI's import path.
+      - name: Install core and dev only
+        run: |
+          python -m pip install -e ".[dev]"
+      - name: Assert the optional tiers really are absent
+        run: |
+          python - <<'PY'
+          import importlib.util, sys
+          present = [m for m in ("torch", "xgboost", "sklearn", "pandas", "networkx")
+                     if importlib.util.find_spec(m) is not None]
+          if present:
+              sys.exit(f"optional tiers leaked into the core job: {present}")
+          print("core tier is clean")
+          PY
+      - name: The simulation runs with nothing optional installed
+        run: |
+          python -m fraudsim.engine.cli demo --holders 200
+          python -m fraudsim.rules.cli describe
+      - name: Tests
+        run: pytest tests -q
+
+  test-full:
+    name: every tier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install every extra
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[dev,analysis,calibration,defender,rl,generative]"
+      - name: Tests
+        run: pytest tests -q
+      - name: The pipeline completes end to end
+        run: python main.py --profile quick --mock
+
+  reproducible:
+    name: same seed, same run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[dev,defender,rl,calibration]"
+      # torch was seeded nowhere until recently, so two runs at one seed produced
+      # different attackers. This asserts the fix rather than trusting it.
+      - name: Two co-adaptation runs at one seed
+        run: |
+          for run in a b; do
+            python -m fraudsim.orchestration.cli coadapt \
+              --holders 250 --seed 5 \
+              --demo-episodes 6 --bc-epochs 1 --critic-rollouts 4 \
+              --critic-epochs 1 --updates 2 --episodes-per-update 4 \
+              --refit-every 2 --hidden 16 --minibatch 8 \
+              --metrics "metrics_$run.json" > /dev/null
+          done
+      - name: They must be identical
+        run: |
+          python - <<'PY'
+          import json, sys
+          a = json.load(open("metrics_a.json"))
+          b = json.load(open("metrics_b.json"))
+          keys = ("top_sequences", "attacker_success", "mean_return", "entropy")
+          differing = [k for k in keys if a.get(k) != b.get(k)]
+          if differing:
+              sys.exit(f"same seed produced different runs: {differing}")
+          print("reproducible across", len(keys), "recorded series")
+          PY

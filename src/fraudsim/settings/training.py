@@ -66,6 +66,12 @@ class ActionSpaceConfig(StrictModel):
     delay_min_hours: Annotated[float, Field(ge=0.0)] = 0.0
     delay_max_hours: PositiveFloat = 72.0
     n_stealth_postures: Annotated[int, Field(ge=1, le=16)] = 4
+    # How long the "cool off" posture waits, at minimum. Long enough to read as a
+    # separate session rather than a continuation of the same one, and
+    # deliberately not a whole number of days: a floor of exactly twenty-four
+    # hours lands the action at the same hour it would have run at anyway, so the
+    # wait would buy separation in the velocity windows while leaving the
+    # time-of-day tell exactly where it was.
     cool_off_hours: Annotated[float, Field(ge=0.0)] = 20.0
     # Consecutive illegal or failed actions before an episode is abandoned.
     stuck_limit: Annotated[int, Field(ge=1)] = 6

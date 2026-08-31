@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import argparse
 
-from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..engine.bands import CostModel, grid_search_bands
+from ..logs import emit
 from ..orchestration.run import EpisodeRunner
 from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleScorer

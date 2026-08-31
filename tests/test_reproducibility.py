@@ -19,10 +19,11 @@ torch = pytest.importorskip(
 
 import numpy as np
 
-from fraudsim.attacker.env import AttackEnv  # noqa: E402
-from fraudsim.attacker.ppo import PPOTrainer  # noqa: E402
-from fraudsim.rng import RngHub, set_seed  # noqa: E402
-from fraudsim.settings.training import PPOConfig  # noqa: E402
+from fraudsim.attacker.env import AttackEnv
+from fraudsim.attacker.ppo import PPOTrainer
+from fraudsim.rng import RngHub, set_seed
+from fraudsim.settings.training import PPOConfig
+
 
 def trainer(seed: int) -> PPOTrainer:
     return PPOTrainer(

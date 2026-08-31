@@ -14,9 +14,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..settings.engine import WindowConfig
+from ..clock import SECONDS_PER_DAY as DAY
+from ..clock import SECONDS_PER_HOUR as HOUR
+from ..clock import SECONDS_PER_WEEK as WEEK
 from ..ids import CardId
-from ..clock import SECONDS_PER_DAY as DAY, SECONDS_PER_HOUR as HOUR, SECONDS_PER_WEEK as WEEK
+from ..settings.engine import WindowConfig
 from .windows import (
     CompoundKey,
     CompoundWindowIndex,
@@ -46,7 +48,7 @@ class CardFeatureState:
     n_auths: int = 0
 
     @classmethod
-    def create(cls, config: WindowConfig) -> "CardFeatureState":
+    def create(cls, config: WindowConfig) -> CardFeatureState:
         horizon = max(config.windows_seconds)
         capacity = config.max_events_per_window
         return cls(
@@ -168,7 +170,7 @@ class HolderFeatureState:
 class FeatureStateStore:
     """Feature state for every entity, created on first use."""
 
-    __slots__ = ("_config", "_cards", "_holders")
+    __slots__ = ("_cards", "_config", "_holders")
 
     def __init__(self, config: WindowConfig) -> None:
         self._config = config

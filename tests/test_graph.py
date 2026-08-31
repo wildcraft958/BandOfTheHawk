@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.world.edges import AddMethod, AddedEdge, BindMethod, ProvisionedEdge
+from fraudsim.world.edges import AddedEdge, AddMethod, BindMethod, ProvisionedEdge
 from fraudsim.world.entities import (
     Account,
     ActivityTier,

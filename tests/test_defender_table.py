@@ -11,7 +11,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.table import MISSING_SUFFIX, build_table
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.simulator import Actor, ActorKind, Simulator
@@ -21,6 +20,7 @@ from fraudsim.features.schema import EventType
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.settings.simulation import SimulationConfig
 
 # Fields that must never appear as a matrix column, whatever the event.
 LEAKY = {"is_fraud", "episode_id", "event_id", "card_id", "merchant_id", "device_id", "ip_asn"}

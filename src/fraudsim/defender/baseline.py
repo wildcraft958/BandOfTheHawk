@@ -33,7 +33,6 @@ from ..protocols import RiskAssessment
 from ..settings.detector import TreeConfig
 from .table import FeatureTable
 
-
 # Per-entity features from Part 0, the ones the open question is about. Named
 # here so the ablation can drop exactly this set and no more.
 PER_ENTITY_FEATURES = (
@@ -66,7 +65,7 @@ class GBDTBaseline:
 
     # ------------------------------------------------------------------- fit
 
-    def fit(self, table: FeatureTable, drop_columns: tuple[str, ...] = ()) -> "GBDTBaseline":
+    def fit(self, table: FeatureTable, drop_columns: tuple[str, ...] = ()) -> GBDTBaseline:
         """Fit on the labelled rows, optionally without a set of columns.
 
         `drop_columns` is how the ablation removes the per-entity features: the
@@ -162,8 +161,8 @@ class GBDTBaseline:
         Builds the one-row matrix the same way the training table was built, so
         an event is scored on exactly the features the model was fit on.
         """
-        from .table import build_table
         from ..features.schema import EventLog
+        from .table import build_table
 
         log = EventLog()
         log.append(event)

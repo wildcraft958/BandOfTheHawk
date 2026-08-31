@@ -232,7 +232,10 @@ class PPOTrainer:
         adv_arr = np.asarray(adv, dtype=np.float32)
         # Normalise advantages, the standard PPO stabiliser.
         adv_arr = (adv_arr - adv_arr.mean()) / (adv_arr.std() + 1e-8)
-        t = lambda x, dt=torch.float32: torch.as_tensor(np.asarray(x), dtype=dt, device=self.device)
+        def t(x, dt=torch.float32):
+            """One field of the batch as a tensor on the trainer's device."""
+            return torch.as_tensor(np.asarray(x), dtype=dt, device=self.device)
+
         return RolloutBatch(
             obs=t(obs),
             mask=t(mask, torch.bool),

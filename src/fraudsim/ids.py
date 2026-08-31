@@ -41,7 +41,7 @@ class IdMinter:
     __slots__ = ("_counters",)
 
     def __init__(self) -> None:
-        self._counters: dict[EntityKind, int] = {kind: 0 for kind in EntityKind}
+        self._counters: dict[EntityKind, int] = dict.fromkeys(EntityKind, 0)
 
     def mint(self, kind: EntityKind) -> int:
         nxt = self._counters[kind]

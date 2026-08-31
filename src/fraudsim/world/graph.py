@@ -12,12 +12,21 @@ stores to prove they agree.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import TypeVar
+
 from ..ids import AccountId, BucketId, CardId, DeviceId, HolderId, MerchantId, PayeeId
 from .edges import AddedEdge, ProvisionedEdge, TransactsEdge, UsedByEdge
 from .entities import Account, Card, Cardholder, Device, FingerprintBucket, Merchant, Payee
 
 _EMPTY_CARDS: frozenset[CardId] = frozenset()
 _EMPTY_DEVICES: frozenset[DeviceId] = frozenset()
+
+
+# The adjacency indices are keyed by NewType ids, whose Mapping key type is
+# invariant, so the comparison helper is generic rather than pinned to int.
+_K = TypeVar("_K")
+_V = TypeVar("_V", bound=int)
 
 
 class GraphInvariantError(RuntimeError):
@@ -28,13 +37,26 @@ class EntityGraph:
     """Mutable world state. Only the simulator is permitted to hold one."""
 
     __slots__ = (
-        "holders", "cards", "devices", "buckets", "accounts", "merchants", "payees",
-        "provisioned", "added", "transacts", "used_by",
-        "_cards_of_holder", "_accounts_of_holder",
-        "_devices_of_card", "_cards_of_device",
+        "_accounts_of_device",
+        "_accounts_of_holder",
+        "_cards_of_device",
+        "_cards_of_holder",
+        "_devices_of_account",
         "_devices_of_bucket",
-        "_payees_of_account", "_merchants_of_card",
-        "_accounts_of_device", "_devices_of_account",
+        "_devices_of_card",
+        "_merchants_of_card",
+        "_payees_of_account",
+        "accounts",
+        "added",
+        "buckets",
+        "cards",
+        "devices",
+        "holders",
+        "merchants",
+        "payees",
+        "provisioned",
+        "transacts",
+        "used_by",
     )
 
     def __init__(self) -> None:
@@ -274,7 +296,11 @@ class EntityGraph:
                 )
 
     @staticmethod
-    def _compare(label: str, actual: dict, expected: dict) -> None:
+    def _compare(
+        label: str,
+        actual: Mapping[_K, set[_V]],
+        expected: Mapping[_K, set[_V]],
+    ) -> None:
         for key, expected_set in expected.items():
             actual_set = actual.get(key, set())
             if actual_set != expected_set:

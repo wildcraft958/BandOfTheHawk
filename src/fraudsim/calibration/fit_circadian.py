@@ -73,7 +73,7 @@ class CircadianFit:
     def density(self, hours: np.ndarray) -> np.ndarray:
         angles = np.asarray(hours_to_angle(hours))
         total = np.zeros_like(angles, dtype=float)
-        for mean, kappa, weight in zip(self.means, self.concentrations, self.weights):
+        for mean, kappa, weight in zip(self.means, self.concentrations, self.weights, strict=False):
             centred = angles - hours_to_angle(mean)
             total += weight * np.exp(kappa * np.cos(centred)) / (TWO_PI * i0(kappa))
         return total

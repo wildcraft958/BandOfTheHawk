@@ -27,10 +27,10 @@ import numpy as np
 
 from ..behavior.amount import AmountModel
 from ..behavior.loyalty import LoyaltyModel
-from ..settings.behavior import AmountConfig, HardNegativeConfig
-from ..settings.world import GeoConfig
 from ..features.schema import EventType
 from ..ids import DeviceId, MerchantId
+from ..settings.behavior import AmountConfig, HardNegativeConfig
+from ..settings.world import GeoConfig
 
 
 class NegativeKind(Enum):

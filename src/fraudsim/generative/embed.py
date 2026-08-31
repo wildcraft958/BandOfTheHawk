@@ -17,6 +17,8 @@ import hashlib
 
 import numpy as np
 
+from ..settings.generation import EmbeddingConfig
+
 
 def _stable_hash(s: str) -> int:
     return int.from_bytes(hashlib.md5(s.encode("utf-8")).digest()[:4], "little")
@@ -30,7 +32,6 @@ DEFAULT_EMBED_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 # here: the text expert fits on the few hundred text events a run produces, and
 # a thousand columns against that many rows is mostly noise. The default
 # truncation below is chosen on that ratio, not on cost.
-from ..settings.generation import EmbeddingConfig
 EMBED_FULL_DIM = EmbeddingConfig().full_dim
 DEFAULT_TRUNCATE_DIM = 256
 

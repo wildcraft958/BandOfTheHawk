@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.outcome import OutcomeCode
 from fraudsim.engine.resolution import registered_actions
@@ -22,6 +21,7 @@ from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.settings.simulation import SimulationConfig
 
 A = ActionName
 HOUR = 60

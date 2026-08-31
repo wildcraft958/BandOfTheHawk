@@ -98,7 +98,6 @@ def test_artifact_source_serves_text_and_scores():
 
 def test_mock_generator_needs_no_model():
     # Constructing and running the mock must not import torch or transformers.
-    import sys
 
     gen = MockGenerator()
     from fraudsim.generative.prompts import PromptFacts
@@ -114,4 +113,7 @@ def test_mock_generator_needs_no_model():
     )
     text = gen.generate("friendly_fraud", 3, True, facts)
     assert "123.45" in text
-    assert "torch" not in sys.modules or True  # torch may be absent entirely; that is fine
+    # No assertion on sys.modules here. The mock generator must not import
+    # torch, but torch may already be loaded by another test in the same
+    # process, so its presence proves nothing either way. The previous line
+    # asserted `... or True`, which can never fail.

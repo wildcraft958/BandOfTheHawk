@@ -27,7 +27,7 @@ def _concat(tables: list[FeatureTable]) -> FeatureTable:
     """Stack aligned tables into one. All must share a column order."""
     tables = [t for t in tables if len(t) > 0]
     if not tables:
-        empty = FeatureTable(
+        return FeatureTable(
             X=np.zeros((0, 0)),
             y=np.zeros(0),
             columns=(),
@@ -37,7 +37,6 @@ def _concat(tables: list[FeatureTable]) -> FeatureTable:
             group=np.zeros(0, dtype=np.int64),
             events=np.array([], dtype=object),
         )
-        return empty
     columns = tables[0].columns
     for t in tables:
         if t.columns != columns:

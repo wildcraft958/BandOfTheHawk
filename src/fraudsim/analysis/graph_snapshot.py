@@ -147,7 +147,7 @@ class GraphSnapshot:
         """Build a graph object for the metrics that need one."""
         if projection is Projection.DEVICE_CARD:
             return self._bipartite(
-                ((f"d{d}", f"c{c}") for (c, d) in self.graph.provisioned)
+                (f"d{d}", f"c{c}") for (c, d) in self.graph.provisioned
             )
         if projection is Projection.FINGERPRINT_CARD:
             edges = []
@@ -158,11 +158,11 @@ class GraphSnapshot:
             return self._bipartite(edges)
         if projection is Projection.ACCOUNT_PAYEE:
             return self._bipartite(
-                ((f"a{a}", f"p{p}") for (a, p) in self.graph.added)
+                (f"a{a}", f"p{p}") for (a, p) in self.graph.added
             )
         if projection is Projection.CARD_MERCHANT:
             return self._bipartite(
-                ((f"c{c}", f"m{m}") for (c, m) in self.graph.transacts)
+                (f"c{c}", f"m{m}") for (c, m) in self.graph.transacts
             )
         if projection is Projection.ENTITY_PROJECTION:
             return self._entity_projection()

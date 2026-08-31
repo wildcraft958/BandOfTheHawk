@@ -8,8 +8,8 @@ from __future__ import annotations
 import argparse
 import time
 
-from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
+from ..logs import emit
 from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleEngine
 from .stages import describe_stages

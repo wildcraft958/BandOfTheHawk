@@ -191,7 +191,7 @@ class ThompsonSelector:
         w = self.weights()
         lines = ["  victim selection (posterior mean by feature)"]
         lines.append("    (coefficients are differences from the reference level)")
-        lines.append(f"    bin tier 0       reference")
+        lines.append("    bin tier 0       reference")
         for i in range(1, N_BIN_TIERS):
             lines.append(f"    bin tier {i}      {w[i - 1]:>+8.3f}")
         names = ("under 6m", "6m to 1y", "1y to 3y", "over 3y")

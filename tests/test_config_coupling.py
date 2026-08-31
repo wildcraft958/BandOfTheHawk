@@ -27,8 +27,7 @@ def target() -> Target:
 
 def actions_of(vertical: str, cfg: SimulationConfig) -> list:
     """Every action the policy would take, walked far enough to see the delays."""
-    policy = build_policy(vertical, target(), np.random.default_rng(0), config=cfg)
-    return policy
+    return build_policy(vertical, target(), np.random.default_rng(0), config=cfg)
 
 
 def test_voice_quality_clears_the_configured_threshold() -> None:

@@ -100,7 +100,7 @@ class CircadianConfig(StrictModel):
     kappa_within_mean: PositiveFloat = 1.175
 
     @model_validator(mode="after")
-    def _components_align(self) -> "CircadianConfig":
+    def _components_align(self) -> CircadianConfig:
         if not len(self.means) == len(self.concentrations) == len(self.weights):
             raise ValueError("means, concentrations, and weights must be the same length")
         total = sum(self.weights)
@@ -140,7 +140,7 @@ class CategoryConfig(StrictModel):
     )
 
     @model_validator(mode="after")
-    def _mix_sums_to_one(self) -> "CategoryConfig":
+    def _mix_sums_to_one(self) -> CategoryConfig:
         total = sum(self.mix.values())
         if abs(total - 1.0) > 1e-3:
             raise ValueError(f"category mix must sum to 1, got {total}")

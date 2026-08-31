@@ -93,7 +93,7 @@ class CoadaptReport:
         ]
         refit_set = set(self.defender_refits)
         for i, (succ, ret, ent) in enumerate(
-            zip(self.attacker_success, self.mean_return, self.entropy)
+            zip(self.attacker_success, self.mean_return, self.entropy, strict=False)
         ):
             marker = "  <- refit" if i in refit_set else ""
             lines.append(f"    {i:<7}{succ:>9.1f}{ret:>9.2f}{ent:>10.3f}{marker}")

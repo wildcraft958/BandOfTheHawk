@@ -10,13 +10,12 @@ pd = pytest.importorskip(
 
 import numpy as np
 
-
 from fraudsim.behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
 from fraudsim.calibration.entity_stats import categorical_entity_concentration
-from fraudsim.settings.behavior import LoyaltyConfig
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.population.archetypes import build_profiles
 from fraudsim.population.builder import PopulationBuilder
+from fraudsim.settings.behavior import LoyaltyConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.world.entities import Archetype, CategoryCluster
 
 

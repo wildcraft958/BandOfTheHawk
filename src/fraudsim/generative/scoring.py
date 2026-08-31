@@ -39,7 +39,6 @@ from ..features.columns import (
 )
 
 
-
 def _stable_hash(s: str) -> int:
     return int.from_bytes(hashlib.md5(s.encode("utf-8")).digest()[:4], "little")
 

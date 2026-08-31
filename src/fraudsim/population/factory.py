@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..settings.simulation import SimulationConfig
 from ..engine.simulator import Simulator
 from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..protocols import AlwaysApproveScorer, RiskScorer
+from ..settings.simulation import SimulationConfig
 from ..timing.circadian import HolderClockModel
 from ..world.graph import EntityGraph
 from .builder import PopulationBuilder

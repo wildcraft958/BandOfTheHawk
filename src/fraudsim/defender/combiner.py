@@ -22,9 +22,9 @@ from __future__ import annotations
 import numpy as np
 
 from ..engine.bands import RiskBands
-from ..settings.detector import LogisticConfig
 from ..features.schema import EventLog
 from ..protocols import RiskAssessment
+from ..settings.detector import LogisticConfig
 from .experts import ExpertBank
 from .table import build_table
 
@@ -61,7 +61,7 @@ class LearnedCombiner:
         self.settings = settings or LogisticConfig()
         self._model = None
 
-    def fit(self, scores: np.ndarray, mask: np.ndarray, y: np.ndarray) -> "LearnedCombiner":
+    def fit(self, scores: np.ndarray, mask: np.ndarray, y: np.ndarray) -> LearnedCombiner:
         from sklearn.linear_model import LogisticRegression  # lazy; defender extra
 
         X = _masked(scores, mask)
@@ -87,8 +87,8 @@ class LearnedCombiner:
         something. Either is a result.
         """
         if self._model is None:
-            return {name: 0.0 for name in expert_names}
-        return {name: float(w) for name, w in zip(expert_names, self._model.coef_[0])}
+            return dict.fromkeys(expert_names, 0.0)
+        return {name: float(w) for name, w in zip(expert_names, self._model.coef_[0], strict=False)}
 
 
 class MixtureScorer:
@@ -108,7 +108,7 @@ class MixtureScorer:
         self.bands = bands or RiskBands()
 
     @classmethod
-    def fit(cls, table, learned: bool = True, bands=None) -> "MixtureScorer":
+    def fit(cls, table, learned: bool = True, bands=None) -> MixtureScorer:
         """Fit the experts and combiner, and attach the banding.
 
         The bands are what turn a score into a mitigation, so a scorer built

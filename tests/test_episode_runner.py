@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.table import build_table
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
@@ -19,6 +18,7 @@ from fraudsim.orchestration.run import EpisodeRunner
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.population.warmstart import WarmStartRunner
 from fraudsim.protocols import AlwaysApproveScorer
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.timing.circadian import HolderClockModel
 
 

@@ -31,16 +31,16 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..settings.simulation import SimulationConfig
-from ..taxonomy import TEXT_ACTIONS
+from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..engine.outcome import OutcomeCode
 from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage, StageGate
 from ..features.schema import EventType
 from ..ids import ActorId, CardId
-from ..protocols import ActorObservation, RiskScorer, Target
-from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..population.warmstart import WarmStartRunner
+from ..protocols import ActorObservation, RiskScorer, Target
+from ..settings.simulation import SimulationConfig
+from ..taxonomy import TEXT_ACTIONS
 
 _STAGE_INDEX = {stage: i for i, stage in enumerate(Stage)}
 

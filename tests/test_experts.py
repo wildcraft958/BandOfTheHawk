@@ -9,7 +9,6 @@ Whether the mixture beats the flat table is a finding, not pinned here.
 from __future__ import annotations
 
 import pytest
-
 from conftest import requires_sklearn, requires_xgboost
 
 # The tree and linear models are imported inside fit(), so this module
@@ -18,8 +17,6 @@ pytestmark = [requires_xgboost, requires_sklearn]
 
 import numpy as np
 
-from fraudsim.settings.simulation import SimulationConfig
-from fraudsim.engine.bands import CostModel, grid_search_bands
 from fraudsim.defender.combiner import (
     FixedAverageCombiner,
     LearnedCombiner,
@@ -28,6 +25,7 @@ from fraudsim.defender.combiner import (
 from fraudsim.defender.experts import EXPERT_EVENT_TYPES, ExpertBank
 from fraudsim.defender.split import entity_split
 from fraudsim.defender.table import build_table
+from fraudsim.engine.bands import CostModel, grid_search_bands
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.schema import AuthAttemptEvent, EventType
@@ -36,6 +34,7 @@ from fraudsim.orchestration.run import EpisodeRunner
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.population.warmstart import WarmStartRunner
 from fraudsim.protocols import AlwaysApproveScorer, RiskAssessment
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.timing.circadian import HolderClockModel
 
 

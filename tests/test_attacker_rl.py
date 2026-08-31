@@ -18,9 +18,10 @@ torch = pytest.importorskip(
 from fraudsim.attacker.env import AttackEnv
 from fraudsim.attacker.nets import Actor, NetConfig, squash_amount, squash_delay
 from fraudsim.attacker.ppo import PPOConfig, PPOTrainer, compute_gae
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import N_ACTIONS
 from fraudsim.protocols import ActorObservation
+from fraudsim.settings.simulation import SimulationConfig
+
 
 def test_masked_head_never_proposes_illegal():
     cfg = NetConfig(obs_dim=AttackEnv.obs_dim(), hidden_dim=32, n_layers=1)

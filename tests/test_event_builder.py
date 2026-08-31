@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.engine import WindowConfig
-from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.features.builder import EventBuilder, haversine_km
 from fraudsim.features.schema import EventLog, EventType
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.population.builder import PopulationBuilder
+from fraudsim.settings.engine import WindowConfig
+from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.timing.circadian import HolderClock, HolderClockModel
 
 MINUTE = 1

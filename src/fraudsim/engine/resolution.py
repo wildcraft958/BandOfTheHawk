@@ -17,15 +17,15 @@ advances on a capability that was not obtained.
 
 from __future__ import annotations
 
-from typing import Callable, Mapping
+from collections.abc import Callable, Mapping
 
 import numpy as np
 
+from ..clock import MINUTES_PER_HOUR
 from ..features.schema import EventType
 from ..ids import AccountId, CardId, DeviceId, MerchantId, PayeeId
 from ..world.edges import AddedEdge, AddMethod, BindMethod, ProvisionedEdge
 from ..world.entities import Device, Payee
-from ..clock import MINUTES_PER_HOUR
 from .actions import Action, ActionName
 from .outcome import Outcome, OutcomeCode
 
