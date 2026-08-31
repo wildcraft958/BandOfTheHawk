@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..population.builder import PopulationBuilder
 from ..population.factory import build_warm_world
@@ -35,7 +36,7 @@ def _build(args: argparse.Namespace, warm: bool = True):
 
 def cmd_metrics(args: argparse.Namespace) -> int:
     graph, _, _ = _build(args)
-    print(GraphSnapshot(graph).render())
+    emit(GraphSnapshot(graph).render())
     return 0
 
 
@@ -53,27 +54,27 @@ def cmd_compare(args: argparse.Namespace) -> int:
     }
     generated = snapshot.fingerprint_card_degrees().as_dict()
 
-    print("shared-signature fan-out")
-    print(f"  {'statistic':<20}{'generated':>12}{'measured':>12}{'ratio':>9}")
-    print(f"  {'-' * 20}{'-' * 12}{'-' * 12}{'-' * 9}")
+    emit("shared-signature fan-out")
+    emit(f"  {'statistic':<20}{'generated':>12}{'measured':>12}{'ratio':>9}")
+    emit(f"  {'-' * 20}{'-' * 12}{'-' * 12}{'-' * 9}")
     for key, measured in reference.items():
         value = generated[key]
         ratio = value / measured if measured else float("nan")
-        print(f"  {key:<20}{value:>12.3f}{measured:>12.3f}{ratio:>9.2f}")
+        emit(f"  {key:<20}{value:>12.3f}{measured:>12.3f}{ratio:>9.2f}")
 
     devices = snapshot.device_card_degrees()
-    print("\nphysical devices, which a mitigation may block")
-    print(f"  {'mean':<20}{devices.mean:>12.3f}")
-    print(f"  {'max':<20}{devices.degrees.max():>12.3f}")
-    print(f"  {'variance_to_mean':<20}{devices.variance_to_mean:>12.3f}")
-    print("\n  independent assignment caps dispersion at one, whatever it draws")
-    print("  from, so the signature figure above rules it out while the device")
-    print("  figure stays where a household would put it")
+    emit("\nphysical devices, which a mitigation may block")
+    emit(f"  {'mean':<20}{devices.mean:>12.3f}")
+    emit(f"  {'max':<20}{devices.degrees.max():>12.3f}")
+    emit(f"  {'variance_to_mean':<20}{devices.variance_to_mean:>12.3f}")
+    emit("\n  independent assignment caps dispersion at one, whatever it draws")
+    emit("  from, so the signature figure above rules it out while the device")
+    emit("  figure stays where a household would put it")
 
     motifs = snapshot.motifs()
-    print("\nentity projection, cards sharing a device")
+    emit("\nentity projection, cards sharing a device")
     for key, value in motifs.as_dict().items():
-        print(f"  {key:<20}{value:>12.3f}")
+        emit(f"  {key:<20}{value:>12.3f}")
     return 0
 
 
@@ -86,7 +87,7 @@ def cmd_entity_stats(args: argparse.Namespace) -> int:
     the real one does.
     """
     _, _, simulator = _build(args)
-    print(render_entity_report(simulator.log, args.judge, min_events=args.min_events))
+    emit(render_entity_report(simulator.log, args.judge, min_events=args.min_events))
     return 0
 
 

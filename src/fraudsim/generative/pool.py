@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..logs import get_logger
 from ..protocols import Artifact, ArtifactRequest
 from .prompts import (
     DETAILS,
@@ -38,6 +39,8 @@ from .prompts import (
     TONES,
     PromptFacts,
 )
+
+_log = get_logger(__name__)
 
 TEXT_VERTICALS = tuple(PROMPT_FOR_VERTICAL)
 TIERS = (0, 1, 2, 3)
@@ -295,7 +298,7 @@ def build_pool(
                     specs.append((vertical, tier, fraudulent, _draw_facts(rng, vertical)))
 
     if getattr(generator, "supports_batch", False):
-        print(f"  generating {len(specs):,} texts in batches of {batch_size} ...", flush=True)
+        _log.info("generating %s texts in batches of %d ...", f"{len(specs):,}", batch_size)
         texts = generator.generate_many(specs, batch_size=batch_size, progress=progress)
     else:
         texts = []
@@ -303,7 +306,7 @@ def build_pool(
         for i, (vertical, tier, fraudulent, facts) in enumerate(specs):
             texts.append(generator.generate(vertical, tier, fraudulent, facts))
             if progress and (i + 1) % step == 0:
-                print(f"    generated {i + 1:,}/{len(specs):,}", flush=True)
+                _log.info("  generated %s/%s", f"{i + 1:,}", f"{len(specs):,}")
 
     entries = [
         PoolEntry(
@@ -331,7 +334,7 @@ def build_pool(
         from .embed import HashEmbedder
         embedder = HashEmbedder()
     if progress:
-        print(f"  embedding {len(entries):,} texts ...", flush=True)
+        _log.info("embedding %s texts ...", f"{len(entries):,}")
     vectors = embedder.encode([e.text for e in entries])
     for entry, vec in zip(entries, vectors):
         entry.embedding = tuple(float(x) for x in vec)

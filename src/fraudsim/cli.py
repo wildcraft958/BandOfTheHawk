@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .calibration.artifact import FittedParams
+from .logs import configure
 from .paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from .settings.simulation import ResolvedConfig, resolve
 
@@ -24,9 +25,14 @@ if TYPE_CHECKING:
 
 
 def base_parser(prog: str, description: str | None = None) -> argparse.ArgumentParser:
-    """A parser carrying the two flags every entry point accepts."""
+    """A parser carrying the flags every entry point accepts."""
     parser = argparse.ArgumentParser(prog=prog, description=description)
     add_config_flags(parser)
+    parser.add_argument(
+        "--log-level", default=None,
+        help="diagnostic verbosity on stderr (DEBUG, INFO, WARNING, ERROR). "
+             "Report output on stdout is unaffected",
+    )
     return parser
 
 
@@ -101,6 +107,11 @@ def overrides_from(args: argparse.Namespace) -> dict | None:
     return overrides or None
 
 
+def apply_log_level(args: argparse.Namespace) -> None:
+    """Apply --log-level before a subcommand produces any output."""
+    configure(level=getattr(args, "log_level", None))
+
+
 def load_artifact(args: argparse.Namespace) -> FittedParams | None:
     """The calibration artifact, or None when it has not been generated yet."""
     return FittedParams.load(args.artifact) if args.artifact.exists() else None
@@ -108,6 +119,7 @@ def load_artifact(args: argparse.Namespace) -> FittedParams | None:
 
 def load_resolved(args: argparse.Namespace) -> ResolvedConfig:
     """Config plus its provenance ledger, for callers that report on origins."""
+    apply_log_level(args)
     return resolve(args.config, artifact=load_artifact(args),
                    overrides=overrides_from(args))
 

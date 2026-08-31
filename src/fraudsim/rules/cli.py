@@ -10,6 +10,7 @@ import argparse
 
 import numpy as np
 
+from ..logs import emit
 from ..cli import base_parser, load_config
 from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
@@ -25,8 +26,8 @@ def _load(args: argparse.Namespace):
 
 def cmd_describe(args: argparse.Namespace) -> int:
     config = _load(args)
-    print("velocity rules")
-    print(VelocityRuleEngine(config.engine.rules).describe())
+    emit("velocity rules")
+    emit(VelocityRuleEngine(config.engine.rules).describe())
     return 0
 
 
@@ -78,9 +79,9 @@ def cmd_rate(args: argparse.Namespace) -> int:
     rates = VelocityRuleEngine(config.engine.rules).trigger_rates(events)
     target = config.behavior.hard_negatives.naive_rule_trip_target
     tolerance = config.behavior.hard_negatives.naive_rule_trip_tolerance
-    print(rates.render(target=target, tolerance=tolerance))
-    print("\n  this traffic carries no travel, sessions, or new devices yet,")
-    print("  so the rules keyed on those stay quiet until they are injected")
+    emit(rates.render(target=target, tolerance=tolerance))
+    emit("\n  this traffic carries no travel, sessions, or new devices yet,")
+    emit("  so the rules keyed on those stay quiet until they are injected")
     return 0
 
 

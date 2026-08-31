@@ -18,6 +18,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..logs import get_logger
+
+_log = get_logger(__name__)
+
 # Qwen 2.5 7B instruct. A model id, not a load — resolving this string costs
 # nothing until something asks the loader to realise it.
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -166,10 +170,10 @@ def generate_batch(
                 elapsed = time.perf_counter() - started
                 rate = len(out) / elapsed if elapsed else 0.0
                 remaining = (len(prompts) - len(out)) / rate if rate else 0.0
-                print(
-                    f"    batch {batch_i}/{n_batches}  {len(out):,}/{len(prompts):,} texts"
-                    f"  {rate:.1f}/s  eta {remaining/60:.1f} min",
-                    flush=True,
+                _log.info(
+                    "  batch %d/%d  %s/%s texts  %.1f/s  eta %.1f min",
+                    batch_i, n_batches, f"{len(out):,}", f"{len(prompts):,}",
+                    rate, remaining / 60,
                 )
     finally:
         tok.padding_side = original_side

@@ -8,14 +8,15 @@ from __future__ import annotations
 import argparse
 import time
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_artifact, load_config
 from .builder import PopulationBuilder
 
 
 def cmd_preview(args: argparse.Namespace) -> int:
     if load_artifact(args) is None:
-        print(f"no artifact at {args.artifact}, using configured values only")
-        print("run: python -m fraudsim.calibration.cli fit\n")
+        emit(f"no artifact at {args.artifact}, using configured values only")
+        emit("run: python -m fraudsim.calibration.cli fit\n")
 
     config = load_config(args)
 
@@ -23,13 +24,13 @@ def cmd_preview(args: argparse.Namespace) -> int:
     graph, report = PopulationBuilder(config).build()
     elapsed = time.perf_counter() - started
 
-    print(report.render())
-    print(f"\n  signatures derived   {config.population.resolved_fingerprint_count():>10,}")
-    print(f"  built in             {elapsed:>10.1f}s")
+    emit(report.render())
+    emit(f"\n  signatures derived   {config.population.resolved_fingerprint_count():>10,}")
+    emit(f"  built in             {elapsed:>10.1f}s")
 
     fanout = report.fanout
     ratio = fanout["mean"] / max(fanout["target_mean"], 1e-9)
-    print(
+    emit(
         f"\n  fan-out mean is {ratio:.2f}x its target; dispersion "
         f"{fanout['variance_to_mean']:.0f} against a bound of 1 for independent assignment"
     )

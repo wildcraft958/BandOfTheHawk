@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..engine.bands import CostModel, grid_search_bands
 from ..orchestration.run import EpisodeRunner
@@ -46,47 +47,47 @@ def cmd_baseline(args: argparse.Namespace) -> int:
     table = build_table(sim.log, exclude_warm_start=True)
     split = entity_split(table, test_fraction=0.3, seed=config.seed)
 
-    print("defender baseline  [STATIC BENCHMARK vs the scripted red team]")
-    print("  a fixed adversary and fixed data, so architectures can be compared and")
-    print("  the per-entity ablation means something. NOT a claim about the learned")
-    print("  attacker -- that is the co-adaptation curve.")
-    print(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
-    print(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
+    emit("defender baseline  [STATIC BENCHMARK vs the scripted red team]")
+    emit("  a fixed adversary and fixed data, so architectures can be compared and")
+    emit("  the per-entity ablation means something. NOT a claim about the learned")
+    emit("  attacker -- that is the co-adaptation curve.")
+    emit(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
+    emit(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
 
     # D_0: the rule engine, the published baseline the tree must beat.
     d0 = VelocityRuleScorer(config.engine.rules)
     d0_scores = _rule_scores(d0, split.test)
-    print()
-    print(DetectionMetrics.compute(split.test.y, d0_scores).render("D_0 rule engine"))
+    emit()
+    emit(DetectionMetrics.compute(split.test.y, d0_scores).render("D_0 rule engine"))
 
     # The full tree.
     full = GBDTBaseline(table.columns).fit(split.train)
     full_scores = full.predict_scores(split.test.X)
     full_metrics = DetectionMetrics.compute(split.test.y, full_scores)
-    print()
-    print(full_metrics.render("GBDT full"))
+    emit()
+    emit(full_metrics.render("GBDT full"))
 
     # The ablation: the same tree without the per-entity features.
     ablated = GBDTBaseline(table.columns).fit(split.train, drop_columns=PER_ENTITY_FEATURES)
     ablated_scores = ablated.predict_scores(split.test.X)
     ablated_metrics = DetectionMetrics.compute(split.test.y, ablated_scores)
-    print()
-    print(ablated_metrics.render("GBDT without per-entity features"))
+    emit()
+    emit(ablated_metrics.render("GBDT without per-entity features"))
 
     delta = full_metrics.pr_auc - ablated_metrics.pr_auc
-    print("\n  the open question (H.6)")
-    print(f"    per-entity PR-AUC lift   {delta:>+8.4f}")
+    emit("\n  the open question (H.6)")
+    emit(f"    per-entity PR-AUC lift   {delta:>+8.4f}")
     verdict = (
         "the per-entity features carry signal"
         if delta > 0.01
         else "the per-entity features add little here"
     )
-    print(f"    verdict                  {verdict}")
+    emit(f"    verdict                  {verdict}")
 
-    print("\n  top features by gain")
+    emit("\n  top features by gain")
     for name, gain in full.feature_importance()[:12]:
         marker = "  <- per-entity" if name in PER_ENTITY_FEATURES else ""
-        print(f"    {name:<32}{gain:>12.1f}{marker}")
+        emit(f"    {name:<32}{gain:>12.1f}{marker}")
     return 0
 
 
@@ -125,17 +126,17 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     table = build_table(sim.log, exclude_warm_start=True)
     split = entity_split(table, test_fraction=0.3, seed=config.seed)
 
-    print("mixture of experts  [STATIC BENCHMARK vs the scripted red team]")
-    print("  the same fixed data as the baseline, so the two are comparable. NOT a")
-    print("  claim about the learned attacker.")
-    print(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
-    print(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
+    emit("mixture of experts  [STATIC BENCHMARK vs the scripted red team]")
+    emit("  the same fixed data as the baseline, so the two are comparable. NOT a")
+    emit("  claim about the learned attacker.")
+    emit(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
+    emit(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
 
     # Flat baseline for comparison.
     full = GBDTBaseline(table.columns).fit(split.train)
     flat_scores = full.predict_scores(split.test.X)
-    print()
-    print(DetectionMetrics.compute(split.test.y, flat_scores).render("flat GBDT"))
+    emit()
+    emit(DetectionMetrics.compute(split.test.y, flat_scores).render("flat GBDT"))
 
     # Experts, fit once; scored two ways.
     bank = ExpertBank.build(table.columns).fit(split.train)
@@ -144,29 +145,29 @@ def cmd_mixture(args: argparse.Namespace) -> int:
 
     avg = FixedAverageCombiner()
     avg_pred = avg.combine(test_scores, test_mask)
-    print()
-    print(DetectionMetrics.compute(split.test.y, avg_pred).render("experts + fixed average"))
+    emit()
+    emit(DetectionMetrics.compute(split.test.y, avg_pred).render("experts + fixed average"))
 
     learned = LearnedCombiner().fit(train_scores, train_mask, split.train.y)
     learned_pred = learned.combine(test_scores, test_mask)
     learned_metrics = DetectionMetrics.compute(split.test.y, learned_pred)
-    print()
-    print(learned_metrics.render("experts + learned combiner"))
+    emit()
+    emit(learned_metrics.render("experts + learned combiner"))
 
-    print("\n  learned combiner weights")
+    emit("\n  learned combiner weights")
     for name, w in learned.weights(bank.names).items():
-        print(f"    {name:<14}{w:>+8.3f}")
+        emit(f"    {name:<14}{w:>+8.3f}")
 
     from .metrics import pr_auc
     lift = pr_auc(split.test.y, learned_pred) - pr_auc(split.test.y, avg_pred)
-    print(f"\n  learned vs fixed-average PR-AUC lift   {lift:>+8.4f}")
+    emit(f"\n  learned vs fixed-average PR-AUC lift   {lift:>+8.4f}")
     verdict = "learned combination helps" if lift > 0.01 else "fixed average was enough"
-    print(f"  verdict                                {verdict}")
+    emit(f"  verdict                                {verdict}")
 
     # Bands grid-searched against the cost curve, on the learned scores.
     bands = grid_search_bands(split.test.y, learned_pred, CostModel())
-    print("\n  cost-curve bands")
-    print(f"    step_up  {bands.step_up_at:.2f}   hold {bands.hold_at:.2f}"
+    emit("\n  cost-curve bands")
+    emit(f"    step_up  {bands.step_up_at:.2f}   hold {bands.hold_at:.2f}"
           f"   decline {bands.decline_at:.2f}   block {bands.block_at:.2f}")
     return 0
 

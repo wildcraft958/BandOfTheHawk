@@ -86,14 +86,17 @@ or what they print.
 LOGGING
 -------
 
-Every stage is wrapped in a banner naming it and its arguments, timed, and
-followed by a summary table at the end, so one redirected stream is a complete
-readable record:
+Two streams, on purpose. Progress — the stage banners, per-stage timings, and
+everything the stages themselves report — goes to stderr. The final summary table
+goes to stdout. So a redirect keeps the record complete, and a redirect of stdout
+alone keeps just the summary:
 
-    nohup python main.py --profile server > run.log 2>&1 &     # linux
+    nohup python main.py --profile server > run.log 2>&1 &     # the full record
     tail -f run.log
 
-Output flushes at each stage boundary, so `tail -f` follows it live.
+    python main.py --profile quick > summary.txt               # summary only
+
+Raise or lower the progress detail with --log-level, or GAUNTLET_LOG_LEVEL.
 
 WHAT A RUN LEAVES BEHIND
 ------------------------
@@ -112,10 +115,12 @@ from __future__ import annotations
 import argparse
 import importlib
 import time
-import traceback
 from datetime import datetime
 
+from fraudsim.logs import configure, emit, get_logger
 from fraudsim.paths import ARTIFACT_DIR
+
+_log = get_logger("fraudsim.pipeline")
 
 PROFILES = ("quick", "default", "gpu", "server")
 
@@ -257,20 +262,19 @@ def _run_stage(name: str, module: str, argv: list[str]) -> tuple[bool, float]:
     anything failed.
     """
     bar = "=" * 78
-    print(f"\n{bar}")
-    print(f"  STAGE: {name}")
-    print(f"  {module} {' '.join(argv)}")
-    print(f"  start: {datetime.now():%Y-%m-%d %H:%M:%S}")
-    print(bar, flush=True)
+    _log.info("%s", bar)
+    _log.info("STAGE: %s", name)
+    _log.info("%s %s", module, " ".join(argv))
+    _log.info("%s", bar)
 
     started = time.perf_counter()
     try:
         ok = importlib.import_module(module).main(argv) == 0
     except Exception:  # noqa: BLE001 — one stage must not sink the run
-        traceback.print_exc()
+        _log.exception("stage %s raised", name)
         ok = False
     elapsed = time.perf_counter() - started
-    print(f"\n  {name}: {'ok' if ok else 'FAILED'} in {elapsed:.1f}s", flush=True)
+    _log.info("%s: %s in %.1fs", name, "ok" if ok else "FAILED", elapsed)
     return ok, elapsed
 
 
@@ -295,24 +299,29 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--profile", choices=PROFILES, default="default")
     parser.add_argument(
+        "--log-level", default=None,
+        help="diagnostic verbosity on stderr (DEBUG, INFO, WARNING, ERROR)",
+    )
+    parser.add_argument(
         "--mock", action="store_true",
         help="build the text pool with the deterministic stand-in instead of the "
              "real models — for a machine without a GPU, or a quick check. The "
              "real Qwen generation and embeddings are the default.",
     )
     args = parser.parse_args(argv)
+    configure(level=args.log_level)
 
     scales = _scales(args.profile)
     stages = [args.stage] if args.stage else list(STAGE_ORDER)
 
     bar = "=" * 78
-    print(bar)
-    print("  fraudsim")
-    print(f"  profile: {args.profile}    population: {scales['holders']:,}")
-    print(f"  models:  {'deterministic stand-ins' if args.mock else 'real Qwen + embeddings'}")
-    print(f"  stages:  {' -> '.join(stages)}")
-    print(f"  started: {datetime.now():%Y-%m-%d %H:%M:%S}")
-    print(bar, flush=True)
+    _log.info("%s", bar)
+    _log.info("fraudsim")
+    _log.info("profile: %s    population: %s", args.profile, f"{scales['holders']:,}")
+    _log.info("models:  %s",
+              "deterministic stand-ins" if args.mock else "real Qwen + embeddings")
+    _log.info("stages:  %s", " -> ".join(stages))
+    _log.info("%s", bar)
 
     results = []
     for stage in stages:
@@ -320,18 +329,18 @@ def main(argv: list[str] | None = None) -> int:
         ok, elapsed = _run_stage(stage, module, stage_argv)
         results.append((stage, ok, elapsed))
 
-    print(f"\n{bar}")
-    print("  SUMMARY")
-    print(bar)
+    emit(f"\n{bar}")
+    emit("  SUMMARY")
+    emit(bar)
     total = 0.0
     for name, ok, elapsed in results:
         total += elapsed
-        print(f"  {name:<12}{'ok' if ok else 'FAILED':<8}{elapsed:>9.1f}s")
-    print(f"  {'total':<12}{'':<8}{total:>9.1f}s")
+        emit(f"  {name:<12}{'ok' if ok else 'FAILED':<8}{elapsed:>9.1f}s")
+    emit(f"  {'total':<12}{'':<8}{total:>9.1f}s")
     failed = [n for n, ok, _ in results if not ok]
     if failed:
-        print(f"\n  failed: {', '.join(failed)}")
-    print(f"  finished: {datetime.now():%Y-%m-%d %H:%M:%S}", flush=True)
+        emit(f"\n  failed: {', '.join(failed)}")
+    emit(f"  finished: {datetime.now():%Y-%m-%d %H:%M:%S}")
     return 1 if failed else 0
 
 

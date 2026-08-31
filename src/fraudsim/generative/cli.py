@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ..logs import emit
 from ..paths import DEFAULT_CFPB, DEFAULT_POOL
 from .cfpb import load_reference
 from .pool import build_pool
@@ -51,12 +52,12 @@ def cmd_build(args: argparse.Namespace) -> int:
         except Exception:
             existing = None
         if existing and existing.get("entries"):
-            print(f"text pool  ({existing.get('generator')})")
-            print(f"  entries          {len(existing['entries']):>8,}")
-            print(f"  embed model      {existing.get('embed_model')}  "
+            emit(f"text pool  ({existing.get('generator')})")
+            emit(f"  entries          {len(existing['entries']):>8,}")
+            emit(f"  embed model      {existing.get('embed_model')}  "
                   f"(dim {existing.get('embed_dim')})")
-            print(f"  fingerprint      {str(existing.get('fingerprint'))[:16]}")
-            print(f"\n  reusing {args.out} -- pass --rebuild to generate a new one")
+            emit(f"  fingerprint      {str(existing.get('fingerprint'))[:16]}")
+            emit(f"\n  reusing {args.out} -- pass --rebuild to generate a new one")
             return 0
 
     # Rebuilding with the stand-in over a pool built with the real model would
@@ -70,7 +71,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         except Exception:
             existing = {}
         if existing.get("generator") not in (None, "mock") and not args.force:
-            print(
+            emit(
                 f"refusing to overwrite {args.out}: it was built with "
                 f"'{existing.get('generator')}' and this build would replace it with "
                 f"the stand-in.\n  Pass --qwen to rebuild it for real, --out to "
@@ -105,14 +106,14 @@ def cmd_build(args: argparse.Namespace) -> int:
         reference = load_reference(args.cfpb, limit=args.reference_limit, seed=args.seed)
     scorer = TextScorer(reference=reference or [e.text for e in pool.entries])
 
-    print(f"text pool  ({pool.generator_name})")
-    print(f"  entries          {len(pool.entries):>8,}")
-    print(f"  fingerprint      {pool.fingerprint[:16]}")
-    print(f"  embed model      {pool.embed_model}  (dim {pool.embed_dim})")
-    print(f"  reference        {len(reference):>8,} CFPB narratives")
-    print()
-    print(_tier_report(pool, scorer))
-    print(f"\n  written to {args.out}")
+    emit(f"text pool  ({pool.generator_name})")
+    emit(f"  entries          {len(pool.entries):>8,}")
+    emit(f"  fingerprint      {pool.fingerprint[:16]}")
+    emit(f"  embed model      {pool.embed_model}  (dim {pool.embed_dim})")
+    emit(f"  reference        {len(reference):>8,} CFPB narratives")
+    emit()
+    emit(_tier_report(pool, scorer))
+    emit(f"\n  written to {args.out}")
     return 0
 
 

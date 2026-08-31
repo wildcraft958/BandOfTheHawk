@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..logs import emit
 from ..cli import base_parser, load_config
 from ..paths import DEFAULT_FLOORS
 from .arrival import DriftingRateProcess, burstiness, lag1_autocorrelation
@@ -40,10 +41,10 @@ def cmd_gate(args: argparse.Namespace) -> int:
     if args.floors.exists():
         floors = json.loads(args.floors.read_text(encoding="utf-8")).get("floors", {})
 
-    print(f"timing gate  {args.entities:,} entities, {args.events} events each")
-    print(f"  seed {args.seed}, held out from the fit\n")
-    print(f"  {'metric':<20}{'target':>10}{'generated':>12}{'ratio':>10}")
-    print(f"  {'-' * 20}{'-' * 10}{'-' * 12}{'-' * 10}")
+    emit(f"timing gate  {args.entities:,} entities, {args.events} events each")
+    emit(f"  seed {args.seed}, held out from the fit\n")
+    emit(f"  {'metric':<20}{'target':>10}{'generated':>12}{'ratio':>10}")
+    emit(f"  {'-' * 20}{'-' * 10}{'-' * 12}{'-' * 10}")
 
     for name, target, observed, floor_key in (
         ("autocorrelation", arrival.target_autocorrelation, observed_rho, "autocorrelation_gap"),
@@ -51,17 +52,17 @@ def cmd_gate(args: argparse.Namespace) -> int:
     ):
         floor = floors.get(floor_key)
         ratio = abs(target - observed) / floor if floor else float("nan")
-        print(f"  {name:<20}{target:>+10.4f}{observed:>+12.4f}{ratio:>10.2f}")
+        emit(f"  {name:<20}{target:>+10.4f}{observed:>+12.4f}{ratio:>10.2f}")
 
-    print(f"\n  share of entities with positive correlation  {np.mean(np.array(rhos) > 0):.3f}")
-    print("  independent draws cannot exceed zero, so a positive mean is the check")
+    emit(f"\n  share of entities with positive correlation  {np.mean(np.array(rhos) > 0):.3f}")
+    emit("  independent draws cannot exceed zero, so a positive mean is the check")
 
     clock = CircadianClock(config.behavior.circadian)
     hours = clock.sample_hour(rng, 100_000)
-    print(f"\n  circadian resultant {resultant_length(hours):.4f}")
+    emit(f"\n  circadian resultant {resultant_length(hours):.4f}")
 
     if observed_rho <= 0:
-        print("\nFAIL: generated gaps carry no positive correlation")
+        emit("\nFAIL: generated gaps carry no positive correlation")
         return 1
     return 0
 

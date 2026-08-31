@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import time
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleEngine
@@ -21,20 +22,20 @@ def cmd_demo(args: argparse.Namespace) -> int:
     world = build_warm_world(config)
     elapsed = time.perf_counter() - started
 
-    print("stage machine")
-    print(describe_stages())
-    print()
+    emit("stage machine")
+    emit(describe_stages())
+    emit()
 
     events = [event for event in world.simulator.log.events if hasattr(event, "amount")]
     if events:
         stamps = [event.ts for event in events]
         span = (max(stamps) - min(stamps)) / 1440
-        print(f"\n  history spans      {span:>10.0f} days")
+        emit(f"\n  history spans      {span:>10.0f} days")
 
         rates = VelocityRuleEngine(config.engine.rules).trigger_rates(events)
-        print()
+        emit()
         negatives = config.behavior.hard_negatives
-        print(
+        emit(
             rates.render(
                 target=negatives.naive_rule_trip_target,
                 tolerance=negatives.naive_rule_trip_tolerance,
@@ -42,8 +43,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
         )
 
     world.graph.check_invariants()
-    print(f"\n  graph invariants   {'hold':>10}")
-    print(f"  built and warmed   {elapsed:>10.1f}s")
+    emit(f"\n  graph invariants   {'hold':>10}")
+    emit(f"  built and warmed   {elapsed:>10.1f}s")
     return 0
 
 

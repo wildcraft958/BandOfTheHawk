@@ -35,6 +35,7 @@ ARTIFACT_DIR = _from_env("GAUNTLET_ARTIFACTS", PROJECT_ROOT / "artifacts")
 DATASET_DIR = _from_env("GAUNTLET_DATASET", PROJECT_ROOT / "Dataset")
 
 DEFAULT_CONFIG = CONFIG_DIR / "simulation.yaml"
+DEFAULT_LOGGING = CONFIG_DIR / "logging.yaml"
 
 DEFAULT_ARTIFACT = ARTIFACT_DIR / "fitted_params.json"
 DEFAULT_FLOORS = ARTIFACT_DIR / "noise_floors.json"
@@ -55,6 +56,7 @@ __all__ = [
     "DEFAULT_CHECKPOINTS",
     "DEFAULT_CONFIG",
     "DEFAULT_FLOORS",
+    "DEFAULT_LOGGING",
     "DEFAULT_METRICS",
     "DEFAULT_POOL",
     "PROJECT_ROOT",

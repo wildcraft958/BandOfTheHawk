@@ -13,6 +13,7 @@ import argparse
 import time
 from pathlib import Path
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..paths import DEFAULT_CFPB, DEFAULT_CHECKPOINTS, DEFAULT_METRICS, DEFAULT_POOL
 from ..population.factory import build_warm_world
@@ -30,10 +31,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     report = runner.run(benign_seed=config.seed + 2)
     elapsed = time.perf_counter() - started
 
-    print(report.render())
+    emit(report.render())
     world.graph.check_invariants()
-    print(f"\n  graph invariants   {'hold':>10}")
-    print(f"  built and run      {elapsed:>10.1f}s")
+    emit(f"\n  graph invariants   {'hold':>10}")
+    emit(f"  built and run      {elapsed:>10.1f}s")
     return 0
 
 
@@ -71,7 +72,7 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         stealth_frozen=args.stealth_frozen,
         target_prevalence=args.target_prevalence,
     )
-    print(report.render())
+    emit(report.render())
 
     # The same numbers as data, so the curve can be plotted and the attacker
     # strategies inspected without re-running or scraping the log.
@@ -80,9 +81,9 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
 
         args.metrics.parent.mkdir(parents=True, exist_ok=True)
         args.metrics.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
-        print(f"\n  metrics written to {args.metrics}")
+        emit(f"\n  metrics written to {args.metrics}")
     for name, where in report.checkpoints.items():
-        print(f"  {name} saved to {where}")
+        emit(f"  {name} saved to {where}")
     return 0
 
 

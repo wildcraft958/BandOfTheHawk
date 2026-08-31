@@ -1,0 +1,40 @@
+# Two channels, deliberately on different streams.
+#
+#   stdout  rendered reports, no prefix, so `gauntlet metrics > out.txt` captures
+#           the table exactly as it would have been printed
+#   stderr  progress and diagnostics, timestamped, so a long phase can be watched
+#           while its report is being redirected
+#
+# Raise or lower the diagnostic level without editing this file:
+#   --log-level DEBUG      or      GAUNTLET_LOG_LEVEL=WARNING
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  diagnostic:
+    format: "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
+    datefmt: "%H:%M:%S"
+  bare:
+    format: "%(message)s"
+
+handlers:
+  console:
+    class: fraudsim.logs.StderrHandler
+    formatter: diagnostic
+    level: INFO
+  report:
+    class: fraudsim.logs.StdoutHandler
+    formatter: bare
+    level: INFO
+
+loggers:
+  # Report output is terminal, never propagated: a rendered table must not also
+  # appear on stderr with a timestamp glued to every row.
+  fraudsim.report:
+    handlers: [report]
+    level: INFO
+    propagate: false
+
+root:
+  handlers: [console]
+  level: INFO

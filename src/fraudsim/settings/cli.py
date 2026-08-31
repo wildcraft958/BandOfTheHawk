@@ -8,52 +8,53 @@ from __future__ import annotations
 
 import argparse
 
+from ..logs import emit
 from ..cli import base_parser, load_artifact, load_resolved
 
 
 def _load(args: argparse.Namespace):
     if load_artifact(args) is None:
-        print(f"no artifact at {args.artifact}; showing configured values only")
-        print("run: python -m fraudsim.calibration.cli fit\n")
+        emit(f"no artifact at {args.artifact}; showing configured values only")
+        emit("run: python -m fraudsim.calibration.cli fit\n")
     return load_resolved(args)
 
 
 def cmd_show(args: argparse.Namespace) -> int:
     resolved = _load(args)
     config = resolved.config
-    print(resolved.render())
-    print()
-    print("population")
-    print(f"  holders               {config.population.n_holders:,}")
-    print(f"  merchants             {config.population.merchants.count:,}")
-    print(f"  fingerprints          {config.population.resolved_fingerprint_count():,}")
-    print(f"  device household mean {config.population.devices.household_mean}")
-    print(f"  fan-out exponent      {config.population.fanout.exponent}")
-    print()
-    print("behaviour")
-    print(f"  amount median target  {config.behavior.amount.tail_threshold:,.0f} splice")
-    print(f"  tail index            {config.behavior.amount.tail_index:.3f}")
-    print(f"  arrival model         {config.behavior.arrival.model}")
-    print(f"  circadian components  {len(config.behavior.circadian.means)}")
-    print()
-    print("engine")
-    print(f"  windows               {config.engine.windows.windows_seconds}")
-    print(f"  compound criteria     {config.engine.windows.compound_criteria}")
-    print(f"  compound features     {config.engine.windows.n_compound_features}")
-    print(f"  fraud base rate       {config.engine.fraud_base_rate}")
+    emit(resolved.render())
+    emit()
+    emit("population")
+    emit(f"  holders               {config.population.n_holders:,}")
+    emit(f"  merchants             {config.population.merchants.count:,}")
+    emit(f"  fingerprints          {config.population.resolved_fingerprint_count():,}")
+    emit(f"  device household mean {config.population.devices.household_mean}")
+    emit(f"  fan-out exponent      {config.population.fanout.exponent}")
+    emit()
+    emit("behaviour")
+    emit(f"  amount median target  {config.behavior.amount.tail_threshold:,.0f} splice")
+    emit(f"  tail index            {config.behavior.amount.tail_index:.3f}")
+    emit(f"  arrival model         {config.behavior.arrival.model}")
+    emit(f"  circadian components  {len(config.behavior.circadian.means)}")
+    emit()
+    emit("engine")
+    emit(f"  windows               {config.engine.windows.windows_seconds}")
+    emit(f"  compound criteria     {config.engine.windows.compound_criteria}")
+    emit(f"  compound features     {config.engine.windows.n_compound_features}")
+    emit(f"  fraud base rate       {config.engine.fraud_base_rate}")
     return 0
 
 
 def cmd_provenance(args: argparse.Namespace) -> int:
     resolved = _load(args)
-    print(resolved.ledger.table())
+    emit(resolved.ledger.table())
     grouped = resolved.ledger.by_origin()
     for origin, paths in grouped.items():
         if not paths:
             continue
-        print(f"\n{origin.value}")
+        emit(f"\n{origin.value}")
         for path in paths:
-            print(f"  {path}")
+            emit(f"  {path}")
     return 0
 
 

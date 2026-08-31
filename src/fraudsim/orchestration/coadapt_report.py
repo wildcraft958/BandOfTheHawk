@@ -2,45 +2,41 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
+from ..logs import get_logger
 from ..protocols import RiskAction
 
 _REFUSING_ACTIONS = frozenset(
     {RiskAction.HOLD, RiskAction.DECLINE, RiskAction.BLOCK}
 )
 
+_log = get_logger(__name__)
+
 
 class _Progress:
     """Announces a long step and how long it took.
 
-    The live phase prints per update so that a slow run cannot be mistaken for a
-    hung one. Every line flushes, because a buffered progress report is no
-    progress report.
+    The live phase reports per update so that a slow run cannot be mistaken for a
+    hung one. These are diagnostics, so they go to the log on stderr, leaving the
+    rendered report alone on stdout.
     """
 
     __slots__ = ("_label", "_started")
 
     def __init__(self, label: str) -> None:
-        import time as _t
-
         self._label = label
-        self._started = _t.perf_counter()
-        print(f"  {label}", flush=True)
+        self._started = time.perf_counter()
+        _log.info("%s", label)
 
     def say(self, message: str) -> None:
-        import time as _t
-
-        elapsed = _t.perf_counter() - self._started
-        print(f"    [{elapsed:5.1f}s] {message}", flush=True)
+        _log.info("  [%5.1fs] %s", time.perf_counter() - self._started, message)
 
     def done(self, note: str = "") -> None:
-        import time as _t
-
-        elapsed = _t.perf_counter() - self._started
+        elapsed = time.perf_counter() - self._started
         tail = f"  ({note})" if note else ""
-        print(f"    {self._label} done in {elapsed:.1f}s{tail}", flush=True)
-        print(flush=True)
+        _log.info("  %s done in %.1fs%s", self._label, elapsed, tail)
 
 
 @dataclass

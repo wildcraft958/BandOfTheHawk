@@ -26,6 +26,7 @@ import statistics as st
 
 import numpy as np
 
+from ..logs import emit
 from ..paths import ABLATION_DIR
 
 REFIT_AT = 6  # first defender refit, at --refit-every 6
@@ -61,20 +62,20 @@ def main():
     A, B = load("stealth"), load("control")
     seeds = sorted(set(A) & set(B))
     if not seeds:
-        print("no completed pairs yet")
+        emit("no completed pairs yet")
         return
 
-    print(f"paired on {len(seeds)} seed(s): {seeds}\n")
-    print(f"{'seed':>5}{'stealth post':>14}{'control post':>14}{'diff':>10}")
+    emit(f"paired on {len(seeds)} seed(s): {seeds}\n")
+    emit(f"{'seed':>5}{'stealth post':>14}{'control post':>14}{'diff':>10}")
     diffs = []
     for s in seeds:
         a, b = summarise(A[s]), summarise(B[s])
         diff = a["post"] - b["post"]
         diffs.append(diff)
-        print(f"{s:>5}{a['post']:>14.1f}{b['post']:>14.1f}{diff:>+10.1f}")
+        emit(f"{s:>5}{a['post']:>14.1f}{b['post']:>14.1f}{diff:>+10.1f}")
 
-    print(f"\n{'':>5}{'mean':>14}{'mean':>14}{'mean diff':>10}")
-    print(
+    emit(f"\n{'':>5}{'mean':>14}{'mean':>14}{'mean diff':>10}")
+    emit(
         f"{'':>5}"
         f"{st.mean([summarise(A[s])['post'] for s in seeds]):>14.1f}"
         f"{st.mean([summarise(B[s])['post'] for s in seeds]):>14.1f}"
@@ -83,7 +84,7 @@ def main():
 
     if len(seeds) >= 3:
         lo, hi = bootstrap_paired(diffs)
-        print(f"\n  95% bootstrap CI on the paired difference: [{lo:+.1f}, {hi:+.1f}]")
+        emit(f"\n  95% bootstrap CI on the paired difference: [{lo:+.1f}, {hi:+.1f}]")
         verdict = (
             "stealth helps"
             if lo > 0
@@ -91,24 +92,24 @@ def main():
             if hi < 0
             else "no detectable difference"
         )
-        print(f"  verdict: {verdict}")
+        emit(f"  verdict: {verdict}")
         if lo <= 0 <= hi:
-            print("  (the interval spans zero: this design cannot separate the arms)")
+            emit("  (the interval spans zero: this design cannot separate the arms)")
     else:
-        print("\n  too few seeds for an interval; run more before concluding")
+        emit("\n  too few seeds for an interval; run more before concluding")
 
-    print("\n  recovery shape, stealth arm (mean extraction by phase)")
+    emit("\n  recovery shape, stealth arm (mean extraction by phase)")
     for label, sl in (("pre-refit", slice(0, 6)), ("just after", slice(6, 12)),
                       ("mid", slice(12, 18)), ("late", slice(18, None))):
         vals = [st.mean(A[s]["attacker_success"][sl]) for s in seeds]
-        print(f"    {label:<12}{st.mean(vals):>10.1f}")
+        emit(f"    {label:<12}{st.mean(vals):>10.1f}")
 
-    print("\n  final strategies")
+    emit("\n  final strategies")
     for arm, D in (("stealth", A), ("control", B)):
         for s in seeds:
             top = D[s].get("top_sequences") or []
             if top:
-                print(f"    {arm:<8} s{s}: {top[0]['sequence'][:88]}")
+                emit(f"    {arm:<8} s{s}: {top[0]['sequence'][:88]}")
 
 
 if __name__ == "__main__":

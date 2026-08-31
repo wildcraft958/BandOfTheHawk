@@ -35,8 +35,11 @@ over the live phase, showing each responding to the other.
 
 from __future__ import annotations
 
+import time
+
 import numpy as np
 
+from ..logs import get_logger
 from ..attacker.bootstrap import collect_demos
 from ..attacker.env import AttackEnv
 from ..attacker.ppo import PPOConfig, PPOTrainer
@@ -65,6 +68,9 @@ from .coadapt_eval import (
 from .coadapt_report import CoadaptReport, _Progress
 from .retention import RetentionBuffer
 from .run import EpisodeRunner
+
+_log = get_logger(__name__)
+
 
 class CoadaptEngine:
     """Runs the four-phase warm-start then live co-adaptation."""
@@ -360,14 +366,13 @@ class CoadaptEngine:
         world is pointed at it, so the very next batch faces the stronger defence.
         """
         report = CoadaptReport()
-        # Printed as they happen, not accumulated and rendered at the end. A live
+        # Logged as they happen, not accumulated and rendered at the end. A live
         # phase of this length is otherwise completely silent, and a run that is
         # merely slow is indistinguishable from one that has hung.
-        print(f"  live phase: {n_updates} updates, refit every {refit_every}", flush=True)
-        print("  update  extracted   return   entropy  critic      elapsed", flush=True)
-        import time as _time
+        _log.info("live phase: %d updates, refit every %d", n_updates, refit_every)
+        _log.info("update  extracted   return   entropy  critic      elapsed")
 
-        started = _time.perf_counter()
+        started = time.perf_counter()
         for update in range(n_updates):
             # A fresh log window for this update, so the fraud attributed to the
             # refit is what the attacker produced since the last one.
@@ -391,14 +396,12 @@ class CoadaptEngine:
             crit_rel = self.trainer.critic_relative_error(batch)
             report.critic_relative.append(crit_rel)
 
-            elapsed = _time.perf_counter() - started
+            elapsed = time.perf_counter() - started
             eta = (elapsed / (update + 1)) * (n_updates - update - 1)
-            print(
-                f"    {update:<7}{extracted:>9.1f}"
-                f"{report.mean_return[-1]:>9.2f}{stats['entropy']:>10.3f}"
-                f"{crit_rel:>8.2f}"
-                f"   {elapsed/60:>5.1f}m  eta {eta/60:>5.1f}m",
-                flush=True,
+            _log.info(
+                "  %-7d%9.1f%9.2f%10.3f%8.2f   %5.1fm  eta %5.1fm",
+                update, extracted, report.mean_return[-1], stats["entropy"],
+                crit_rel, elapsed / 60, eta / 60,
             )
 
             if (update + 1) % refit_every == 0:
@@ -418,10 +421,10 @@ class CoadaptEngine:
                 report.defender_refits.append(update)
                 report.defender_positives_at_refit.append(positives)
                 report.false_positive_rate.append(self._last_fp_rate)
-                print(
-                    f"      -> defender refit on {positives:,} fraud rows"
-                    f"   (declined {self._last_fp_rate:.2%} of genuine traffic)",
-                    flush=True,
+                _log.info(
+                    "    -> defender refit on %s fraud rows"
+                    "   (declined %.2f%% of genuine traffic)",
+                    f"{positives:,}", self._last_fp_rate * 100,
                 )
 
         report.selection = {

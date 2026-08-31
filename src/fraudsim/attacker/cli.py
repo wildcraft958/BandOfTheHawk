@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config
 from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
@@ -92,11 +93,11 @@ def cmd_train(args: argparse.Namespace) -> int:
         episodes_per_update=args.episodes_per_update,
         seed=config.seed,
     )
-    print(report.render())
+    emit(report.render())
 
     if args.out:
         trainer.save(args.out)
-        print(f"\n  checkpoint written to {args.out}")
+        emit(f"\n  checkpoint written to {args.out}")
     return 0
 
 

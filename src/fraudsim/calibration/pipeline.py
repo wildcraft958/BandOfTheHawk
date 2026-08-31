@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..logs import emit, get_logger
 from ..paths import ARTIFACT_DIR
 from .artifact import FittedParams
 from .behavioral import fanout_stats
@@ -24,6 +25,8 @@ from .fit_timing import fit_hawkes, sequences_from_frame
 from .loaders import IeeeCisLoader, SparkovLoader
 from .noise_floor import NoiseFloorBuilder
 
+_log = get_logger(__name__)
+
 
 def run_calibration(
     seed: int = 0,
@@ -35,7 +38,7 @@ def run_calibration(
 
     def say(message: str) -> None:
         if verbose:
-            print(message)
+            _log.info("%s", message)
 
     say("loading judge dataset")
     frame = IeeeCisLoader().transactions()
@@ -263,9 +266,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     params = run_calibration(seed=args.seed, include_rejected_hawkes=not args.skip_hawkes)
-    print()
-    print(params.render())
-    print(f"\nwrote {params.save(args.out)}")
+    emit()
+    emit(params.render())
+    emit(f"\nwrote {params.save(args.out)}")
     return 0
 
 
