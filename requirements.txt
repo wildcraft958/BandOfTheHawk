@@ -1,67 +1,79 @@
-# Requirements for the fraudsim closed-loop red/blue pipeline.
-# Versions pinned to the known-good GPU environment (torch 2.11.0 + cu130).
+# One exact set of versions, verified end to end on 31 Aug 2026.
 #
-# INSTALL torch FIRST from the CUDA index so pip does not pull the CPU build off
-# PyPI:
-#   python3 -m venv myenv && source myenv/bin/activate
+# This file is NOT the dependency contract. pyproject.toml is: it carries lower
+# bounds, which is what you depend on. This file exists to reproduce a run, and
+# every version below was installed together into a clean virtual environment on
+# CPython 3.14.7 (macOS, arm64), checked with `pip check`, and used to run the
+# full test suite and the quick pipeline profile.
+#
+# The previous contents of this file could not be installed at all: it pinned
+# numpy==2.0.2 and scipy==1.14.1, neither of which publishes a wheel for the
+# interpreter this project requires, and it contradicted pyproject.toml, which
+# asks for numpy>=2.5. The instructions below therefore failed at their first
+# command. They are now run before being written down.
+#
+# ---------------------------------------------------------------------------
+# INSTALL
+#
+#   python3 -m venv .venv && source .venv/bin/activate
 #   pip install --upgrade pip
-#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu130
+#   pip install -r requirements.txt
+#   pip install -e .
+#
+# For a CUDA machine, install torch from the CUDA index FIRST, or pip resolves
+# the CPU build off PyPI:
+#
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu130
 #   pip install -r requirements.txt
 #
 # Verify the GPU is visible:
 #   python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-#   -> 2.11.0+cu130 True
 #
-# Then run:
+# Then:
 #   CUDA_VISIBLE_DEVICES=0 python main.py --profile server
 #
-# Note on where the GPU is actually used: the generation and embedding models
-# run once, in the `text` stage, and their output is cached into the pool. The
+# Where the GPU is actually used: the generation and embedding models run once,
+# in the `text` stage, and their output is cached into the pool. The
 # reinforcement-learning networks are small multilayer perceptrons and the
 # defender is gradient-boosted trees, so the remaining stages are bound by the
 # simulation loop rather than by the device.
+#
+# On macOS, torch and xgboost each bring their own libomp and loading both in
+# one process segfaults. tests/conftest.py detects this and names the fix.
+# ---------------------------------------------------------------------------
 
-# --- core: simulation runtime (numpy-only tier) ---
-numpy==2.0.2
-scipy==1.14.1
-pydantic==2.13.4
+# --- core: the numpy-only simulation runtime ---
+numpy==2.5.2
+scipy==1.18.1
+pydantic==2.13.5
 PyYAML==6.0.3
 
-# --- reinforcement-learning attacker ---
-torch==2.11.0                 # install from the cu130 index, see note above
+# --- rl extra: the learned attacker ---
+torch==2.13.0
 
-# --- generative layer: text generation and embeddings ---
-transformers==5.0.0
-accelerate==1.13.0            # device_map="auto" in generative/loader.py
-tokenizers==0.22.2
-safetensors==0.7.0
-sentencepiece==0.2.1
-sentence-transformers==5.4.1  # Qwen3-Embedding-0.6B for the text expert
+# --- generative extra: text generation and embeddings ---
+transformers==5.16.1
+accelerate==1.14.0
+tokenizers==0.23.1
+safetensors==0.8.0
+sentence-transformers==6.0.1   # Qwen3-Embedding-0.6B for the text expert
 
-# --- defender: the detectors ---
-xgboost==3.0.2                # flat baseline and the expert trees
-scikit-learn==1.6.1           # logistic binding expert and the combiner
+# --- defender extra: the detectors ---
+xgboost==3.4.1                 # flat baseline and the expert trees
+scikit-learn==1.9.0            # logistic binding expert and the combiner
 
-# --- calibration and analysis tiers (dataset loading, reporting) ---
-pandas==2.3.3
-pyarrow==18.1.0
+# --- calibration and analysis extras ---
+pandas==3.0.5
+pyarrow==25.0.1
 networkx==3.6.1
-matplotlib==3.10.0
+matplotlib==3.11.1
 
-# --- hugging face hub (model download) ---
-huggingface_hub==1.4.1
-hf-xet==1.3.0
+# --- model download ---
+huggingface_hub==1.29.0
+hf-xet==1.6.0
 
-# --- tests ---
-pytest==8.3.4
-
-# --- misc runtime deps (pulled in by the above, pinned for reproducibility) ---
-tqdm==4.67.3
-requests==2.32.4
-regex==2025.11.3
-filelock==3.24.3
-packaging==26.0
-sympy==1.14.0
-Jinja2==3.1.6
-fsspec==2025.3.0
-pillow==11.3.0
+# --- dev extra: tests and static analysis ---
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.16.5
+mypy==2.3.1

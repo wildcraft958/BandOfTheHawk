@@ -20,6 +20,10 @@ keywords = ["payment-fraud", "adversarial-simulation", "red-team", "blue-team", 
 # Runtime tier. Deliberately excludes pandas/pyarrow/networkx so that a stray
 # import in the simulation path fails in a clean install instead of silently
 # resolving against a globally installed copy.
+#
+# Lower bounds, not pins. This file is the contract: the oldest version the code
+# is known to work against. requirements.txt holds one exact set that was
+# verified end to end, for reproducing a run rather than for depending on.
 # Must stay inside [project]: under [project.urls] it parses as
 # project.urls.dependencies and the package becomes uninstallable.
 dependencies = [
@@ -41,7 +45,7 @@ calibration = ["pandas>=2.2", "pyarrow>=17.0"]
 defender = ["scikit-learn>=1.5", "xgboost>=2.1"]
 rl = ["torch>=2.4"]
 generative = ["torch>=2.4", "transformers>=4.44", "accelerate>=0.34", "sentence-transformers>=3.0"]
-dev = ["pytest>=8.0", "pytest-cov"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.11"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -98,10 +98,17 @@ cd BandOfTheHawk
 python -m venv .venv && source .venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cu130
 pip install -r requirements.txt
+pip install -e .
 
 # Install (CPU only)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
+
+# Install (simulation only, no learned tiers)
+# The runtime is numpy-only; the detectors, the RL attacker and the text
+# models are optional extras. Tests that need one skip without it.
+pip install -e ".[dev]"
 
 # Run the full pipeline
 python main.py --profile server    # GPU, 12k holders, ~64 min
@@ -112,8 +119,15 @@ python main.py baseline
 python main.py coadapt --profile server
 
 # Run tests
-pytest tests/ -x -q
+pytest tests/ -q
 ```
+
+The package must be installed (`pip install -e .`) before anything runs: the
+code lives under `src/`, so it is not importable from the checkout alone.
+
+On macOS with both torch and xgboost installed, the two bring separate copies of
+libomp and loading both in one process segfaults. The test suite detects this
+and prints the one-line fix.
 
 ## Fraud Taxonomy
 
