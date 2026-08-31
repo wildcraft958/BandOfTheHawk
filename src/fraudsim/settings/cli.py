@@ -33,7 +33,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     print("population")
     print(f"  holders               {config.population.n_holders:,}")
     print(f"  merchants             {config.population.merchants.count:,}")
-    print(f"  fingerprints          {config.population.fingerprint_count:,}")
+    print(f"  fingerprints          {config.population.resolved_fingerprint_count():,}")
     print(f"  device household mean {config.population.devices.household_mean}")
     print(f"  fan-out exponent      {config.population.fanout.exponent}")
     print()

@@ -157,3 +157,22 @@ def test_config_is_immutable() -> None:
 def test_render_separates_the_two_origins() -> None:
     text = resolve(CONFIG, artifact=artifact()).render()
     assert "fitted" in text and "swept" in text
+
+
+def test_derived_counts_are_read_through_their_accessor() -> None:
+    """Optional config fields are None until derived, so print them resolved.
+
+    `fingerprint_count` is left unset in the YAML and computed from the fan-out
+    target. Formatting the raw field crashes on the default config.
+    """
+    population = SimulationConfig().population
+    assert population.fingerprint_count is None
+    assert population.resolved_fingerprint_count() > 0
+
+
+@pytest.mark.parametrize("command", ["show", "provenance"])
+def test_settings_cli_runs(command: str, capsys: pytest.CaptureFixture[str]) -> None:
+    from fraudsim.settings.cli import main
+
+    assert main([command]) == 0
+    assert capsys.readouterr().out.strip()
