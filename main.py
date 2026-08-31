@@ -73,12 +73,17 @@ The stages, in the order the full run executes them:
 SCALE
 -----
 
-    --profile quick     a fast smoke of everything            (~10 min)
-    --profile default   a real run                            (~1-2 h)
-    --profile gpu       large, sized to finish in a few hours  (~4 h)
-    --profile server    the full thing; 150 updates at 12,000
-                        holders is ~40 h, so use it only when
-                        that is genuinely affordable
+    --profile quick     a fast smoke of every stage
+    --profile default   a real run, a middling population
+    --profile gpu       half the server population, ten refit points
+    --profile server    the full thing, and the profile behind every
+                        headline number: measured at 63.7 min end to
+                        end on the GPU box
+
+Only the server profile has a measured wall clock; the rest are strictly
+smaller. Earlier versions of this file projected forty hours for the server
+run, from a per-update estimate that turned out to be about fifty times too
+high. Sizes here are honest; treat any duration not marked measured as a guess.
 
 Scale only changes sizes — population, training length — never which stages run
 or what they print.

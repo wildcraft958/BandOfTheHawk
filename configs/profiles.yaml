@@ -54,13 +54,15 @@ default:
   fraud_rounds: 4
   target_prevalence: 0.02
 
-# Sized to finish inside a working day on the GPU box. The full server profile
-# is ~19 min per update at twelve thousand holders and eighty episodes, which is
-# forty hours for a hundred and fifty updates: fine as a number, useless as a
-# schedule. Halving the population and the episodes per update quarters the
-# per-update cost; sixty updates at a refit every six still gives ten refit
-# points, more of the arms-race curve than the full profile's twelve, at a
-# fraction of the time.
+# A middle size: sixty updates at a refit every six gives ten refit points, most
+# of the arms-race curve, on half the population.
+#
+# This profile was added to dodge a projected forty-hour server run, estimated at
+# ~19 min per update before anything had been measured. The measurement came in
+# at 22 seconds per update -- the whole server profile finished in 63.7 min --
+# so the estimate was wrong by roughly fifty times and the schedule pressure it
+# was avoiding never existed. The profile stays because a smaller run is still
+# useful; it is no longer the one to reach for on time grounds.
 gpu:
   holders: 6000
   fraud_rate: 0.02
@@ -79,7 +81,10 @@ gpu:
   fraud_rounds: 4
   target_prevalence: 0.02
 
-# The full thing. Roughly forty hours; use it only when that is affordable.
+# The full thing, and the profile that produced every headline number. Measured
+# at 63.7 min end to end on the GPU box (12,000 holders, 150 updates, 12 refits),
+# with the text pool already built -- which it is in a fresh clone, since the
+# pool ships in artifacts/.
 server:
   holders: 12000
   fraud_rate: 0.01
