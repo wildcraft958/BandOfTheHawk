@@ -80,7 +80,6 @@ class ChannelConfig(StrictModel):
     step_up_challenge_rate: UnitInterval = 0.12
     step_up_abandon_rate: UnitInterval = 0.15
     payee_cooling_off_hours: Annotated[int, Field(ge=0, le=168)] = 24
-    manual_review_cost: PositiveFloat = 8.0
 
 
 class EpisodeConfig(StrictModel):

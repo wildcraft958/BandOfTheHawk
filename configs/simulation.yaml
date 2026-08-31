@@ -90,7 +90,6 @@ engine:
     step_up_challenge_rate: 0.12
     step_up_abandon_rate: 0.15
     payee_cooling_off_hours: 24
-    manual_review_cost: 8.0
 
   episode:
     max_actions: 40

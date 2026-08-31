@@ -322,7 +322,10 @@ class CoadaptEngine:
             if isinstance(model, MixtureScorer)
             else model.predict_scores(train.X)
         )
-        return grid_search_bands(train.y, np.asarray(scores), CostModel())
+        cost = self.config.detector.cost
+        return grid_search_bands(
+            train.y, np.asarray(scores), CostModel.from_config(cost), search=cost,
+        )
 
     # ----------------------------------------- phases B and C: actor, critic
 

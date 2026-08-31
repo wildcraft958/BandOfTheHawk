@@ -21,8 +21,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from ..engine.bands import RiskBands
 from ..features.schema import AuthAttemptEvent
 from ..protocols import RiskAssessment
+from ..settings.detector import TreeConfig
 from .table import FeatureTable
 
 
@@ -45,16 +47,16 @@ class GBDTBaseline:
     than returning a default that would look like a judgement.
     """
 
-    def __init__(self, columns: tuple[str, ...], bands=None):
+    def __init__(self, columns: tuple[str, ...], bands=None,
+                 params: TreeConfig | None = None):
         self.columns = columns
         self._model = None
         self._col_index = {c: i for i, c in enumerate(columns)}
         # The banding turns a score into an action and a graph mutation. Without
         # it this detects and never acts, which would leave the mitigation layer
         # dormant wherever the flat model is the defender in force.
-        from ..engine.bands import RiskBands
-
         self.bands = bands or RiskBands()
+        self.params = params or TreeConfig()
 
     # ------------------------------------------------------------------- fit
 
@@ -75,19 +77,20 @@ class GBDTBaseline:
         neg = max(1, int((1 - y).sum()))
         scale = neg / pos
 
+        p = self.params
         self._model = XGBClassifier(
-            n_estimators=200,
-            max_depth=6,
-            learning_rate=0.05,
+            n_estimators=p.n_estimators,
+            max_depth=p.max_depth,
+            learning_rate=p.learning_rate,
             scale_pos_weight=scale,
-            min_child_weight=5,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            reg_lambda=1.0,
-            tree_method="hist",
-            random_state=0,
-            n_jobs=-1,
-            eval_metric="aucpr",
+            min_child_weight=p.min_child_weight,
+            subsample=p.subsample,
+            colsample_bytree=p.colsample_bytree,
+            reg_lambda=p.reg_lambda,
+            tree_method=p.tree_method,
+            random_state=p.random_state,
+            n_jobs=p.n_jobs,
+            eval_metric=p.eval_metric,
         )
         self._model.fit(X, y)
         self._dropped = set(drop_columns)

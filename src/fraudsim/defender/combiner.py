@@ -21,8 +21,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from ..engine.bands import RiskBands
+from ..settings.detector import LogisticConfig
 from ..features.schema import EventLog
-from ..protocols import RiskAction, RiskAssessment
+from ..protocols import RiskAssessment
 from .experts import ExpertBank
 from .table import build_table
 
@@ -55,7 +57,8 @@ class LearnedCombiner:
     sees every event type's mix of applicable experts.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, settings: LogisticConfig | None = None) -> None:
+        self.settings = settings or LogisticConfig()
         self._model = None
 
     def fit(self, scores: np.ndarray, mask: np.ndarray, y: np.ndarray) -> "LearnedCombiner":
@@ -66,7 +69,8 @@ class LearnedCombiner:
             self._model = None
             self._constant = float(y.mean()) if len(y) else 0.0
             return self
-        self._model = LogisticRegression(max_iter=2000, class_weight="balanced")
+        self._model = LogisticRegression(max_iter=self.settings.max_iter,
+                                    class_weight=self.settings.class_weight)
         self._model.fit(X, y)
         return self
 
@@ -96,10 +100,12 @@ class MixtureScorer:
     simulator frozen for a round.
     """
 
-    def __init__(self, bank: ExpertBank, combiner, bands=None) -> None:
+    def __init__(self, bank: ExpertBank, combiner, bands: RiskBands | None = None) -> None:
         self.bank = bank
         self.combiner = combiner
-        self.bands = bands  # optional RiskBands; a default banding is used if None
+        # Always banded. A scorer without bands detects and never acts, so the
+        # graph write-back sits dormant and the loop does not actually close.
+        self.bands = bands or RiskBands()
 
     @classmethod
     def fit(cls, table, learned: bool = True, bands=None) -> "MixtureScorer":
@@ -110,8 +116,6 @@ class MixtureScorer:
         dormant and the loop would not actually close. A default banding is
         attached unless the caller supplies one it has searched.
         """
-        from ..engine.bands import RiskBands
-
         bank = ExpertBank.build(table.columns).fit(table)
         scores, mask = bank.score_matrix(table)
         combiner = LearnedCombiner().fit(scores, mask, table.y) if learned else FixedAverageCombiner()
@@ -135,10 +139,7 @@ class MixtureScorer:
                 X[0, j] = row.X[0, i]
         row = _replace_X(row, X, self.bank.experts[0].columns)
         risk = float(self.predict_scores(row)[0])
-        if self.bands is not None:
-            action, mitigations = self.bands.decide(risk, event)
-        else:
-            action, mitigations = _default_action(risk), ()
+        action, mitigations = self.bands.decide(risk, event)
         return RiskAssessment(risk_score=risk, action=action, mitigations=tuple(mitigations))
 
 
@@ -158,13 +159,3 @@ def _replace_X(row, X, columns):
     )
 
 
-def _default_action(score: float) -> RiskAction:
-    if score >= 0.95:
-        return RiskAction.BLOCK
-    if score >= 0.8:
-        return RiskAction.DECLINE
-    if score >= 0.6:
-        return RiskAction.HOLD
-    if score >= 0.3:
-        return RiskAction.STEP_UP
-    return RiskAction.APPROVE

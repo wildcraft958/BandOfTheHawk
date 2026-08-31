@@ -45,7 +45,8 @@ def cmd_baseline(args: argparse.Namespace) -> int:
 
     sim = _collect(config, args.holders)
     table = build_table(sim.log, exclude_warm_start=True)
-    split = entity_split(table, test_fraction=0.3, seed=config.seed)
+    split = entity_split(table, test_fraction=config.detector.split.test_fraction,
+                         seed=config.seed)
 
     emit("defender baseline  [STATIC BENCHMARK vs the scripted red team]")
     emit("  a fixed adversary and fixed data, so architectures can be compared and")
@@ -124,7 +125,8 @@ def cmd_mixture(args: argparse.Namespace) -> int:
 
     sim = _collect(config, args.holders)
     table = build_table(sim.log, exclude_warm_start=True)
-    split = entity_split(table, test_fraction=0.3, seed=config.seed)
+    split = entity_split(table, test_fraction=config.detector.split.test_fraction,
+                         seed=config.seed)
 
     emit("mixture of experts  [STATIC BENCHMARK vs the scripted red team]")
     emit("  the same fixed data as the baseline, so the two are comparable. NOT a")
@@ -165,7 +167,10 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     emit(f"  verdict                                {verdict}")
 
     # Bands grid-searched against the cost curve, on the learned scores.
-    bands = grid_search_bands(split.test.y, learned_pred, CostModel())
+    cost = config.detector.cost
+    bands = grid_search_bands(
+        split.test.y, learned_pred, CostModel.from_config(cost), search=cost,
+    )
     emit("\n  cost-curve bands")
     emit(f"    step_up  {bands.step_up_at:.2f}   hold {bands.hold_at:.2f}"
           f"   decline {bands.decline_at:.2f}   block {bands.block_at:.2f}")

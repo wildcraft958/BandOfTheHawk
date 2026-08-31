@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..protocols import RiskAction, RiskAssessment
+from ..settings.detector import CostConfig
 from .mitigation import BlocklistDevice, FreezeCard, UnbindDevice
 
 
@@ -87,6 +88,11 @@ class CostModel:
     friction_cost: float = 5.0
     review_cost: float = 8.0
 
+    @classmethod
+    def from_config(cls, cost: CostConfig) -> "CostModel":
+        """Built from configured costs rather than the defaults above."""
+        return cls(friction_cost=cost.friction_cost, review_cost=cost.review_cost)
+
     def evaluate(self, y_true, scores, bands: RiskBands) -> float:
         """Total cost of operating these bands on this scored set.
 
@@ -126,7 +132,10 @@ def shift_assessment(assessment: RiskAssessment, offset: float, event, scorer) -
     )
 
 
-def grid_search_bands(y_true, scores, cost: CostModel | None = None, steps: int = 9) -> RiskBands:
+def grid_search_bands(
+    y_true, scores, cost: CostModel | None = None,
+    search: CostConfig | None = None,
+) -> RiskBands:
     """Search band boundaries against the cost curve.
 
     A coarse grid over ordered thresholds, keeping the cheapest. Coarse on
@@ -135,8 +144,9 @@ def grid_search_bands(y_true, scores, cost: CostModel | None = None, steps: int 
     """
     import numpy as np
 
-    cost = cost or CostModel()
-    grid = np.linspace(0.1, 0.95, steps)
+    search = search or CostConfig()
+    cost = cost or CostModel.from_config(search)
+    grid = np.linspace(search.search_low, search.search_high, search.search_steps)
     best = RiskBands()
     best_cost = cost.evaluate(y_true, scores, best)
     for step_up in grid:
@@ -146,7 +156,7 @@ def grid_search_bands(y_true, scores, cost: CostModel | None = None, steps: int 
                     step_up_at=float(step_up),
                     hold_at=float(hold),
                     decline_at=float(decline),
-                    block_at=float(min(0.95, decline + 0.1)),
+                    block_at=float(min(search.search_high, decline + 0.1)),
                 )
                 c = cost.evaluate(y_true, scores, bands)
                 if c < best_cost:

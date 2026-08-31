@@ -28,6 +28,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..features.schema import EventType
+from ..settings.detector import DetectorConfig, LogisticConfig, TreeConfig
 from .table import FeatureTable
 
 # Which event types each expert is responsible for. An event is scored by every
@@ -81,10 +82,16 @@ class Expert:
     discount rather than trust.
     """
 
-    def __init__(self, name: str, columns: tuple[str, ...], kind: str = "tree") -> None:
+    def __init__(self, name: str, columns: tuple[str, ...], kind: str = "tree",
+                 tree: TreeConfig | None = None,
+                 logistic: LogisticConfig | None = None) -> None:
         self.name = name
         self.columns = columns
         self.kind = kind
+        # The expert profile is deliberately shallower than the flat baseline:
+        # each sees one event type, so it has fewer rows to spend depth on.
+        self.tree = tree or DetectorConfig().expert
+        self.logistic = logistic or LogisticConfig()
         self.event_types = EXPERT_EVENT_TYPES[name]
         self._model = None
         self._constant = 0.0
@@ -112,26 +119,28 @@ class Expert:
         if self.kind == "linear":
             from sklearn.linear_model import LogisticRegression  # lazy; defender extra
 
+            lg = self.logistic
             self._model = LogisticRegression(
-                max_iter=2000, class_weight="balanced", C=1.0
+                max_iter=lg.max_iter, class_weight=lg.class_weight, C=lg.C
             )
             self._model.fit(X, y)
         else:
             from xgboost import XGBClassifier  # lazy; defender extra
 
+            p = self.tree
             self._model = XGBClassifier(
-                n_estimators=150,
-                max_depth=4,
-                learning_rate=0.05,
+                n_estimators=p.n_estimators,
+                max_depth=p.max_depth,
+                learning_rate=p.learning_rate,
                 scale_pos_weight=neg / pos,
-                min_child_weight=3,
-                subsample=0.9,
-                colsample_bytree=0.9,
-                reg_lambda=1.0,
-                tree_method="hist",
-                random_state=0,
-                n_jobs=-1,
-                eval_metric="aucpr",
+                min_child_weight=p.min_child_weight,
+                subsample=p.subsample,
+                colsample_bytree=p.colsample_bytree,
+                reg_lambda=p.reg_lambda,
+                tree_method=p.tree_method,
+                random_state=p.random_state,
+                n_jobs=p.n_jobs,
+                eval_metric=p.eval_metric,
             )
             self._model.fit(X, y)
         return self
@@ -180,14 +189,16 @@ class ExpertBank:
     experts: list[Expert]
 
     @classmethod
-    def build(cls, columns: tuple[str, ...]) -> "ExpertBank":
+    def build(cls, columns: tuple[str, ...],
+              detector: DetectorConfig | None = None) -> "ExpertBank":
+        d = detector or DetectorConfig()
         return cls(
             experts=[
-                Expert("identity", columns, kind="tree"),
-                Expert("binding", columns, kind="linear"),
-                Expert("transaction", columns, kind="tree"),
-                Expert("text", columns, kind="tree"),
-                Expert("network", columns, kind="tree"),
+                Expert("identity", columns, kind="tree", tree=d.expert, logistic=d.logistic),
+                Expert("binding", columns, kind="linear", tree=d.expert, logistic=d.logistic),
+                Expert("transaction", columns, kind="tree", tree=d.expert, logistic=d.logistic),
+                Expert("text", columns, kind="tree", tree=d.expert, logistic=d.logistic),
+                Expert("network", columns, kind="tree", tree=d.expert, logistic=d.logistic),
             ]
         )
 
