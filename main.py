@@ -117,12 +117,15 @@ import importlib
 import time
 from datetime import datetime
 
+import yaml
+
 from fraudsim.logs import configure, emit, get_logger
-from fraudsim.paths import ARTIFACT_DIR
+from fraudsim.paths import ARTIFACT_DIR, CONFIG_DIR
 
 _log = get_logger("fraudsim.pipeline")
 
-PROFILES = ("quick", "default", "gpu", "server")
+PROFILES_FILE = CONFIG_DIR / "profiles.yaml"
+PROFILES = tuple(yaml.safe_load(PROFILES_FILE.read_text()))
 
 # The pipeline, in order. Each entry is (stage name, module, argument builder).
 # The module is the stage's own command-line entry point, so running a stage here
@@ -136,50 +139,19 @@ EXTRA_STAGES = ("control",)
 
 
 def _scales(profile: str) -> dict:
-    """Sizes per profile. Only sizes — never which stages run or what they print.
+    """Sizes for one profile, read from configs/profiles.yaml.
 
-    `server` is set for a large-memory GPU box: a population big enough that the
-    text experts and the per-entity statistics have real sample sizes, and a live
-    phase long enough for the attacker and defender to trade several rounds.
+    Only sizes, never which stages run or what they report. The keys are the
+    command-line flags the pipeline passes on, so a profile is exactly what it
+    would otherwise have typed for you.
     """
-    return {
-        "quick": dict(
-            holders=600, fraud_rate=0.06, per_key=25,
-            demo_episodes=40, bc_epochs=6, critic_rollouts=16, critic_epochs=8,
-            updates=12, episodes_per_update=12, refit_every=4,
-            hidden=128, minibatch=128, embed_dim=256,
-            label_latency=2880, fraud_rounds=3, target_prevalence=0.02,
-        ),
-        "default": dict(
-            holders=3000, fraud_rate=0.02, per_key=150,
-            demo_episodes=300, bc_epochs=10, critic_rollouts=48, critic_epochs=20,
-            updates=60, episodes_per_update=48, refit_every=10,
-            hidden=256, minibatch=256, embed_dim=256,
-            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
-        ),
-        # Sized to finish inside a working day on the GPU box. The full "server"
-        # profile is ~19 min per update at twelve thousand holders and eighty
-        # episodes, which is forty hours for a hundred and fifty updates -- fine
-        # as a number, useless as a schedule. Halving the population and the
-        # episodes per update quarters the per-update cost; sixty updates at a
-        # refit every six still gives ten refit points, which is more of the
-        # arms-race curve than the full profile's twelve at a fraction of the
-        # time.
-        "gpu": dict(
-            holders=6000, fraud_rate=0.02, per_key=300,
-            demo_episodes=400, bc_epochs=12, critic_rollouts=64, critic_epochs=25,
-            updates=60, episodes_per_update=32, refit_every=6,
-            hidden=256, minibatch=256, embed_dim=256,
-            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
-        ),
-        "server": dict(
-            holders=12000, fraud_rate=0.01, per_key=500,
-            demo_episodes=800, bc_epochs=15, critic_rollouts=128, critic_epochs=40,
-            updates=150, episodes_per_update=80, refit_every=12,
-            hidden=512, minibatch=512, embed_dim=256,
-            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
-        ),
-    }[profile]
+    profiles = yaml.safe_load(PROFILES_FILE.read_text())
+    if profile not in profiles:
+        raise SystemExit(
+            f"unknown profile {profile!r}; {PROFILES_FILE} defines "
+            f"{', '.join(sorted(profiles))}"
+        )
+    return profiles[profile]
 
 
 def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:

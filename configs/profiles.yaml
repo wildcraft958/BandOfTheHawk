@@ -1,0 +1,99 @@
+# Run sizes. Only sizes: a profile never changes which stages run or what they
+# report, so a quick run and a server run are the same experiment at different
+# scales.
+#
+#   python main.py --profile quick
+#
+# These lived in main.py as four dicts of fifteen keys, a fourth parameter table
+# alongside the config, the two CLIs, and PPOConfig. Note `fraud_rate`: it
+# overrides the configured engine.fraud_base_rate of 0.005 by between two and
+# twelve times, so on a profiled run the YAML value never applies. That is
+# deliberate — a 0.5% base rate needs an impractically large population to
+# yield enough positives — but it was invisible while it lived in Python.
+#
+# Each key is the command-line flag the pipeline passes to the stage that owns
+# it, so a profile is exactly "what main.py would have typed for you". Anything
+# absent here keeps whatever configs/simulation.yaml says.
+
+# A fast smoke of every stage, about ten minutes. Small enough that the numbers
+# mean nothing; large enough that a broken stage fails.
+quick:
+  holders: 600
+  fraud_rate: 0.06
+  per_key: 25
+  demo_episodes: 40
+  bc_epochs: 6
+  critic_rollouts: 16
+  critic_epochs: 8
+  updates: 12
+  episodes_per_update: 12
+  refit_every: 4
+  hidden: 128
+  minibatch: 128
+  embed_dim: 256
+  label_latency: 2880
+  fraud_rounds: 3
+  target_prevalence: 0.02
+
+# A real run, one to two hours.
+default:
+  holders: 3000
+  fraud_rate: 0.02
+  per_key: 150
+  demo_episodes: 300
+  bc_epochs: 10
+  critic_rollouts: 48
+  critic_epochs: 20
+  updates: 60
+  episodes_per_update: 48
+  refit_every: 10
+  hidden: 256
+  minibatch: 256
+  embed_dim: 256
+  label_latency: 4320
+  fraud_rounds: 4
+  target_prevalence: 0.02
+
+# Sized to finish inside a working day on the GPU box. The full server profile
+# is ~19 min per update at twelve thousand holders and eighty episodes, which is
+# forty hours for a hundred and fifty updates: fine as a number, useless as a
+# schedule. Halving the population and the episodes per update quarters the
+# per-update cost; sixty updates at a refit every six still gives ten refit
+# points, more of the arms-race curve than the full profile's twelve, at a
+# fraction of the time.
+gpu:
+  holders: 6000
+  fraud_rate: 0.02
+  per_key: 300
+  demo_episodes: 400
+  bc_epochs: 12
+  critic_rollouts: 64
+  critic_epochs: 25
+  updates: 60
+  episodes_per_update: 32
+  refit_every: 6
+  hidden: 256
+  minibatch: 256
+  embed_dim: 256
+  label_latency: 4320
+  fraud_rounds: 4
+  target_prevalence: 0.02
+
+# The full thing. Roughly forty hours; use it only when that is affordable.
+server:
+  holders: 12000
+  fraud_rate: 0.01
+  per_key: 500
+  demo_episodes: 800
+  bc_epochs: 15
+  critic_rollouts: 128
+  critic_epochs: 40
+  updates: 150
+  episodes_per_update: 80
+  refit_every: 12
+  hidden: 512
+  minibatch: 512
+  embed_dim: 256
+  label_latency: 4320
+  fraud_rounds: 4
+  target_prevalence: 0.02
