@@ -96,7 +96,7 @@ class FeatureTable:
 
         Kept as the full column set so a per-expert model can drop the columns
         that are constant for its types itself, rather than this deciding for
-        it. The alternative — narrowing columns here — bakes a feature-selection
+        it. The alternative -- narrowing columns here -- bakes a feature-selection
         choice into the extractor where it cannot be measured.
         """
         mask = np.array([et in event_types for et in self.event_type], dtype=bool)
@@ -150,7 +150,7 @@ def _schema(events: list[object]) -> list[str]:
     First-appearance order is deterministic given one log and unstable across
     two. Two windows holding exactly the same event types in a different
     sequence produce the same column set in a different order, and the retention
-    buffer — which concatenates a window against every window before it — then
+    buffer -- which concatenates a window against every window before it -- then
     refuses them as incompatible despite their being identical. That failure
     surfaced only when a change to the attacker altered which event happened
     first; it was latent before, waiting for any reordering at all. Sorting
@@ -214,7 +214,7 @@ def build_table(log: EventLog, exclude_warm_start: bool = True) -> FeatureTable:
         for name in base_order:
             if name not in fields:
                 # A field this event type does not carry. Treat it as missing
-                # where it is nullable, otherwise leave the neutral zero — the
+                # where it is nullable, otherwise leave the neutral zero -- the
                 # column is constant-zero for this type and a per-expert view
                 # drops it.
                 if name in _NULLABLE_FILL:
@@ -229,7 +229,7 @@ def build_table(log: EventLog, exclude_warm_start: bool = True) -> FeatureTable:
         types[row] = event.event_type
         warm[row] = getattr(event, "is_warm_start", False)
         # The entity a row belongs to, so a split can keep an entity wholly in
-        # one side. A card for an auth, a holder for a binding — read from the
+        # one side. A card for an auth, a holder for a binding -- read from the
         # event directly, never placed in X.
         gid = getattr(event, "card_id", None)
         if gid is None:

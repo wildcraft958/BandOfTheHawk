@@ -227,7 +227,7 @@ class EventLog:
         wrapped in an episode, so its events stay unlabelled. In this simulator
         an event that belonged to no adversarial episode is benign ground truth,
         which is exactly the negative class a detector trains against. Called
-        once collection is complete, never mid-run — a benign label is only true
+        once collection is complete, never mid-run -- a benign label is only true
         once no fraud episode can still claim the event.
         """
         stamped = 0

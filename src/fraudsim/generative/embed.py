@@ -1,8 +1,8 @@
 """Embedding the generated text.
 
 The text expert reads meaning, not only the surface statistics. A generated
-dispute and a real one differ in ways a template-overlap score cannot see — tone,
-coherence, the shape of the argument — and a dense sentence embedding is what
+dispute and a real one differ in ways a template-overlap score cannot see -- tone,
+coherence, the shape of the argument -- and a dense sentence embedding is what
 carries those. This wraps a sentence-transformer so every pool item gets a
 vector, computed once, offline, and stored alongside the text.
 
@@ -81,7 +81,7 @@ class Embedder:
 class HashEmbedder:
     """A deterministic stand-in that needs no model.
 
-    Not a semantic embedding — a hashed bag of character n-grams projected to a
+    Not a semantic embedding -- a hashed bag of character n-grams projected to a
     fixed width. It exists so the pool and the text expert have vectors to work
     with when the real model is not being loaded, and so a run is reproducible
     without a download. The real model replaces it wherever semantics matter.

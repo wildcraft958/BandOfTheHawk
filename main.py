@@ -9,12 +9,12 @@ TWO WAYS TO RUN
 The stages, in the order the full run executes them:
 
     demo       build the benign world and warm it; prints the fidelity numbers
-               (rule trip rate, fan-out, events per entity) — the sanity check
+               (rule trip rate, fan-out, events per entity) -- the sanity check
                that the simulation still matches its calibration
     text       generate the text pool with Qwen and embed it; prints the tier
                ladder. Uses the real models unless --mock is passed. The pool is
                written to artifacts/text_pool.json and REUSED on every later run
-               — an existing pool is never regenerated, so the models load once
+               -- an existing pool is never regenerated, so the models load once
                and never again. Force a fresh corpus with:
                    python -m fraudsim.generative.cli build --qwen --embed --rebuild
     fraud      add scripted fraud at the base rate; prints prevalence and the
@@ -39,19 +39,17 @@ The stages, in the order the full run executes them:
                policy found. Also writes a JSON of the same numbers for plotting.
     control    THE SAME RUN WITH STEALTH DISABLED. Identical in every other
                respect, with the attacker's posture head pinned to the loud
-               setting and its dump cut to one card -- which is exactly the
-               attacker that existed before those were added. Not part of the
-               default pipeline; run it when the question is whether stealth
-               earned its place:
+               setting and its dump cut to one card, which is the attacker
+               without either capability. Not part of the default pipeline;
+               run it when the question is whether stealth earned its place:
 
                    python main.py control --profile server
 
                Read it against coadapt's curve -- but read several seeds of
-               each, not one. A single run is one sample from a heavy-tailed
-               distribution: the first comparison showed a 1.5x gap that looked
-               convincing and was not (Mann-Whitney p = 0.98, the whole gap
-               carried by one spike). Use --seed on the underlying command to
-               repeat it.
+               each, not one. Extraction per episode is heavy-tailed, so a
+               single run is one sample from a distribution where one spike
+               can carry an apparent gap that a rank test will not support.
+               Use --seed on the underlying command to repeat it.
 
                MEASURED, four seeds each, paired, at 600 holders and 24 updates
                with a refit every 6: mean post-refit extraction 4871 (stealth)
@@ -81,14 +79,14 @@ SCALE
     --profile server    12,000 holders, 150 updates. Every static
                         detection benchmark comes from here
 
-Scale only changes sizes — population, training length — never which stages run
+Scale only changes sizes -- population, training length -- never which stages run
 or what they print.
 
 LOGGING
 -------
 
-Two streams, on purpose. Progress — the stage banners, per-stage timings, and
-everything the stages themselves report — goes to stderr. The final summary table
+Two streams, on purpose. Progress -- the stage banners, per-stage timings, and
+everything the stages themselves report -- goes to stderr. The final summary table
 goes to stdout. So a redirect keeps the record complete, and a redirect of stdout
 alone keeps just the summary:
 
@@ -326,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--mock", action="store_true",
         help="build the text pool with the deterministic stand-in instead of the "
-             "real models — for a machine without a GPU, or a quick check. The "
+             "real models -- for a machine without a GPU, or a quick check. The "
              "real Qwen generation and embeddings are the default.",
     )
     args = parser.parse_args(argv)

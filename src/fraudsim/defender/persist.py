@@ -5,8 +5,8 @@ weights vanish when the process exits, and re-scoring events with the final
 defender, comparing defenders across runs, or resuming from one all mean
 retraining from scratch.
 
-The defenders hold fitted third-party models — gradient-boosted trees and
-logistic regressions — so they are pickled through joblib rather than given a
+The defenders hold fitted third-party models -- gradient-boosted trees and
+logistic regressions -- so they are pickled through joblib rather than given a
 bespoke serialisation. What is written alongside them is the column order, which
 is what makes a loaded model usable: a matrix built with a different column order
 would score silently and wrongly, so the order is stored and checked on load.

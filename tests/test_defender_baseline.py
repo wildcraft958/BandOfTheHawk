@@ -2,8 +2,8 @@
 
 A small world, so the suite stays fast, but the whole path: collect labelled
 traffic, split by entity, fit the tree, and run the per-entity ablation. The
-tests assert the machinery is sound — the split does not leak, the metrics are
-in range, the ablation produces a number — not that the number takes a
+tests assert the machinery is sound -- the split does not leak, the metrics are
+in range, the ablation produces a number -- not that the number takes a
 particular value, since that is a finding, not an invariant.
 """
 

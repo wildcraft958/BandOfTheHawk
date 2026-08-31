@@ -3,7 +3,7 @@
     python -m fraudsim.orchestration.cli run --holders 2000
 
 Builds a benign world, warms it, then runs adversarial episodes to the
-configured prevalence and prints what they produced — including the top action
+configured prevalence and prints what they produced -- including the top action
 sequences, which are there to be read.
 """
 
@@ -148,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
                          "between them mid-episode. 1 reproduces the "
                          "single-card behaviour")
     co.add_argument("--stealth-frozen", action="store_true",
-                    help="pin the stealth head to the loud posture — the control "
+                    help="pin the stealth head to the loud posture -- the control "
                          "arm for measuring whether stealth changed anything")
     co.add_argument("--candidates", type=int, default=None,
                     help="cards the victim-selection bandit chooses among each episode")

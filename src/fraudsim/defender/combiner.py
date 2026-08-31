@@ -1,6 +1,6 @@
 """Combining the experts' opinions into one score.
 
-Which experts apply to an event is already decided — a schema fact. What is not
+Which experts apply to an event is already decided -- a schema fact. What is not
 decided is how much each applicable opinion should count, and that is what this
 learns. An authorisation minutes after a device bind that followed a password
 reset is scored by the transaction expert (an ordinary purchase), the binding
@@ -112,7 +112,7 @@ class MixtureScorer:
         """Fit the experts and combiner, and attach the banding.
 
         The bands are what turn a score into a mitigation, so a scorer built
-        without them detects and never acts — the graph write-back would sit
+        without them detects and never acts -- the graph write-back would sit
         dormant and the loop would not actually close. A default banding is
         attached unless the caller supplies one it has searched.
         """

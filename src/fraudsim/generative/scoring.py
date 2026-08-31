@@ -4,19 +4,19 @@ Generation is the easy half; the scores are what a detector actually consumes,
 and they must be computed by something specified rather than asserted. Three
 scores, each a real detector-facing signal:
 
-**template_similarity** — how close this text is to the nearest of a reference
+**template_similarity** -- how close this text is to the nearest of a reference
 set, by character n-gram overlap. High similarity means a reused skeleton, which
 is the tell of bulk generation. Measured against the real CFPB narratives and,
 where those are absent, against the pool's own tier so near-duplicates within a
 run still register.
 
-**entity_consistency** — do the amount, merchant and date stated in the text
+**entity_consistency** -- do the amount, merchant and date stated in the text
 match the facts the action carried? A real attacker's generated evidence often
 drifts from the transaction it is meant to describe; a genuine customer's does
 not. This is the only score that couples the text to the simulation state, which
 is what makes it hard to game.
 
-**perplexity_proxy** — a model-free stand-in for fluency: burstiness and
+**perplexity_proxy** -- a model-free stand-in for fluency: burstiness and
 vocabulary richness, which separate templated text from written text without
 needing a language model in the loop. The real perplexity under the generator is
 available behind a flag for a machine that can run it, but nothing on the default
@@ -57,7 +57,7 @@ class TextScorer:
     The reference is hashed into a fixed-width matrix once, so scoring a pool is
     a single matrix product rather than a comparison per (item, reference) pair.
     The pairwise form was quadratic and became the slowest thing in the pipeline
-    at a realistic pool size — twenty-four million Counter comparisons for a
+    at a realistic pool size -- twenty-four million Counter comparisons for a
     twelve-thousand-item pool against two thousand narratives.
     """
 
@@ -126,7 +126,7 @@ class TextScorer:
 
         Type-token ratio over words: templated text reuses a small vocabulary
         and scores low, varied prose scores higher. A crude proxy, and named as
-        one — its job is to give the expert a fluency axis without a model, not
+        one -- its job is to give the expert a fluency axis without a model, not
         to be a calibrated perplexity.
         """
         words = _WORD.findall(text.lower())

@@ -40,8 +40,8 @@ class StdoutHandler(logging.StreamHandler[TextIO]):
     """A stream handler that looks up sys.stdout on every write.
 
     logging.config binds `ext://sys.stdout` once, at configure time. Anything
-    that replaces the stream afterwards — pytest's capsys, a redirect inside a
-    context manager — would then be written past rather than to. Resolving on
+    that replaces the stream afterwards -- pytest's capsys, a redirect inside a
+    context manager -- would then be written past rather than to. Resolving on
     each emit keeps the handler pointed at whatever stdout currently is.
 
     StreamHandler.__init__ assigns self.stream, so the live lookup cannot be a

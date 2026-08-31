@@ -1,6 +1,6 @@
 """Five experts over structurally different feature spaces.
 
-The justification for separate experts is not "many attack types" — it is that
+The justification for separate experts is not "many attack types" -- it is that
 the event types have genuinely different feature spaces. A KYC submission has no
 amount; an authorisation has no liveness score; a dispute carries a text
 embedding that appears nowhere else. Flatten them into one table and most cells
@@ -9,7 +9,7 @@ instead of behaviour.
 
 **Routing is a schema fact, not a learned gate.** Which expert can score an event
 is decided by its type, a dictionary lookup, and there is nothing to learn there
-— a gate trained to predict it would reach near-perfect accuracy and contribute
+-- a gate trained to predict it would reach near-perfect accuracy and contribute
 nothing. What is learned is the *combination* of the applicable experts'
 opinions, and that lives in the combiner, not here. This is stacking, and naming
 it that is more honest than dressing a lookup as a mixture.
@@ -185,7 +185,7 @@ class ExpertBank:
     """The five experts, fit together and scored together.
 
     Holds the per-expert models and produces, for a set of rows, a matrix of
-    expert scores plus an applicability mask — which experts had a right to
+    expert scores plus an applicability mask -- which experts had a right to
     judge each row. The combiner consumes exactly this.
     """
 
@@ -228,8 +228,8 @@ class ExpertBank:
             mask[:, j] = applies
             # An expert whose remit covers none of these rows is not run at all.
             # Its scores would be masked out by the combiner anyway, and the
-            # single-row path — one event scored as it happens, five experts, a
-            # scikit-learn call each — is dominated by per-call overhead rather
+            # single-row path -- one event scored as it happens, five experts, a
+            # scikit-learn call each -- is dominated by per-call overhead rather
             # than by arithmetic. Skipping the four that do not apply is most of
             # the cost of scoring one event.
             if not applies.any():

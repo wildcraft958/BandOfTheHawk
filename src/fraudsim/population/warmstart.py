@@ -136,7 +136,7 @@ class WarmStartRunner:
         behaviour forward from the current clock and leaves it unflagged: this
         is the ordinary traffic that continues through the observation window,
         and it is the negative class a detector trains against. The behavioural
-        machinery is identical either way — only the placement in time and the
+        machinery is identical either way -- only the placement in time and the
         warm-start flag differ.
         """
         graph = self.simulator.graph

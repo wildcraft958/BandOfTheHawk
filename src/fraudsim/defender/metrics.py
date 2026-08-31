@@ -1,7 +1,7 @@
 """The metrics a detection task is actually judged on.
 
 At a 0.5% base rate, accuracy and plain ROC-AUC flatter a model that never fires
-— predicting benign everywhere scores 99.5% accurate and says nothing. What an
+-- predicting benign everywhere scores 99.5% accurate and says nothing. What an
 issuer cares about is caught fraud at a tolerable false-positive rate and the
 precision of a fixed alert budget an investigator can actually work through.
 
@@ -43,7 +43,7 @@ def roc_auc(y_true: np.ndarray, scores: np.ndarray) -> float:
     """Reported alongside PR-AUC, never instead of it.
 
     Kept because it is the number reviewers expect, with the caveat that at a
-    0.5% base rate it is optimistic — a model can look excellent here while
+    0.5% base rate it is optimistic -- a model can look excellent here while
     missing most fraud at any usable threshold.
     """
     order = np.argsort(-scores)
@@ -76,7 +76,7 @@ def recall_at_fpr(y_true: np.ndarray, scores: np.ndarray, fpr_target: float) -> 
 
 
 def precision_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
-    """Precision of the top-k alerts — a fixed investigation budget."""
+    """Precision of the top-k alerts -- a fixed investigation budget."""
     if k <= 0:
         return 0.0
     order = np.argsort(-scores)[:k]

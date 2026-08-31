@@ -9,7 +9,7 @@ sequences each round so an absurd one surfaces as the simulator bug it is rather
 than a clever attacker.
 
 The demonstrations are collected through the same environment the learned policy
-acts in, so they are recorded as encoded observations and action indices — the
+acts in, so they are recorded as encoded observations and action indices -- the
 exact form BC needs. A script that read the actor directly could not be cloned;
 collecting through the env is what guarantees it can.
 """
@@ -55,7 +55,7 @@ def _inverse_delay_raw(minutes: float) -> float:
 
     The mirror of `_inverse_amount_raw`, and it exists for a defect rather than
     for symmetry. Every demonstration used to store a raw delay of zero, which
-    squashes to the midpoint of the range — thirty-six hours — no matter what
+    squashes to the midpoint of the range -- thirty-six hours -- no matter what
     delay the script had actually chosen. The clone therefore learned one
     constant wait and learned nothing about timing, while the scripts' own
     delays, which do vary, were thrown away before the head ever saw them.
@@ -63,7 +63,7 @@ def _inverse_delay_raw(minutes: float) -> float:
     That mattered more than it looks. Genuine traffic follows a circadian curve
     and an attacker with no sense of the clock spreads itself uniformly across
     the day, which lands roughly a third of its activity in hours when real
-    volume is near zero — a tell as decisive as a brand-new device, and one no
+    volume is near zero -- a tell as decisive as a brand-new device, and one no
     posture can cover.
     """
     import math

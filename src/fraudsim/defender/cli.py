@@ -95,8 +95,8 @@ def cmd_baseline(args: argparse.Namespace) -> int:
 def _rule_scores(scorer, test_table):
     """Score each test row with the rule engine, aligned row for row.
 
-    The table carries its source events, so the rule scorer — which reads an
-    event, not a matrix — is run over exactly the events the test rows came
+    The table carries its source events, so the rule scorer -- which reads an
+    event, not a matrix -- is run over exactly the events the test rows came
     from. A row whose event the rules do not apply to (anything but an auth)
     gets a neutral zero, which is the engine declining to judge it rather than a
     fabricated score.

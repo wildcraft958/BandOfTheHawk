@@ -1,8 +1,8 @@
 name: ci
 
-# The import firewall is the repository's most valuable structural property and
-# was enforced only when somebody remembered to run pytest locally. These jobs
-# enforce it on every push.
+# The import firewall is the repository's most valuable structural property, so
+# these jobs enforce it on every push rather than leaving it to whoever runs
+# pytest locally.
 #
 # The tiers run as separate jobs for two reasons. The core job proves the claim
 # the firewall makes: that the simulation runs on numpy alone. And splitting them
@@ -52,8 +52,8 @@ jobs:
           python-version: "3.13"
           cache: pip
       # Nothing optional. If a runtime module reaches for pandas, sklearn or
-      # torch, this job fails, which is the firewall's whole point. It caught
-      # calibration/__init__ pulling pandas into every CLI's import path.
+      # torch, this job fails, which is the firewall's whole point. A lazy
+      # import inside a package __init__ is enough to trip it.
       - name: Install core and dev only
         run: |
           python -m pip install -e ".[dev]"
@@ -105,8 +105,9 @@ jobs:
         run: |
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e ".[dev,defender,rl,calibration]"
-      # torch was seeded nowhere until recently, so two runs at one seed produced
-      # different attackers. This asserts the fix rather than trusting it.
+      # Reproducibility is a claim the repository makes, so it is asserted here
+      # rather than trusted: the trainer seeds torch from the run seed, and two
+      # runs at one seed must agree on every recorded series.
       - name: Two co-adaptation runs at one seed
         run: |
           for run in a b; do

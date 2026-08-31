@@ -52,7 +52,7 @@ def test_template_similarity_falls_with_tier():
 
     Each tier is scored against the OTHER tiers' text, never against itself. An
     item compared to a reference containing that same item scores exactly 1.0
-    whatever it says, which measures nothing — the point is how close a tier's
+    whatever it says, which measures nothing -- the point is how close a tier's
     text is to text it did not come from.
     """
     pool = build_pool(per_key=8, seed=2)

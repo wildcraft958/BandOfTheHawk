@@ -11,8 +11,8 @@ Two generators satisfy the same interface.
 
 `MockGenerator` is the default. It composes text from the facts and the tier
 deterministically, with the tier controlling how much checkable detail lands and
-how much of a fixed skeleton is reused. It exists so the whole pipeline — pool,
-scoring, the text expert — runs on any machine, and so the tier ladder is
+how much of a fixed skeleton is reused. It exists so the whole pipeline -- pool,
+scoring, the text expert -- runs on any machine, and so the tier ladder is
 exercised without a GPU. It is not trying to fool a human; it is trying to give
 the scores something with the right structure to read.
 
@@ -67,7 +67,7 @@ class MockGenerator:
     """Deterministic text from facts and tier. The default; no model.
 
     The tier is the whole point. A low tier emits a short line off a fixed
-    skeleton, so many low-tier items look alike — high template similarity, thin
+    skeleton, so many low-tier items look alike -- high template similarity, thin
     detail. A high tier adds the amount, the merchant, the date and a timeline,
     each phrased around the facts, so items diverge and carry checkable content.
     That is the ordinal ladder the capability claim rests on, produced without a
@@ -170,7 +170,7 @@ class TextPool:
         """Both classes of a vertical/tier.
 
         The source draws from here, because at generation time nothing knows the
-        ground truth — a benign dispute and a fraudulent one request the same
+        ground truth -- a benign dispute and a fraudulent one request the same
         tool, and the text differs by facts, not by a label the generator sees.
         The episode's outcome sets the label; the text is just text.
         """

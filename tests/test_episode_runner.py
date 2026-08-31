@@ -2,7 +2,7 @@
 
 A smaller world than the CLI uses, so the suite stays fast, but the same path:
 warm start for benign traffic, then the runner for fraud, checked for the three
-properties that matter — the share is near target, the episodes reach
+properties that matter -- the share is near target, the episodes reach
 monetisation, and the graph is still consistent after all the mutations.
 """
 

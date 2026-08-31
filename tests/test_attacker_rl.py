@@ -81,6 +81,6 @@ def test_trainer_bootstrap_improves_return():
     # The pipeline completed and produced per-update stats and a sequence log.
     assert len(report.update_stats) == 6
     assert report.top_sequences
-    # Later returns should not be worse than the first by a wide margin — the
+    # Later returns should not be worse than the first by a wide margin -- the
     # clone gives a working start and PPO should not immediately destroy it.
     assert report.mean_return[-1] >= report.mean_return[0] - 5.0

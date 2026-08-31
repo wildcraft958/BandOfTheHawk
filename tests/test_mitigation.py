@@ -1,7 +1,7 @@
 """Mitigation closes the loop at the level of the world.
 
 A score alone changes nothing; these tests prove the mitigations mutate the
-graph so the attacker's next action genuinely fails — a deleted binding is gone,
+graph so the attacker's next action genuinely fails -- a deleted binding is gone,
 a frozen card refuses, a blocklisted device is unusable. This is the mitigation
 half of the edge symmetry the design is built on.
 """

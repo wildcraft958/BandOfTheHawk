@@ -6,8 +6,8 @@ on the flat table first, because it produces a real number early and because a
 mixture that cannot beat it is not worth its complexity. If the experts lose to
 this, the honest result is the ablation.
 
-It is also what answers the open question. Whether the per-entity features —
-`amount_vs_median`, `is_first_txn_this_merchant`, `within_usual_hours` — carry
+It is also what answers the open question. Whether the per-entity features --
+`amount_vs_median`, `is_first_txn_this_merchant`, `within_usual_hours` -- carry
 signal is not known until a model is asked to separate fraud with and without
 them. That is what `feature_importance` and the ablation harness are for, and it
 should be answered before five experts are built on top of an assumption.

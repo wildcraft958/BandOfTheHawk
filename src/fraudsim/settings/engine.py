@@ -94,7 +94,7 @@ class EpisodeConfig(StrictModel):
     # anti-reward-hacking controls. A fixed boundary is a number a policy can
     # find and then sit just underneath, which is memorising one detector rather
     # than learning to evade detection. Drawn once per episode, so the amount is
-    # stable while an attacker acts and different the next time it tries — the
+    # stable while an attacker acts and different the next time it tries -- the
     # attacker cannot binary-search a threshold that moves between attempts.
     #
     # Zero disables it, which is what the static benchmarks want: a fixed

@@ -1,7 +1,7 @@
 """Splitting a table for training, without leaking an entity across the split.
 
 A row split puts the same card in both train and test, so the model is tested on
-entities it trained on and the number that comes out is optimistic — the same
+entities it trained on and the number that comes out is optimistic -- the same
 failure the fidelity floor guards against, one layer down. The split here is by
 entity: a card (or holder) lands wholly in one side.
 

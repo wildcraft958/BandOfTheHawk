@@ -81,7 +81,7 @@ def fisher_corrected_r(resultants: np.ndarray, counts: np.ndarray) -> np.ndarray
 
     Under a uniform null E[R^2] = 1/k, which gives the correction below. On the
     judge dataset it moves the estimate from 0.565 to 0.492 at a five-event
-    cutoff, and — the part that matters — makes it stop drifting: raw R falls
+    cutoff, and -- the part that matters -- makes it stop drifting: raw R falls
     to 0.496 as the cutoff rises to twenty while the corrected value holds near
     0.48. Without it, a generator tuned at one cutoff is wrong at every other.
     """
@@ -323,7 +323,7 @@ def matched_by_event_count(
     statistic here varies with how many events an entity has. A real
     population whose median is two events against a generated one whose
     activity tiers put it elsewhere would then report a difference in census
-    as a difference in behaviour — misleading in both directions, since sparse
+    as a difference in behaviour -- misleading in both directions, since sparse
     entities scatter more whatever the model.
 
     `statistic` takes a frame and returns a float.

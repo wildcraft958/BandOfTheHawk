@@ -12,8 +12,8 @@ GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simula
 The full write-up: the attacks identified, how they are generated and simulated, the
 detection and mitigation model with its efficacy results, and real-world feasibility.
 
-- **[docs/BandOfTheHawk.pdf](docs/BandOfTheHawk.pdf)** — 26 pages, the readable version
-- **[docs/BandOfTheHawk.docx](docs/BandOfTheHawk.docx)** — the same document as submitted
+- **[docs/BandOfTheHawk.pdf](docs/BandOfTheHawk.pdf)** -- 26 pages, the readable version
+- **[docs/BandOfTheHawk.docx](docs/BandOfTheHawk.docx)** -- the same document as submitted
 
 Section 8 carries the results this repository reproduces, Appendix B the configuration
 every reported run used, and Appendix D the commands to re-run them.
@@ -187,8 +187,8 @@ python main.py --profile quick     # a fast smoke of every stage
 # Run a single stage
 python main.py baseline
 
-# The stealth ablation: the four paired seeds behind the reported comparison
-for s in 0 1 2 3; do
+# The stealth ablation: twelve paired seeds, the set that ships here
+for s in $(seq 0 11); do
   python main.py coadapt --profile ablation --seed $s
   python main.py control --profile ablation --seed $s
 done
@@ -202,8 +202,8 @@ pytest tests/ -q
 Profiles set sizes and never which stages run or what they print. There are five:
 `quick`, `ablation`, `default`, `gpu` and `server`. A bare `python main.py` runs
 `default`; every static detection benchmark comes from `server`; the paired co-adaptation
-comparison comes from four seeds under `ablation`, which fixes 600 cardholders, 24 updates
-and a refit every 6.
+comparison comes from `ablation`, which fixes 600 cardholders, 24 updates and a refit
+every 6.
 
 A set of paired runs ships in `artifacts/ablation/`, so
 `python -m fraudsim.orchestration.ablation` and `python make_figures.py` produce a

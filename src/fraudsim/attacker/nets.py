@@ -1,7 +1,7 @@
 """The policy and value networks.
 
-The reference this is ported from operates on a graph state; ours is flat — an
-observation is a stage, a legal-action mask and a feature mapping — so the
+The reference this is ported from operates on a graph state; ours is flat -- an
+observation is a stage, a legal-action mask and a feature mapping -- so the
 encoder is a multilayer perceptron rather than a graph network. Everything else
 follows the reference: a masked categorical over the discrete actions, and the
 same clipped-surrogate training the PPO module drives.
@@ -51,7 +51,7 @@ DELAY_MAX = _SPACE.delay_max_hours * MINUTES_PER_HOUR
 
 # The stealth-modifier space. Four ways to carry out whatever action was chosen,
 # ordered so that index 0 is the behaviour the policy had before this head
-# existed — which makes it the natural behaviour-cloning target and keeps the
+# existed -- which makes it the natural behaviour-cloning target and keeps the
 # clone's meaning unchanged.
 #
 #   0 LOUD        whatever binding the world prefers (the newest), online entry

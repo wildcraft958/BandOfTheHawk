@@ -1,7 +1,7 @@
 """Choosing whom to attack.
 
-The attack itself is sequential — phishing unlocks a reset, which unlocks a
-binding, which unlocks a spend — and that is why it is learned with policy
+The attack itself is sequential -- phishing unlocks a reset, which unlocks a
+binding, which unlocks a spend -- and that is why it is learned with policy
 gradient. Choosing the victim is not sequential at all: a card is picked, a
 return is observed, and the next episode starts from an unrelated card. Nothing
 chosen now changes what is available later. That is a contextual bandit, and
@@ -10,7 +10,7 @@ problem with no sequence in it.
 
 **What the attacker is allowed to know.** Only what a bought card dump carries:
 the BIN tier and roughly how old the card is. Not the credit line, not the
-balance, not the tenure, and never the graph — those are facts the bank holds,
+balance, not the tenure, and never the graph -- those are facts the bank holds,
 and letting the attacker select on them would quietly answer a different and much
 easier question than the one being asked.
 
@@ -47,7 +47,7 @@ def card_context(bin_tier: int, card_age_days: float) -> np.ndarray:
     on a card dump; nothing here is on a bank statement.
     """
     # Drop-first encoding. A full one-hot for each factor plus an intercept is
-    # rank deficient — each one-hot sums to the intercept — so the ridge spreads
+    # rank deficient -- each one-hot sums to the intercept -- so the ridge spreads
     # weight arbitrarily across collinear columns and every level comes out with
     # the same coefficient. Dropping the first level of each factor makes the
     # design full rank, and the coefficients read as differences from that

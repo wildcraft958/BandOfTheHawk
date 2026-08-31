@@ -2,7 +2,7 @@
 
 The head exists because of a specific failure. The attacker had no way to say
 *how* an action was carried out, so every authorisation ran through whichever
-binding the simulator preferred — the newest — and every attack therefore
+binding the simulator preferred -- the newest -- and every attack therefore
 carried a device minutes old. The defender's top feature by a wide margin was
 device age, and one refit ended the arms race. There was no stealthier strategy
 for the policy to discover, because the action space could not express one.
@@ -188,7 +188,7 @@ def test_fraud_loop_terminates_when_episodes_produce_no_auths(monkeypatch):
     none: an auth whose card has no usable binding fails before an event is
     built, and a vertical that monetises through a refund may never attempt one.
     Both are reachable at the end of a long co-adaptation run, where mitigations
-    have blocklisted devices and frozen cards — and the zero-shot holdout then
+    have blocklisted devices and frozen cards -- and the zero-shot holdout then
     runs a single vertical against exactly that world.
 
     This is not hypothetical. A run finished all its training updates and then
@@ -235,7 +235,7 @@ def test_terminal_bonus_is_paid_for_money_not_for_a_stage_label():
     approval; a transfer moves balance into the laundering pot and realises
     nothing until a later cash-out. Paying the bonus on arrival made the
     transfer worth over ten points of reward for zero extracted value, and the
-    policy learned to reach the stage and stop — scoring well on the reward
+    policy learned to reach the stage and stop -- scoring well on the reward
     while extracting nothing the arms-race metric could see.
     """
     from fraudsim.attacker.env import AttackEnv, RewardWeights
@@ -291,7 +291,7 @@ def test_behaviour_cloning_leaves_the_stealth_head_free():
 
     This is a regression test for a real failure. The scripts predate the head
     and are uniformly loud, so cloning it drove posture entropy from 1.382 to
-    0.031 — the policy came out of the warm start 99.6% certain of the one choice
+    0.031 -- the policy came out of the warm start 99.6% certain of the one choice
     it most needed to question, and the KL-to-BC penalty then held it there
     through the first defender refit. The stealth capability was present, was
     measurably sufficient to clear the decline threshold on its own, and was

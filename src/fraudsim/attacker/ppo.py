@@ -282,7 +282,7 @@ class PPOTrainer:
         the head to a constant: measured, the posture entropy fell from 1.382 to
         0.031, leaving the policy 99.6% certain of the one posture it most needed
         to question. The KL-to-BC penalty then held it there through the first
-        several updates — which is exactly when the defender first refits and
+        several updates -- which is exactly when the defender first refits and
         when an alternative posture would have to be discovered. The head existed,
         worked, and was never used.
 

@@ -8,23 +8,23 @@ what a real arms race is.
 
 It runs in four phases, and the order is the point.
 
-**A — the defender starts strong.** Before anything adversarial learns, the
+**A -- the defender starts strong.** Before anything adversarial learns, the
 defender is fitted on a first sweep of benign traffic and scripted fraud, so the
 attacker faces a real detector from its first step rather than a rule of thumb.
 
-**B — the actor warm-starts, everything else frozen.** With the defender frozen,
+**B -- the actor warm-starts, everything else frozen.** With the defender frozen,
 the policy is behaviour-cloned from the scripted attackers. It starts from a
 working strategy instead of the inaction a cold policy collapses into.
 
-**C — the critic warm-starts, the actor frozen.** The cloned actor is now frozen
+**C -- the critic warm-starts, the actor frozen.** The cloned actor is now frozen
 and rolled out against the frozen defender; the critic is fitted on the returns
 those rollouts realise. The value function is calibrated to the actor's actual
 behaviour before a single PPO step, so the first advantages are trustworthy
 rather than noise that would undo the clone.
 
-**D — live adaptation.** Everything unfreezes. The attacker runs PPO
+**D -- live adaptation.** Everything unfreezes. The attacker runs PPO
 continuously. Every K updates the defender refits on the fraud accumulated since
-its last refit — all fraud kept, recent benign only — and the world is pointed at
+its last refit -- all fraud kept, recent benign only -- and the world is pointed at
 the new defender, so the attacker immediately faces the stronger defence. The two
 clocks differ on purpose: an attacker adapts fast, a fraud model retrains
 periodically, and that asymmetry is the real one.
@@ -124,7 +124,7 @@ class CoadaptEngine:
         self.label_latency_minutes = label_latency_minutes
         # How much of the log has already been folded into the retention buffer.
         # Without this every refit re-reads the whole log and the same fraud is
-        # counted once per refit — the buffer grew to two hundred thousand rows
+        # counted once per refit -- the buffer grew to two hundred thousand rows
         # of mostly duplicates, and the defender was effectively trained on the
         # same attack a dozen times over.
         self._log_consumed = 0
@@ -150,7 +150,7 @@ class CoadaptEngine:
         self.dump_size = max(1, dump_size)
         # The ablation switch. With the head frozen to the loud posture the
         # policy is exactly the one that collapsed at the first refit, which is
-        # the only control that shows whether stealth did anything — a nicer
+        # the only control that shows whether stealth did anything -- a nicer
         # curve after a dozen edits proves nothing on its own.
         self.stealth_frozen = stealth_frozen
         self._pending_context = None
@@ -168,7 +168,7 @@ class CoadaptEngine:
         # The text pool, if one is built, so dispute/ticket/refund actions carry
         # real generated text and its embedding to the text expert. Absent, the
         # simulator falls back to empty artifacts and the text expert sees no
-        # text columns — the pipeline still runs, just without that signal.
+        # text columns -- the pipeline still runs, just without that signal.
         from ..generative.pool import load_artifact_source
 
         setup.say(f"graph holds {len(graph.cards):,} cards, {len(graph.devices):,} devices")
@@ -235,7 +235,7 @@ class CoadaptEngine:
 
         # The rest of the dump: the candidates the bandit passed over. Taking
         # them from the same draw rather than from a fresh one keeps the bandit's
-        # context honest — it still describes the card the episode leads with,
+        # context honest -- it still describes the card the episode leads with,
         # and the spares are what a buyer of that same batch would also hold.
         # Drawing spares independently would let an episode reach cards the
         # selector never saw, and the posterior would be crediting returns to a
@@ -318,7 +318,7 @@ class CoadaptEngine:
         Without this the live defender ran on the round-number defaults and had
         exactly one loss condition: missing fraud. Declining a genuine customer
         cost it nothing, so its cheapest winning move was to become stricter
-        without limit — and the reason it had not already done so was luck.
+        without limit -- and the reason it had not already done so was luck.
 
         A detector that must stay usable is the constraint that leaves an
         attacker any room at all, which is what makes the contest a contest.
@@ -328,7 +328,7 @@ class CoadaptEngine:
 
         Searched on the training set, which slightly favours the defender: the
         thresholds see the same rows the model was fitted on. Stated rather than
-        hidden — a held-out split at this prevalence would leave too few
+        hidden -- a held-out split at this prevalence would leave too few
         positives to place a threshold on.
         """
         # The two defenders take different arguments here: the flat tree scores a
@@ -380,7 +380,7 @@ class CoadaptEngine:
         """The live phase: attacker PPO continuous, defender refit every K updates.
 
         Each update collects a batch of attacker episodes against the current
-        live defender, does one PPO update, and records the attacker's success —
+        live defender, does one PPO update, and records the attacker's success --
         the share of fraud authorisations the defender let through. Every
         `refit_every` updates the defender refits on the fraud seen since, and the
         world is pointed at it, so the very next batch faces the stronger defence.
@@ -464,7 +464,7 @@ class CoadaptEngine:
         Labels arrive late in reality: a chargeback takes days to weeks, and a
         detector is therefore always fitted to a picture of the attack that is
         already stale. Modelling that lag is what leaves an adapting attacker
-        anything to exploit — with instant labels the detector sees each new
+        anything to exploit -- with instant labels the detector sees each new
         tactic the moment it appears and the contest is over before it starts.
 
         The lag is expressed in simulated minutes and applied by withholding the
@@ -475,7 +475,7 @@ class CoadaptEngine:
         # training and nothing after, so every event in a refit window came from
         # the attacker. The detector was being fitted at 42% fraud against a
         # design that specifies 0.5%, which is a different and far easier problem
-        # — at that balance almost any split separates the classes, and the
+        # -- at that balance almost any split separates the classes, and the
         # defender's apparent invincibility was mostly the prevalence.
         #
         # Generated before the window is read, so the benign traffic lands in the
@@ -536,8 +536,8 @@ class CoadaptEngine:
         # carries, so the obvious `getattr(event, "approved")` finds nothing and
         # silently reports a perfect zero. It did, for several runs.
         #
-        # Scoring with `self.defender` — the one that was in force while this
-        # traffic ran, since the refit happens after this returns — keeps the
+        # Scoring with `self.defender` -- the one that was in force while this
+        # traffic ran, since the refit happens after this returns -- keeps the
         # rate a description of decisions actually taken.
         fresh = [
             e for e in self.sim.log.events[before:] if isinstance(e, AuthAttemptEvent)
@@ -615,8 +615,8 @@ def run_coadapt(
 
     Both trained sides are written to `checkpoint_dir` when one is given: the
     attacker's actor and critic, and the final refitted defender. A run of this
-    length produces models worth keeping — for re-scoring, for comparing across
-    runs, and for resuming — and without saving them they vanish with the
+    length produces models worth keeping -- for re-scoring, for comparing across
+    runs, and for resuming -- and without saving them they vanish with the
     process.
     """
     engine = CoadaptEngine(

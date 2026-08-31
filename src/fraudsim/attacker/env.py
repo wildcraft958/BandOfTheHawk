@@ -4,15 +4,15 @@ The simulator is the world; this wraps it into the loop a policy trains against.
 An episode places one adversarial actor against a target, and each step turns the
 policy's chosen action into an `Action`, resolves it, and returns the reward and
 the next observation. Benign traffic and prevalence are the runner's concern, not
-this — here the concern is one attacker's trajectory, which is what PPO learns
+this -- here the concern is one attacker's trajectory, which is what PPO learns
 from.
 
 The observation is exactly what the design permits a policy to see: the stage,
 the legal-action mask, and a feature mapping. Never the graph. The encoder turns
 that into a fixed vector, and its width is reported so the networks match it.
 
-**Stealth is resolved here, not chosen here.** The policy emits a posture — ride
-an aged binding, cool off, rotate cards — and this module turns it into the
+**Stealth is resolved here, not chosen here.** The policy emits a posture -- ride
+an aged binding, cool off, rotate cards -- and this module turns it into the
 concrete `device_id`, `delay` and `target_id` the simulator needs. That
 resolution reads the graph; the policy does not. The distinction matters and is
 easy to misread as a leak: an attacker who has taken over an account knows which
@@ -58,7 +58,7 @@ N_STAGES = len(Stage)
 #
 # The last four were added with the stealth head. A policy that can choose
 # between a loud and a quiet route needs to know whether loud is working, and
-# without any feedback on its own detection history the choice is unlearnable —
+# without any feedback on its own detection history the choice is unlearnable --
 # both postures look identical from inside the observation. Every one of these is
 # a fact the attacker itself holds: how often its own actions came back refused,
 # whether the last one did, how much of its dump is unspent, and how long it has
@@ -141,7 +141,7 @@ class AttackEnv:
                 kind=ActorKind.ADVERSARIAL,
                 holder_id=self.target.holder_id,
                 # The whole dump, not just the primary. Nothing in the engine
-                # reads this — resolvers take the card off the action — but an
+                # reads this -- resolvers take the card off the action -- but an
                 # actor whose record disagrees with what it is actually spending
                 # is the kind of quiet inconsistency that costs an afternoon
                 # later.
@@ -260,7 +260,7 @@ class AttackEnv:
         """The binding an aged posture routes through, or None for the default.
 
         Returning None hands the choice back to the simulator, which prefers the
-        newest binding — the loud posture, and what every action did before this
+        newest binding -- the loud posture, and what every action did before this
         head existed. The aged postures name the card's oldest surviving binding
         instead, which is the point: an account takeover spends through the
         device the victim has always used, and a detector leaning on device
@@ -317,7 +317,7 @@ class AttackEnv:
         # on approval, and a transfer, which moves balance into the laundering
         # pot and extracts nothing until a later cash-out. Paying the bonus on
         # arrival made the transfer worth +10.5 for zero realised value, and the
-        # policy duly learned to reach the stage and stop — a strategy that
+        # policy duly learned to reach the stage and stop -- a strategy that
         # scored well on the reward and extracted nothing the metric could see.
         # Scaling by whether the step actually realised value keeps the shaping
         # pointing at the same quantity the arms race is measured in.
@@ -342,7 +342,7 @@ class AttackEnv:
             return True
         # The wall-clock cap, which was declared in the configuration and
         # enforced nowhere. Without it the delay head could stretch an episode
-        # across months of simulated time — long enough for a brand-new device to
+        # across months of simulated time -- long enough for a brand-new device to
         # age into an ordinary one, and for velocity windows to forget everything
         # that came before. That is not patience, it is stepping outside the
         # window the detector is defined over.
@@ -365,7 +365,7 @@ class AttackEnv:
             # What time it is where the victim is. Without it the delay head is
             # choosing a wait in the dark: benign traffic follows a circadian
             # curve and fraud, having no clock at all, spread itself uniformly
-            # across the day — so roughly a third of it landed in hours when
+            # across the day -- so roughly a third of it landed in hours when
             # genuine volume is near zero. That handed the detector a tell as
             # decisive as device novelty and just as untouchable by any posture,
             # because the policy could not see the clock it was being judged

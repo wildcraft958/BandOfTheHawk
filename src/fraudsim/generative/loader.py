@@ -22,7 +22,7 @@ from ..logs import get_logger
 
 _log = get_logger(__name__)
 
-# Qwen 2.5 7B instruct. A model id, not a load — resolving this string costs
+# Qwen 2.5 7B instruct. A model id, not a load -- resolving this string costs
 # nothing until something asks the loader to realise it.
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 

@@ -6,8 +6,8 @@ thresholds. Three of the five were declared in the configuration and enforced
 nowhere.
 
 The consequence was not subtle. With no ceiling on what one merchant would
-absorb, every seed of a co-adaptation run converged on the same shape — rotate
-cards to dodge per-card velocity, then hammer authorisations — and took eight to
+absorb, every seed of a co-adaptation run converged on the same shape -- rotate
+cards to dodge per-card velocity, then hammer authorisations -- and took eight to
 twenty-eight thousand an episode against a stated cap of two thousand. That
 produced a rising extraction curve that looked exactly like an arms race and was
 a hole in the simulator.
@@ -225,7 +225,7 @@ def test_threshold_jitter_moves_the_decision_between_episodes():
     """A fixed boundary is a number a policy can find and sit underneath.
 
     The jitter is drawn once per episode, so it is stable while an attacker acts
-    and different next time — the boundary cannot be binary-searched.
+    and different next time -- the boundary cannot be binary-searched.
     """
     config, graph, sim = _world({"engine": {"episode": {"threshold_jitter": 0.05}}})
 

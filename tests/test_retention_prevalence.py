@@ -3,7 +3,7 @@
 The live phase produces fraud and benign in whatever ratio the training loop
 happens to generate them. Left alone that ratio was 42%, against a design that
 specifies 0.5%. A detector fitted at 42% is not a stricter version of the
-deployed one — it is solving a different and far easier problem, because at that
+deployed one -- it is solving a different and far easier problem, because at that
 balance almost any split separates the classes. Most of the defender's apparent
 invincibility was the mixture rather than the model.
 

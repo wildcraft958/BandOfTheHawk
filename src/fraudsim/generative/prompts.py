@@ -3,21 +3,21 @@
 
 Three verticals present text to a control: a disputed charge, a support request,
 a refund claim. Each is built from a system turn and a user turn filled with
-facts the simulator supplies — the amount, the merchant, the date, a persona.
+facts the simulator supplies -- the amount, the merchant, the date, a persona.
 
 Two disciplines make the resulting data honest.
 
 **Fraud and benign share a template.** The negative twin of a fraudulent dispute
 is a real customer disputing a charge they genuinely did not make; the letter
 reads the same, and the only difference is whether the underlying transaction
-was authorised — a fact that lives in the episode label, not in the text. If the
+was authorised -- a fact that lives in the episode label, not in the text. If the
 two classes came from different templates a text model would learn the template
 rather than the fraud, so the benign twin is the same prompt with the
 adversarial facts removed, never a different prompt.
 
 **The tier is richness, not intent.** A higher capability tier asks for more
-specific, consistent, well-structured text — a timeline, pre-empted objections,
-cross-referenced detail — not for anything more adversarial. That ladder is
+specific, consistent, well-structured text -- a timeline, pre-empted objections,
+cross-referenced detail -- not for anything more adversarial. That ladder is
 ordinal and measurable, which is what the capability-tier claim needs, and it
 never requires the model to believe it is doing anything wrong.
 """
@@ -30,7 +30,7 @@ from ..taxonomy import Vertical
 
 SYSTEM = (
     "You are writing on behalf of a bank customer. Produce only the letter or "
-    "message text — no preamble, no explanation, no subject line unless asked. "
+    "message text -- no preamble, no explanation, no subject line unless asked. "
     "Write naturally, as a real person would: plain language, occasional "
     "imperfection, specific concrete detail. Do not use placeholders like "
     "[NAME] or [DATE]; use the details provided. Length: {length_hint}."
@@ -38,7 +38,7 @@ SYSTEM = (
 
 # The capability ladder. Length and the extra instructions grow together, so a
 # higher tier produces text that is harder to cluster and richer in checkable
-# detail — exactly what the scores read.
+# detail -- exactly what the scores read.
 LENGTH_HINT = {
     0: "2 to 3 terse sentences",
     1: "a short paragraph",
@@ -98,13 +98,13 @@ def dispute_prompt(facts: PromptFacts, tier: int, fraudulent: bool) -> tuple[str
     """A card-dispute message.
 
     The fraudulent and benign twins differ only in the framing fact: whether the
-    customer authorised the charge. Everything else — amount, merchant, date,
-    persona — is identical and drawn from shared pools.
+    customer authorised the charge. Everything else -- amount, merchant, date,
+    persona -- is identical and drawn from shared pools.
     """
     stance = (
         "they did not authorise this charge and do not recognise the merchant"
         if fraudulent
-        else "the charge is wrong — they were double-billed and want the duplicate reversed"
+        else "the charge is wrong -- they were double-billed and want the duplicate reversed"
     )
     user = (
         f"Write a card dispute message to {facts.bank_name}. The customer is "
@@ -120,7 +120,7 @@ def dispute_prompt(facts: PromptFacts, tier: int, fraudulent: bool) -> tuple[str
 def ticket_prompt(facts: PromptFacts, tier: int, fraudulent: bool) -> tuple[str, str]:
     """A support request.
 
-    The benign twin is a real customer with the same problem — a genuinely lost
+    The benign twin is a real customer with the same problem -- a genuinely lost
     phone, a genuine lockout. The pretext and the real emergency read alike; the
     difference is whether the account is theirs.
     """

@@ -9,7 +9,7 @@ has ever seen, which is the stronger and more honest version.
 
 Catastrophic forgetting is the failure this guards against. A defender refit only
 on recent rounds forgets the early attacks and starts losing to attackers it once
-beat — which shows up as the columns of the arms-race chart going non-monotone.
+beat -- which shows up as the columns of the arms-race chart going non-monotone.
 Keeping all fraud is the fix, and keeping it here rather than in the model makes
 the discipline visible.
 """
@@ -59,7 +59,7 @@ class RetentionBuffer:
 
     Fraud from every round, benign from the last `benign_rounds`. The columns are
     fixed from the first table added, so every round must be extracted against
-    the same schema — which it is, since the schema is deterministic given the
+    the same schema -- which it is, since the schema is deterministic given the
     event types present.
     """
 
@@ -77,8 +77,8 @@ class RetentionBuffer:
     # This exists because the live phase produces fraud and benign in whatever
     # ratio the training loop happens to generate them, and that ratio was 42%
     # against a design that specifies 0.5%. A detector fitted at 42% is solving
-    # a different and far easier problem than the deployed one — at that balance
-    # nearly any split separates the classes — so the defender's dominance was
+    # a different and far easier problem than the deployed one -- at that balance
+    # nearly any split separates the classes -- so the defender's dominance was
     # substantially an artefact of the mixture rather than a property of the
     # model or of the attacker it faced.
     #
@@ -116,7 +116,7 @@ class RetentionBuffer:
         Only ever removes positives. Adding benign would mean inventing traffic
         the world did not produce, and dropping benign would throw away the
         negatives that make the problem hard. Where there is already too little
-        fraud to need thinning, the table is returned untouched — the target is
+        fraud to need thinning, the table is returned untouched -- the target is
         a ceiling on prevalence, not a quota to be met.
         """
         target = self.target_prevalence

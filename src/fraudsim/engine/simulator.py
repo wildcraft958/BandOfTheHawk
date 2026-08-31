@@ -217,7 +217,7 @@ class Simulator:
         if action.needs_artifact:
             # The capability tier the action was taken at. An action may name one
             # in its params; otherwise it is drawn across the range, so the run
-            # exercises the whole ladder rather than sitting at tier zero — which
+            # exercises the whole ladder rather than sitting at tier zero -- which
             # would draw every artifact from one corner of the pool and reuse the
             # same handful of texts throughout.
             tier = int(action.params.get("capability_tier", -1))
@@ -262,7 +262,7 @@ class Simulator:
             d for d in devices if not self.graph.devices[d].blocklisted
         )
         if not devices:
-            # No usable binding, so there is nothing to authorise through —
+            # No usable binding, so there is nothing to authorise through --
             # either the card never had one, or mitigation removed the last one.
             return Outcome(code=OutcomeCode.FAILED, stage=actor.stage, cost=cost)
 

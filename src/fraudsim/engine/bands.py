@@ -2,7 +2,7 @@
 
 A classifier emits a number; deciding what to do with it is a separate, and
 cheaper, problem. The band boundaries are free parameters, but leaving them at
-round numbers wastes a real result — grid-searched against a business cost curve
+round numbers wastes a real result -- grid-searched against a business cost curve
 (fraud loss plus friction plus review cost) they become a defended operating
 point rather than an arbitrary one, which turns a FREE parameter into a CITED
 one and lets the claim be "we optimise the cost curve, not just AUC".
@@ -79,8 +79,8 @@ class RiskBands:
 class CostModel:
     """The business cost the bands are searched against.
 
-    A missed fraud costs its value. A friction event — a step-up or a hold on a
-    genuine customer — costs a fixed amount, the annoyance and abandonment it
+    A missed fraud costs its value. A friction event -- a step-up or a hold on a
+    genuine customer -- costs a fixed amount, the annoyance and abandonment it
     causes. A review costs the analyst's time. The search minimises the sum, so
     the bands land where the three trade off rather than at round numbers.
     """
@@ -100,7 +100,7 @@ class CostModel:
         lost. Genuine traffic above the step-up threshold pays friction; above
         the hold threshold it also pays a review. Amounts are unit where the
         event value is not to hand, so this is a shape to minimise, not a dollar
-        figure — stated as such.
+        figure -- stated as such.
         """
         import numpy as np
 

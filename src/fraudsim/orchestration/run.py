@@ -2,7 +2,7 @@
 
 The warm start fills a benign world with history. This runner adds the other
 half: adversarial episodes, interleaved with benign traffic, at a realistic
-prevalence. It is the data-collection half on its own — no training, just the
+prevalence. It is the data-collection half on its own -- no training, just the
 data collection every later phase reads from.
 
 Three things it gets right on purpose.
@@ -13,7 +13,7 @@ auth events and stops adding attackers when their auths reach the configured
 base rate of the total. Never fifty-fifty; the design is emphatic about it.
 
 **A policy is handed an observation, never the actor.** The runner builds an
-`ActorObservation` — stage, legal mask, a small feature mapping — and nothing
+`ActorObservation` -- stage, legal mask, a small feature mapping -- and nothing
 else crosses to the policy. A scripted policy that reached past it would be one
 the learned policy could never imitate, so the boundary is enforced here where
 both kinds of policy pass through.
@@ -58,7 +58,7 @@ class RunReport:
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
     # Set when the run stopped on its episode budget rather than on reaching the
     # prevalence target. It means the world could no longer produce fraud
-    # authorisations — every binding blocklisted, every card frozen — which is a
+    # authorisations -- every binding blocklisted, every card frozen -- which is a
     # real outcome worth reporting rather than a silent shortfall.
     exhausted: bool = False
 
@@ -146,7 +146,7 @@ class EpisodeRunner:
         )
         # Ordinary customers also dispute wrong charges, open real support
         # tickets, and ask for genuine refunds. Without these the text expert
-        # sees only fraudulent disputes and has no honest ones to contrast — the
+        # sees only fraudulent disputes and has no honest ones to contrast -- the
         # text signal cannot be learned. This injects them, labelled benign,
         # carrying real text from the pool.
         self._benign_text_sweep(n=self._benign_text_count(benign_auths))
@@ -165,7 +165,7 @@ class EpisodeRunner:
         # count of auth *events*, and an episode can produce none: an
         # authorisation whose card has no usable binding fails before an event is
         # built, and a vertical that monetises through a refund or a transfer may
-        # never attempt one at all. Both were reachable — a long co-adaptation run
+        # never attempt one at all. Both were reachable -- a long co-adaptation run
         # ends with mitigations having blocklisted devices and frozen cards, and
         # the zero-shot holdout then runs a single vertical against that world.
         # The result was a process that finished training and hung indefinitely in
@@ -203,7 +203,7 @@ class EpisodeRunner:
 
         # The benign backdrop was never wrapped in an episode, so it is still
         # unlabelled. Now that collection is done and no fraud episode can claim
-        # those events, stamp them benign — the negative class the defender needs.
+        # those events, stamp them benign -- the negative class the defender needs.
         self.simulator.log.stamp_unlabelled_benign()
 
         report.top_sequences = self._sequences.most_common(10)
@@ -260,7 +260,7 @@ class EpisodeRunner:
                 Action(name=action_names[action_key], target_id=card_id),
             )
             # No episode is opened, so these stay unlabelled until the runner
-            # stamps the benign backdrop at the end — which is exactly right,
+            # stamps the benign backdrop at the end -- which is exactly right,
             # since a legitimate dispute is benign ground truth.
 
     def _benign_text_actor(

@@ -1,6 +1,6 @@
 """Detection is a score; mitigation is a graph mutation.
 
-A risk score on its own changes nothing — the attacker's next action still
+A risk score on its own changes nothing -- the attacker's next action still
 resolves against the same world. Mitigation is what closes the loop: a scored
 event triggers a mutation that deletes an edge or freezes a card, so the
 capability the attacker was using no longer exists, and the next action fails at
@@ -63,7 +63,7 @@ class UnbindDevice(Mitigation):
     """Delete a binding, removing the capability an authorisation ran through.
 
     This is the sharp one. After it, an authorisation through that device fails
-    because the edge is gone — not throttled, not flagged, absent. The attacker
+    because the edge is gone -- not throttled, not flagged, absent. The attacker
     has to spend actions and cost rebuilding it, which is exactly the loop the
     design is after.
     """

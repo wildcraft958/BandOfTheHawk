@@ -4,11 +4,11 @@ These are the first thing to drive the action layer, and they earn their place
 three times over. They produce the first labelled fraud, so a detector has
 positives to learn from. They are the demonstrations the reinforcement-learning
 policy is cloned from, so it starts from a working strategy rather than random
-exploration. And they are a complete, submittable red team on their own — if the
+exploration. And they are a complete, submittable red team on their own -- if the
 learned policy never converges, versioned scripts still give the arms-race chart.
 
 Each policy is a small stage machine. It reads only what a policy is allowed to
-see — the stage, the legal-action mask, and a feature mapping — and never the
+see -- the stage, the legal-action mask, and a feature mapping -- and never the
 graph or the actor's internal capability flags. It tracks its own progress
 through `observe`, exactly as the learned policy will have to, so a script that
 cannot be expressed against that boundary is a script the learned policy could
@@ -225,7 +225,7 @@ class VoiceCloneProvisioning(ScriptedPolicy):
     """Harvest a voice sample, provision the card by phone, then spend.
 
     The voice quality has to clear the IVR control, so the harvest is not
-    optional — an attacker who skips it fails at provisioning.
+    optional -- an attacker who skips it fails at provisioning.
     """
 
     vertical = "voice_clone"
@@ -295,7 +295,7 @@ class DeepfakeOnboarding(ScriptedPolicy):
 class PhishingATO(ScriptedPolicy):
     """Phish a holder, reset the password, rebind a device, take over.
 
-    The recovery chain — reset then rebind in short order — is what the binding
+    The recovery chain -- reset then rebind in short order -- is what the binding
     detector keys on, so the timing between them is the interesting knob.
     """
 
@@ -318,7 +318,7 @@ class PhishingATO(ScriptedPolicy):
             return None
         self.state.auths += 1
         # No device_id given, so the resolver spends through one of the card's
-        # existing bindings — the victim's own device.
+        # existing bindings -- the victim's own device.
         return Action(
             name=ActionName.ATTEMPT_AUTH,
             target_id=self.target.card_id,
@@ -471,7 +471,7 @@ class RefundAbuse(ScriptedPolicy):
     """Buy, then claim the item never arrived and request a refund.
 
     The refund claim carries generated evidence, so this is the third text
-    vertical, and it is the second zero-shot holdout — a generalisation test
+    vertical, and it is the second zero-shot holdout -- a generalisation test
     across the text modality as well as to an unseen attack.
     """
 
