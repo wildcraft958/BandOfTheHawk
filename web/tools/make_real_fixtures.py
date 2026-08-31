@@ -50,7 +50,7 @@ def split_stages(text: str) -> dict[str, str]:
     blocks["_header"] = parts[0]
     for name, body in zip(parts[1::2], parts[2::2]):
         blocks[name] = body
-    tail = re.search(r"={70,}\n\s+SUMMARY\n={70,}\n(.*)", text, re.S)
+    tail = re.search(r"={70,}\n\s+SUMMARY\n={70,}\n(.*)", text, re.DOTALL)
     blocks["_summary"] = tail.group(1) if tail else ""
     return blocks
 
@@ -60,13 +60,13 @@ def labelled(block: str, label: str) -> float | None:
 
     Tolerates a trailing unit word, as in ``history spans   180 days``.
     """
-    m = re.search(rf"^\s*{re.escape(label)}\s+({NUM})(\s+\w+)?\s*$", block, re.M)
+    m = re.search(rf"^\s*{re.escape(label)}\s+({NUM})(\s+\w+)?\s*$", block, re.MULTILINE)
     return _f(m.group(1)) if m else None
 
 
 def pairs(block: str, start: str, stop: str) -> dict[str, float]:
     """``name  value`` lines between two markers, in order."""
-    m = re.search(rf"{re.escape(start)}\n(.*?)(?:\n\s*\n|{re.escape(stop)})", block, re.S)
+    m = re.search(rf"{re.escape(start)}\n(.*?)(?:\n\s*\n|{re.escape(stop)})", block, re.DOTALL)
     if not m:
         return {}
     out: dict[str, float] = {}
@@ -80,7 +80,7 @@ def pairs(block: str, start: str, stop: str) -> dict[str, float]:
 def metric_block(block: str, heading: str) -> dict[str, float] | None:
     """One detector configuration: five metrics plus the positive counts."""
     m = re.search(
-        rf"^\s+{re.escape(heading)}\s*$\n(.*?)(?=^\s*$|^\s{{2}}\S)", block, re.M | re.S
+        rf"^\s+{re.escape(heading)}\s*$\n(.*?)(?=^\s*$|^\s{{2}}\S)", block, re.MULTILINE | re.DOTALL
     )
     if not m:
         return None
@@ -108,11 +108,26 @@ def metric_block(block: str, heading: str) -> dict[str, float] | None:
 # fragments the log leaves when it truncates a long chain mid-token.
 VALID_ACTIONS = frozenset(
     {
-        "phish_holder", "buy_creds", "make_synth_id", "harvest_voice", "harvest_face",
-        "call_ivr_provision", "submit_kyc", "add_device_selfserve", "sim_swap",
-        "reset_password", "add_payee", "open_ticket", "escalate_limit",
-        "attempt_auth", "complete_3ds", "transfer_p2p", "request_refund",
-        "file_dispute", "cash_out", "launder_chain",
+        "phish_holder",
+        "buy_creds",
+        "make_synth_id",
+        "harvest_voice",
+        "harvest_face",
+        "call_ivr_provision",
+        "submit_kyc",
+        "add_device_selfserve",
+        "sim_swap",
+        "reset_password",
+        "add_payee",
+        "open_ticket",
+        "escalate_limit",
+        "attempt_auth",
+        "complete_3ds",
+        "transfer_p2p",
+        "request_refund",
+        "file_dispute",
+        "cash_out",
+        "launder_chain",
     }
 )
 
@@ -152,9 +167,11 @@ def parse_meta(blocks: dict[str, str]) -> dict:
     finished = re.search(r"finished:\s*([\d-]+ [\d:]+)", summary)
 
     stages = []
-    for name, status, secs in re.findall(r"^\s+(\w+)\s+(ok|fail)\s+([\d.]+)s\s*$", summary, re.M):
+    for name, status, secs in re.findall(
+        r"^\s+(\w+)\s+(ok|fail)\s+([\d.]+)s\s*$", summary, re.MULTILINE
+    ):
         stages.append({"stage": name, "status": status, "seconds": float(secs)})
-    total = re.search(r"^\s+total\s+([\d.]+)s\s*$", summary, re.M)
+    total = re.search(r"^\s+total\s+([\d.]+)s\s*$", summary, re.MULTILINE)
 
     return {
         "profile": profile.group(1) if profile else None,
@@ -172,21 +189,19 @@ def parse_run_report(blocks: dict[str, str]) -> dict:
 
     negatives = pairs(demo, "hard negatives injected", "history spans")
     rules = {}
-    for rid, rate in re.findall(r"^\s+(R\d|any)\s+([\d.]+)\s*$", demo, re.M):
+    for rid, rate in re.findall(r"^\s+(R\d|any)\s+([\d.]+)\s*$", demo, re.MULTILINE):
         rules[rid] = float(rate)
     rule_target = re.search(r"target ([\d.]+), (within target|off target)", demo)
 
     per_vertical = pairs(fraud, "episodes per vertical", "top action sequences")
 
     sequences = []
-    seq_block = re.search(r"top action sequences\n(.*?)\n\s*\n", fraud, re.S)
+    seq_block = re.search(r"top action sequences\n(.*?)\n\s*\n", fraud, re.DOTALL)
     if seq_block:
         for line in seq_block.group(1).splitlines():
             hit = re.match(r"^\s+(\d+)\s+(\S+)\s*$", line)
             if hit:
-                sequences.append(
-                    {"count": int(hit.group(1)), "chain": hit.group(2).split(">")}
-                )
+                sequences.append({"count": int(hit.group(1)), "chain": hit.group(2).split(">")})
 
     return {
         "source": "data/run.log",
@@ -219,16 +234,30 @@ def parse_detectors(blocks: dict[str, str]) -> dict:
 
     configs = []
     for key, heading, block, family, note in [
-            ("d0", "D_0 rule engine", base, "rule",
-             "ROC-AUC below 0.5: on this population the hand-written rules are "
-             "anti-correlated with fraud."),
-            ("gbdt_full", "GBDT full", base, "flat", None),
-            ("gbdt_no_per_entity", "GBDT without per-entity features", base, "flat", None),
-            ("experts_fixed", "experts + fixed average", mix, "mixture", None),
-            ("experts_learned", "experts + learned combiner", mix, "mixture",
-             "Loses to the flat tree on this run. Structural decomposition costs "
-             "accuracy at this scale and buys per-event-type attribution and "
-             "independent retraining."),
+        (
+            "d0",
+            "D_0 rule engine",
+            base,
+            "rule",
+            (
+                "ROC-AUC below 0.5: on this population the hand-written rules are "
+                "anti-correlated with fraud."
+            ),
+        ),
+        ("gbdt_full", "GBDT full", base, "flat", None),
+        ("gbdt_no_per_entity", "GBDT without per-entity features", base, "flat", None),
+        ("experts_fixed", "experts + fixed average", mix, "mixture", None),
+        (
+            "experts_learned",
+            "experts + learned combiner",
+            mix,
+            "mixture",
+            (
+                "Loses to the flat tree on this run. Structural decomposition costs "
+                "accuracy at this scale and buys per-event-type attribution and "
+                "independent retraining."
+            ),
+        ),
     ]:
         metrics = metric_block(block, heading)
         if metrics:
@@ -248,7 +277,7 @@ def parse_detectors(blocks: dict[str, str]) -> dict:
     ]
 
     features = []
-    feat_block = re.search(r"top features by gain\n(.*?)\n\s*\n", base, re.S)
+    feat_block = re.search(r"top features by gain\n(.*?)\n\s*\n", base, re.DOTALL)
     if feat_block:
         for line in feat_block.group(1).splitlines():
             hit = re.match(rf"^\s+(\S+)\s+({NUM})(\s+<- per-entity)?\s*$", line)
@@ -338,7 +367,9 @@ def parse_coadapt(blocks: dict[str, str]) -> dict:
 
     strategies = []
     strat_block = re.search(
-        r"how the attacker's strategy changed \(sampled at each refit\)\n(.*?)\n\s*\n", co, re.S
+        r"how the attacker's strategy changed \(sampled at each refit\)\n(.*?)\n\s*\n",
+        co,
+        re.DOTALL,
     )
     if strat_block:
         for line in strat_block.group(1).splitlines():
@@ -355,7 +386,7 @@ def parse_coadapt(blocks: dict[str, str]) -> dict:
                 )
 
     zero_shot = []
-    zs_block = re.search(r"zero-shot recall on held-out verticals\n(.*?)\n\s*\n", co, re.S)
+    zs_block = re.search(r"zero-shot recall on held-out verticals\n(.*?)\n\s*\n", co, re.DOTALL)
     if zs_block:
         for line in zs_block.group(1).splitlines():
             hit = re.match(r"^\s+(\w+)\s+([\d.]+)\s*$", line)
@@ -363,7 +394,9 @@ def parse_coadapt(blocks: dict[str, str]) -> dict:
                 zero_shot.append({"vertical": hit.group(1), "recall": float(hit.group(2))})
 
     finals = []
-    fin_block = re.search(r"top action sequences \(final trained attacker\)\n(.*?)(?:\n\s*\n|\Z)", co, re.S)
+    fin_block = re.search(
+        r"top action sequences \(final trained attacker\)\n(.*?)(?:\n\s*\n|\Z)", co, re.DOTALL
+    )
     if fin_block:
         for line in fin_block.group(1).splitlines():
             hit = re.match(r"^\s+(\d+)\s+(\S+)\s*$", line)
@@ -378,7 +411,9 @@ def parse_coadapt(blocks: dict[str, str]) -> dict:
                 )
 
     selection = {"groups": [], "observations": None, "selecting": None}
-    sel_block = re.search(r"victim selection \(posterior mean by feature\)\n(.*?)\n\s*\n", co, re.S)
+    sel_block = re.search(
+        r"victim selection \(posterior mean by feature\)\n(.*?)\n\s*\n", co, re.DOTALL
+    )
     if sel_block:
         body = sel_block.group(1)
         group: dict | None = None
@@ -463,14 +498,31 @@ def parse_fidelity() -> dict:
     t = floors["targets"]
     fl = floors["floors"]
     comparisons = [
-        pair("arrival burstiness", diag.get("burstiness_observed"),
-             diag.get("burstiness_target"), fl.get("burstiness_gap")),
-        pair("arrival autocorrelation", diag.get("autocorrelation_observed"),
-             diag.get("autocorrelation_target"), fl.get("autocorrelation_gap")),
-        pair("amount median", f["amount"]["median"], t.get("amount_median"),
-             fl.get("amount_w1"), "currency units"),
-        pair("entity activity median", t.get("entity_activity_median"),
-             t.get("entity_activity_median"), fl.get("entity_activity_w1")),
+        pair(
+            "arrival burstiness",
+            diag.get("burstiness_observed"),
+            diag.get("burstiness_target"),
+            fl.get("burstiness_gap"),
+        ),
+        pair(
+            "arrival autocorrelation",
+            diag.get("autocorrelation_observed"),
+            diag.get("autocorrelation_target"),
+            fl.get("autocorrelation_gap"),
+        ),
+        pair(
+            "amount median",
+            f["amount"]["median"],
+            t.get("amount_median"),
+            fl.get("amount_w1"),
+            "currency units",
+        ),
+        pair(
+            "entity activity median",
+            t.get("entity_activity_median"),
+            t.get("entity_activity_median"),
+            fl.get("entity_activity_w1"),
+        ),
     ]
 
     return {
@@ -493,9 +545,7 @@ def parse_fidelity() -> dict:
         "amount_heterogeneity": f.get("amount_heterogeneity"),
         "circadian": f.get("circadian"),
         "category_mix": f.get("category_mix"),
-        "fanout_targets": {
-            k: v for k, v in t.items() if k.startswith("fanout")
-        },
+        "fanout_targets": {k: v for k, v in t.items() if k.startswith("fanout")},
         "rejected": fitted.get("rejected", {}),
         "all_floors": fl,
     }
@@ -569,17 +619,25 @@ def main() -> int:
         print(f"  wrote {name}  {path.stat().st_size:>7,} bytes")
 
     print()
-    print(f"  {len(coadapt['rows'])} updates, {len(coadapt['refit_updates'])} refits, "
-          f"checksum {coadapt['checksum_extracted']}")
-    print(f"  extraction {coadapt['reads']['extracted_first']} -> "
-          f"{coadapt['reads']['extracted_last']}, peak {coadapt['reads']['extracted_max']}, "
-          f"{coadapt['reads']['zeros']} updates at exactly zero")
-    print(f"  entropy {coadapt['reads']['entropy_start']} -> peak "
-          f"{coadapt['reads']['entropy_peak']} -> {coadapt['reads']['entropy_end']}")
+    print(
+        f"  {len(coadapt['rows'])} updates, {len(coadapt['refit_updates'])} refits, "
+        f"checksum {coadapt['checksum_extracted']}"
+    )
+    print(
+        f"  extraction {coadapt['reads']['extracted_first']} -> "
+        f"{coadapt['reads']['extracted_last']}, peak {coadapt['reads']['extracted_max']}, "
+        f"{coadapt['reads']['zeros']} updates at exactly zero"
+    )
+    print(
+        f"  entropy {coadapt['reads']['entropy_start']} -> peak "
+        f"{coadapt['reads']['entropy_peak']} -> {coadapt['reads']['entropy_end']}"
+    )
     if detectors["operating_point"]:
         op = detectors["operating_point"]
-        print(f"  derived operating point: precision {op['precision']}, "
-              f"recall {op['recall']}, F1 {op['f1']}")
+        print(
+            f"  derived operating point: precision {op['precision']}, "
+            f"recall {op['recall']}, F1 {op['f1']}"
+        )
     return 0
 
 
