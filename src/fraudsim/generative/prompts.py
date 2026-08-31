@@ -1,4 +1,5 @@
-"""The prompts that render each text vertical.
+"""The prompts that render each text vertical.from ..taxonomy import Vertical
+
 
 Three verticals present text to a control: a disputed charge, a support request,
 a refund claim. Each is built from a system turn and a user turn filled with
@@ -24,6 +25,8 @@ never requires the model to believe it is doing anything wrong.
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+from ..taxonomy import Vertical
 
 SYSTEM = (
     "You are writing on behalf of a bank customer. Produce only the letter or "
@@ -160,24 +163,24 @@ def refund_prompt(facts: PromptFacts, tier: int, fraudulent: bool) -> tuple[str,
 # Which builder renders which vertical, keyed by the vertical name the scripted
 # policies use.
 PROMPT_FOR_VERTICAL = {
-    "friendly_fraud": dispute_prompt,
-    "support_se": ticket_prompt,
-    "refund_abuse": refund_prompt,
+    Vertical.FRIENDLY_FRAUD.value: dispute_prompt,
+    Vertical.SUPPORT_SE.value: ticket_prompt,
+    Vertical.REFUND_ABUSE.value: refund_prompt,
 }
 
 # Detail pools, drawn from by both classes so a word never marks the label.
 DETAILS = {
-    "friendly_fraud": (
+    Vertical.FRIENDLY_FRAUD.value: (
         "reviewing their monthly statement",
         "a text alert from the bank",
         "checking the app after a notification",
     ),
-    "support_se": (
+    Vertical.SUPPORT_SE.value: (
         "they are travelling and their phone was stolen",
         "a family emergency has them locked out",
         "their authenticator app stopped working",
     ),
-    "refund_abuse": (
+    Vertical.REFUND_ABUSE.value: (
         "the item never arrived",
         "the item arrived damaged",
         "the item was not as described",

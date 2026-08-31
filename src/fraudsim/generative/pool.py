@@ -32,6 +32,7 @@ import numpy as np
 
 from ..logs import get_logger
 from ..protocols import Artifact, ArtifactRequest
+from ..taxonomy import SKELETONS, TOOL_TO_VERTICAL
 from .prompts import (
     DETAILS,
     PERSONAS,
@@ -75,11 +76,7 @@ class MockGenerator:
 
     name = "mock"
 
-    _SKELETON = {
-        "friendly_fraud": "I am writing about a charge on my account.",
-        "support_se": "I need help with my account as soon as possible.",
-        "refund_abuse": "I am requesting a refund for a recent order.",
-    }
+    _SKELETON = SKELETONS
 
     def generate(self, vertical: str, tier: int, fraudulent: bool, facts: PromptFacts) -> str:
         parts = [self._SKELETON[vertical]]
@@ -359,11 +356,7 @@ class PoolArtifactSource:
     its scores already attached. No generation happens at run time.
     """
 
-    _TOOL_TO_VERTICAL = {
-        "write_dispute": "friendly_fraud",
-        "write_ticket": "support_se",
-        "write_refund_claim": "refund_abuse",
-    }
+    _TOOL_TO_VERTICAL = TOOL_TO_VERTICAL
 
     def __init__(self, pool: TextPool, scorer=None, seed: int = 0) -> None:
         self._pool = pool

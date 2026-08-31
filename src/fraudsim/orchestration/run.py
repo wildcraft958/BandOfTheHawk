@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from ..settings.simulation import SimulationConfig
+from ..taxonomy import TEXT_ACTIONS
 from ..engine.outcome import OutcomeCode
 from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage, StageGate
@@ -212,11 +213,7 @@ class EpisodeRunner:
 
     # Which benign text action each text vertical is expressed as. These are the
     # legitimate counterparts of the fraud text verticals.
-    _BENIGN_TEXT_ACTIONS = (
-        ("friendly_fraud", "file_dispute"),
-        ("support_se", "open_ticket"),
-        ("refund_abuse", "request_refund"),
-    )
+    _BENIGN_TEXT_ACTIONS = TEXT_ACTIONS
 
     def _benign_text_count(self, benign_auths: int) -> int:
         """How many benign text events to inject.

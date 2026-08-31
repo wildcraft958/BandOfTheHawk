@@ -22,6 +22,12 @@ from __future__ import annotations
 import numpy as np
 
 from ..engine.bands import RiskBands
+from ..features.columns import (
+    AMOUNT_VS_MEDIAN,
+    IS_FIRST_TXN_THIS_MERCHANT,
+    WITHIN_USUAL_HOURS,
+    missing_flag,
+)
 from ..features.schema import AuthAttemptEvent
 from ..protocols import RiskAssessment
 from ..settings.detector import TreeConfig
@@ -31,11 +37,11 @@ from .table import FeatureTable
 # Per-entity features from Part 0, the ones the open question is about. Named
 # here so the ablation can drop exactly this set and no more.
 PER_ENTITY_FEATURES = (
-    "amount_vs_median",
-    "amount_vs_median_missing",
-    "is_first_txn_this_merchant",
-    "within_usual_hours",
-    "within_usual_hours_missing",
+    AMOUNT_VS_MEDIAN,
+    missing_flag(AMOUNT_VS_MEDIAN),
+    IS_FIRST_TXN_THIS_MERCHANT,
+    WITHIN_USUAL_HOURS,
+    missing_flag(WITHIN_USUAL_HOURS),
 )
 
 

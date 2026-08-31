@@ -28,6 +28,13 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..features.schema import EventType
+from ..features.columns import (
+    CARD_N_DEVICES,
+    DEVICE_AGE_DAYS,
+    DEVICE_N_CARDS,
+    DEVICE_NEW_TO_CARD,
+    TEXT_SCORE_COLUMNS,
+)
 from ..settings.detector import DetectorConfig, LogisticConfig, TreeConfig
 from .table import FeatureTable
 
@@ -57,21 +64,17 @@ EXPERT_EVENT_TYPES: dict[str, frozenset[EventType]] = {
 # stamped on the event by the builder, which may read the graph; the expert
 # reads only the event, so the observation boundary holds.
 NETWORK_FEATURES = (
-    "device_n_cards",
-    "card_n_devices",
-    "device_new_to_card",
-    "device_age_days",
+    DEVICE_N_CARDS,
+    CARD_N_DEVICES,
+    DEVICE_NEW_TO_CARD,
+    DEVICE_AGE_DAYS,
 )
 
 # The text expert reads the generated-text signal: the scalar scores plus the
 # embedding columns the artifact stamped on the event. The embedding names are
 # discovered from the table at fit time, since their count depends on the
 # embedding model, so only the scalar names are fixed here.
-TEXT_SCORE_FEATURES = (
-    "template_similarity",
-    "entity_consistency",
-    "perplexity_proxy",
-)
+TEXT_SCORE_FEATURES = TEXT_SCORE_COLUMNS
 
 
 class Expert:

@@ -32,6 +32,13 @@ import hashlib
 import re
 from dataclasses import dataclass
 
+from ..features.columns import (
+    ENTITY_CONSISTENCY,
+    PERPLEXITY_PROXY,
+    TEMPLATE_SIMILARITY,
+)
+
+
 
 def _stable_hash(s: str) -> int:
     return int.from_bytes(hashlib.md5(s.encode("utf-8")).digest()[:4], "little")
@@ -131,7 +138,7 @@ class TextScorer:
     def score(self, entry) -> dict[str, float]:
         """All three scores for a pool entry, as the artifact will carry them."""
         return {
-            "template_similarity": self.template_similarity(entry.text),
-            "entity_consistency": self.entity_consistency(entry.text, entry.facts),
-            "perplexity_proxy": self.perplexity_proxy(entry.text),
+            TEMPLATE_SIMILARITY: self.template_similarity(entry.text),
+            ENTITY_CONSISTENCY: self.entity_consistency(entry.text, entry.facts),
+            PERPLEXITY_PROXY: self.perplexity_proxy(entry.text),
         }

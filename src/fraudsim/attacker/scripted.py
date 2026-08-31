@@ -31,14 +31,14 @@ from ..engine.actions import ACTION_INDEX, Action, ActionName
 from ..engine.outcome import Outcome
 from ..protocols import ActorObservation
 from ..settings.simulation import SimulationConfig
+from ..taxonomy import HELD_OUT
 
-# Quality floors the channel controls enforce, cleared with a margin so a
-# well-resourced attacker gets through and a poorly resourced one does not. The
-# controls themselves live in config; these are what a script chooses to buy.
-# How far above the configured acceptance bar a scripted attacker aims. A
-# harvested sample only has to clear the threshold; overshooting it wastes
-# effort the vertical would not spend. 0.05 reproduces the 0.9 and 0.95 these
-# were previously hardcoded to, at the shipped thresholds of 0.85 and 0.90.
+# How far above the configured acceptance bar a scripted attacker aims. The
+# channel controls live in config; this is what a script chooses to buy to clear
+# them, so a well-resourced attacker gets through and a poorly resourced one does
+# not. A sample only has to beat the threshold, and overshooting wastes effort
+# the vertical would not spend. 0.05 reproduces the 0.9 and 0.95 these were
+# previously hardcoded to, at the shipped thresholds of 0.85 and 0.90.
 QUALITY_MARGIN = 0.05
 
 
@@ -516,7 +516,7 @@ VERTICALS: dict[str, type[ScriptedPolicy]] = {
     )
 }
 
-ZERO_SHOT_HOLDOUTS: frozenset[str] = frozenset({"sim_swap", "refund_abuse"})
+ZERO_SHOT_HOLDOUTS: frozenset[str] = HELD_OUT
 
 
 def build_policy(
