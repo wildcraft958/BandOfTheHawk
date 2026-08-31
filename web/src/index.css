@@ -3,8 +3,8 @@
 /* Self-hosted rather than linked from Google Fonts, so the page renders
    identically offline (a judge running Docker without a network) and online,
    and so the built file stays genuinely self-contained. Vite inlines these as
-   data URIs at build time. All three are variable fonts: one file per family
-   covers every weight we use. */
+   data URIs at build time. Variable fonts: one file per family covers every
+   weight used. */
 @font-face {
   font-family: 'Bricolage Grotesque';
   src: url('./assets/fonts/bricolage.woff2') format('woff2');
@@ -21,72 +21,111 @@
   font-display: swap;
 }
 @font-face {
-  font-family: 'Martian Mono';
-  src: url('./assets/fonts/martianmono.woff2') format('woff2');
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/jetbrainsmono.woff2') format('woff2');
   font-weight: 400 600;
   font-style: normal;
   font-display: swap;
 }
 
 /* ---------------------------------------------------------------------------
-   GAUNTLET - "Two inks, one ledger"
+   GAUNTLET — operations console
 
-   The blindness rule means an attacker's event row and an ordinary holder's row
-   are identical in shape. So the substrate is shared and only the ink differs:
-   one warm carbon ground ruled like a register, attacker events in sodium
-   orange, defender decisions in ice steel. The adversarial boundary is the zero
-   line on the extraction curve, not two coloured half-screens.
+   A security operations console, not a marketing page: sidebar and top bar
+   chrome, dense cards, chips carrying real identifiers, and colour reserved
+   strictly for state.
+
+   Colour language, learnable at a glance:
+     red    attacker, failure
+     blue   defender, action, links
+     amber  money and value extracted, warning
+     green  pass
+     violet never seen in training (the zero-shot held-out verticals)
    --------------------------------------------------------------------------- */
 
 @theme {
-  --color-ground: #12100d;
-  --color-ground-raised: #1a1713;
-  --color-ground-hover: #221e19;
-  --color-rule: #302a22;
-  --color-rule-strong: #453d32;
+  /* Surfaces. Near-black, faintly warm, so the red accent reads as a signal
+     rather than as decoration. */
+  --color-surface: #0a0a0b;
+  --color-surface-raised: #101013;
+  --color-surface-card: #0d0d10;
+  --color-surface-hover: #16161a;
+  --color-surface-active: #1e1e24;
+  --color-rule: #1f1f24;
+  --color-rule-subtle: #17171b;
 
-  --color-ink: #f0e9dc;
-  --color-ink-2: #a79d8c;
-  --color-ink-3: #6e6659;
+  /* Text hierarchy */
+  --color-ink: #e8e8ea;
+  --color-ink-2: #8a8a93;
+  --color-ink-3: #5a5a63;
 
-  --color-atk: #ff6b2c;
-  --color-def: #7fc4de;
-  --color-value: #e3b341;
-  --color-holdout: #a98bff;
+  /* Action */
+  --color-accent: #e5484d;
+  --color-accent-hover: #ff5a5f;
+  --color-accent-deep: #2a0d0f;
+
+  /* State. Red team versus blue team, and the colour language is fixed:
+     red attacker or blocked, blue defender, amber money, green pass,
+     purple never seen in training. */
+  --color-atk: #e5484d;
+  --color-def: #3b82f6;
+  --color-value: #f59e0b;
+  --color-pass: #22c55e;
+  --color-holdout: #a855f7;
 
   --font-display: 'Bricolage Grotesque', 'Archivo', system-ui, sans-serif;
   --font-sans: 'Archivo', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Martian Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
 
-  --radius-panel: 4px;
+  --radius-card: 4px;
+  --radius-panel: 3px;
+  --radius-chip: 2px;
 }
 
 @layer base {
   html {
-    background-color: var(--color-ground);
+    background-color: var(--color-surface);
     color-scheme: dark;
   }
 
   body {
     margin: 0;
-    background-color: var(--color-ground);
+    background-color: var(--color-surface);
     color: var(--color-ink);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Every figure on the page aligns in its column and never jitters while a
-     count-up runs. */
+  /* Every figure aligns in its column and never jitters during a count-up. */
   .num {
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum' 1;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-def);
+    outline: 1px solid var(--color-accent);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgb(229 72 77 / 0.3);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-rule);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-surface-active);
   }
 
   .skip-link {
@@ -96,19 +135,69 @@
   .skip-link:focus {
     left: 1rem;
     top: 1rem;
-    z-index: 50;
+    z-index: 60;
     padding: 0.5rem 0.75rem;
-    background: var(--color-ground-raised);
-    border: 1px solid var(--color-rule-strong);
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-panel);
+  }
+}
+
+@layer utilities {
+  /* The page-load moment: the hero curve traces once, then everything stops.
+     Driven by stroke-dashoffset over a normalised pathLength, so it costs no
+     React re-renders. */
+  @keyframes seismo-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
+  .seismo-trace {
+    stroke-dasharray: 1;
+    animation: seismo-draw 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+
+  @keyframes ring-fill {
+    from {
+      stroke-dashoffset: var(--ring-circumference);
     }
+  }
+
+  .ring-arc {
+    animation: ring-fill 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  .rise {
+    animation: rise 0.32s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@layer components {
+  /* Prose opts out of the console's mono default, because judges have to read
+     the explanations and long mono paragraphs fight that. */
+  .prose-sans {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
   }
 }
