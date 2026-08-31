@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..features.schema import AuthAttemptEvent
-from ..protocols import RiskAction
+from ..protocols import RiskAction, RiskAssessment
 from .mitigation import BlocklistDevice, FreezeCard, UnbindDevice
 
 
@@ -106,6 +106,25 @@ class CostModel:
         friction = float(((y == 0) & (s >= bands.step_up_at)).sum()) * self.friction_cost / 100
         review = float(((y == 0) & (s >= bands.hold_at)).sum()) * self.review_cost / 100
         return fraud_loss + friction + review
+
+
+def shift_assessment(assessment: RiskAssessment, offset: float, event, scorer) -> RiskAssessment:
+    """Re-decide an assessment with the episode's threshold offset applied.
+
+    The offset moves the score rather than the thresholds. The two are
+    equivalent, and moving the score works for any scorer, including one
+    carrying no bands at all.
+
+    The decision is rebuilt from scratch at the shifted score, mitigations
+    included. The reported risk_score stays the model's own, unshifted.
+    """
+    bands = getattr(scorer, "bands", None) or RiskBands()
+    action, mitigations = bands.decide(assessment.risk_score - offset, event)
+    return RiskAssessment(
+        risk_score=assessment.risk_score,
+        action=action,
+        mitigations=tuple(mitigations),
+    )
 
 
 def grid_search_bands(y_true, scores, cost: CostModel | None = None, steps: int = 9) -> RiskBands:

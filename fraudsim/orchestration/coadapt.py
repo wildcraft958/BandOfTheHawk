@@ -45,7 +45,7 @@ from ..attacker.ppo import PPOConfig, PPOTrainer
 from ..attacker.selection import ThompsonSelector, card_context
 from ..config.simulation import SimulationConfig
 from ..defender.baseline import GBDTBaseline
-from ..defender.bands import CostModel, RiskBands, grid_search_bands
+from ..engine.bands import CostModel, RiskBands, grid_search_bands
 from ..defender.combiner import MixtureScorer
 from ..defender.table import build_table
 from ..engine.simulator import Simulator

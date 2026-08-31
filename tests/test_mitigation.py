@@ -17,7 +17,7 @@ from fraudsim.engine.simulator import Actor, ActorKind, Simulator
 from fraudsim.engine.stages import Stage
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
-from fraudsim.defender.mitigation import (
+from fraudsim.engine.mitigation import (
     BlocklistDevice,
     DetachPayee,
     FreezeCard,

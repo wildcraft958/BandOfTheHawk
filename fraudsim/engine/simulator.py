@@ -38,7 +38,7 @@ from ..world.graph import EntityGraph
 from .actions import Action, ActionName, action_cost
 from .outcome import RISK_TO_OUTCOME, Outcome, OutcomeCode
 from .resolution import EVENT_FOR_ACTION, ActionResolver
-from ..defender.mitigation import apply_all
+from .mitigation import apply_all
 from .stages import Stage, StageGate
 
 
@@ -312,7 +312,8 @@ class Simulator:
         # be a banded scorer at all, and moving the score is equivalent to moving
         # every threshold by the same amount in the opposite direction.
         if actor.threshold_offset:
-            assessment = _shift(assessment, actor.threshold_offset, event, self._scorer)
+            from .bands import shift_assessment
+            assessment = shift_assessment(assessment, actor.threshold_offset, event, self._scorer)
         code = RISK_TO_OUTCOME[assessment.action]
 
         if code is OutcomeCode.APPROVED and not card.is_usable(self.clock.now):
@@ -435,38 +436,3 @@ class Simulator:
             "clock": self.clock.now,
         }
 
-
-
-
-
-def _shift(assessment, offset: float, event, scorer):
-    """Re-decide an assessment with the episode's threshold offset applied.
-
-    The offset moves the score rather than the thresholds. The two are
-    equivalent — raising every boundary by x is the same as lowering the score
-    by x — and moving the score works for any scorer, including one carrying no
-    bands at all, without reaching into whichever implementation is in force.
-
-    The decision is rebuilt from scratch at the shifted score, mitigations
-    included. Keeping the original mitigations would let an episode be declined
-    at one threshold while its card was frozen at another, which is two
-    detectors disagreeing rather than one detector being harder to map.
-
-    The reported `risk_score` stays the model's own, unshifted: it is what the
-    detector actually believes, and the metrics read it. The jitter belongs to
-    the decision, not to the belief.
-    """
-    from ..defender.bands import RiskBands
-    from ..protocols import RiskAssessment
-
-    # The bands belong to the scorer, not to the assessment: a RiskAssessment is
-    # a frozen record of a judgement and carries no thresholds. A scorer with
-    # none of its own falls back to the defaults, which is the same operating
-    # point it would have used anyway.
-    bands = getattr(scorer, "bands", None) or RiskBands()
-    action, mitigations = bands.decide(assessment.risk_score - offset, event)
-    return RiskAssessment(
-        risk_score=assessment.risk_score,
-        action=action,
-        mitigations=tuple(mitigations),
-    )
