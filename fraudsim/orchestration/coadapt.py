@@ -35,8 +35,6 @@ over the live phase, showing each responding to the other.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
 import numpy as np
 
 from ..attacker.bootstrap import collect_demos
@@ -53,167 +51,20 @@ from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
-from ..protocols import RiskAction, RiskScorer, Target
+from ..protocols import RiskScorer, Target
 from ..rules.engine import VelocityRuleScorer
 from ..timing.circadian import HolderClockModel
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
+from .coadapt_eval import (
+    log_sequences,
+    mask_table,
+    measure_success,
+    refusal_rate,
+    zero_shot_recall,
+)
+from .coadapt_report import CoadaptReport, _Progress
 from .retention import RetentionBuffer
 from .run import EpisodeRunner
-
-class _Progress:
-    """Announces a long step and how long it took.
-
-    The live phase prints per update so that a slow run cannot be mistaken for a
-    hung one. The warm-start phases before it printed nothing at all, and at
-    twelve thousand holders that is twenty minutes of silence with no way to
-    tell working from wedged. Every line flushes, because a buffered progress
-    report is no progress report.
-    """
-
-    __slots__ = ("_label", "_started")
-
-    def __init__(self, label: str) -> None:
-        import time as _t
-
-        self._label = label
-        self._started = _t.perf_counter()
-        print(f"  {label}", flush=True)
-
-    def say(self, message: str) -> None:
-        import time as _t
-
-        elapsed = _t.perf_counter() - self._started
-        print(f"    [{elapsed:5.1f}s] {message}", flush=True)
-
-    def done(self, note: str = "") -> None:
-        import time as _t
-
-        elapsed = _t.perf_counter() - self._started
-        tail = f"  ({note})" if note else ""
-        print(f"    {self._label} done in {elapsed:.1f}s{tail}", flush=True)
-        print(flush=True)
-
-
-# What counts as refusing a genuine customer. A step-up is friction rather than
-# a refusal — the customer answers a challenge and proceeds — so it is excluded;
-# a hold, a decline and a block all stop the transaction from the holder's point
-# of view. Naming the set here rather than testing for one action keeps the
-# reported rate meaning the same thing as the cost model's friction terms.
-_REFUSING_ACTIONS = frozenset(
-    {RiskAction.HOLD, RiskAction.DECLINE, RiskAction.BLOCK}
-)
-
-
-@dataclass
-class CoadaptReport:
-    """The live-phase curve and the phase-boundary facts."""
-
-    initial_defender_positives: int = 0
-    bc_final_loss: float = 0.0
-    critic_final_loss: float = 0.0
-    # Per live-update series.
-    attacker_success: list[float] = field(default_factory=list)
-    mean_return: list[float] = field(default_factory=list)
-    entropy: list[float] = field(default_factory=list)
-    critic_relative: list[float] = field(default_factory=list)
-    defender_refits: list[int] = field(default_factory=list)  # update indices where D refit
-    defender_positives_at_refit: list[int] = field(default_factory=list)
-    zero_shot: dict[str, float] = field(default_factory=dict)
-    # Share of genuine authorisations the defender declined, measured on the
-    # live benign traffic at each refit. The defender's cost of being wrong in
-    # the other direction; without it the arms-race curve shows only half the
-    # contest, and a detector that had simply become stricter would be
-    # indistinguishable from one that had become better.
-    false_positive_rate: list[float] = field(default_factory=list)
-    top_sequences: list[tuple[str, int]] = field(default_factory=list)
-    # Strategies sampled through the run, not only at the end: the interesting
-    # thing is how the policy's approach changes after a defender refit, and a
-    # single final snapshot cannot show that.
-    strategy_history: list[dict] = field(default_factory=list)
-    selection: dict = field(default_factory=dict)
-    checkpoints: dict = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        """Everything as plain data, for plotting and for the writeup.
-
-        The rendered text is for reading a log; this is for a chart. Written
-        beside the run so the curve can be replotted without re-running.
-        """
-        return {
-            "initial_defender_positives": self.initial_defender_positives,
-            "bc_final_loss": self.bc_final_loss,
-            "critic_final_loss": self.critic_final_loss,
-            "attacker_success": list(self.attacker_success),
-            "mean_return": list(self.mean_return),
-            "entropy": list(self.entropy),
-            "critic_relative": list(self.critic_relative),
-            "defender_refits": list(self.defender_refits),
-            "defender_positives_at_refit": list(self.defender_positives_at_refit),
-            "zero_shot": dict(self.zero_shot),
-            "false_positive_rate": list(self.false_positive_rate),
-            "top_sequences": [
-                {"sequence": seq, "count": count} for seq, count in self.top_sequences
-            ],
-            "strategy_history": list(self.strategy_history),
-            "selection": dict(self.selection),
-            "checkpoints": dict(self.checkpoints),
-        }
-
-    def render(self) -> str:
-        lines = [
-            "live co-adaptation",
-            f"  initial defender fraud   {self.initial_defender_positives:>8,}",
-            f"  BC final loss            {self.bc_final_loss:>8.4f}",
-            f"  critic final loss        {self.critic_final_loss:>8.4f}",
-            "",
-            "  live phase  (extracted = value the attacker takes per episode, all channels)",
-            "  update  extracted   return   entropy   defender",
-        ]
-        refit_set = set(self.defender_refits)
-        for i, (succ, ret, ent) in enumerate(
-            zip(self.attacker_success, self.mean_return, self.entropy)
-        ):
-            marker = "  <- refit" if i in refit_set else ""
-            lines.append(f"    {i:<7}{succ:>9.1f}{ret:>9.2f}{ent:>10.3f}{marker}")
-        lines += ["", "  reads"]
-        if self.attacker_success:
-            lines.append(
-                f"    value extracted per episode  {self.attacker_success[0]:.1f}"
-                f" -> {self.attacker_success[-1]:.1f}"
-            )
-        lines += ["", "  zero-shot recall on held-out verticals"]
-        for name, recall in self.zero_shot.items():
-            lines.append(f"    {name:<16}{recall:>8.3f}")
-        if self.strategy_history:
-            lines += ["", "  how the attacker's strategy changed (sampled at each refit)"]
-            for snap in self.strategy_history:
-                top = snap["sequences"][0] if snap["sequences"] else None
-                if top:
-                    lines.append(
-                        f"    update {snap['update']:<4} {top['count']:>3}x  "
-                        f"{top['sequence'][:92]}"
-                    )
-
-        if self.selection.get("describe"):
-            lines += ["", self.selection["describe"]]
-
-        lines += ["", "  top action sequences (final trained attacker)"]
-        for seq, count in self.top_sequences[:8]:
-            lines.append(f"    {count:>4}  {seq}")
-        return "\n".join(lines)
-
-
-def _mask_table(table, mask):
-    """A row subset of a feature table, keeping every aligned column."""
-    from ..defender.table import FeatureTable
-
-    return FeatureTable(
-        X=table.X[mask], y=table.y[mask], columns=table.columns,
-        event_type=table.event_type[mask], is_warm_start=table.is_warm_start[mask],
-        episode_id=table.episode_id[mask], group=table.group[mask],
-        events=table.events[mask],
-    )
-
 
 class CoadaptEngine:
     """Runs the four-phase warm-start then live co-adaptation."""
@@ -621,7 +472,7 @@ class CoadaptEngine:
             mature = np.array(
                 [getattr(e, "ts", 0) <= cutoff for e in table.events], dtype=bool
             )
-            table = _mask_table(table, mature)
+            table = mask_table(table, mature)
         self.buffer.add(table)
         train = self.buffer.training_table()
         self.defender = self._fit_defender(train)
@@ -697,151 +548,22 @@ class CoadaptEngine:
     BENIGN_TARGET_EVENTS = 6000
 
     def _refusal_rate(self, events) -> float:
-        """Share of these events the defender in force would refuse.
-
-        Scored through the defender's own `score`, which realigns each event to
-        the columns the model was fitted on. Building one table from the benign
-        events directly does not work: benign traffic carries fewer event types
-        than the training window did, so the table comes out narrower and the
-        experts reject it.
-
-        A step-up is excluded — the customer answers a challenge and proceeds, so
-        it is friction rather than refusal. A hold, a decline and a block all
-        stop the transaction from the holder's point of view.
-        """
-        sample = events[: self.FP_SAMPLE]
-        if not sample:
-            return 0.0
-        refused = sum(
-            1
-            for event in sample
-            if self.defender.score(event).action in _REFUSING_ACTIONS
-        )
-        return refused / len(sample)
+        return refusal_rate(self.defender, events, self.FP_SAMPLE)
 
     def _measure_success(self, episodes: int) -> float:
-        """What the attacker extracts per episode under the defender in force.
-
-        Not the authorisation approval rate. That reads only one monetisation
-        channel, and a policy that has learned to take value through disputes,
-        refunds and cash-outs scores zero on it while doing well — which is
-        exactly what happened: approval sat at zero while realised value climbed.
-
-        Value extracted per episode covers every channel the action layer
-        provides, so it falls when the defender closes one and recovers when the
-        attacker finds another. That is the quantity the arms race is about.
-
-        The rollouts use the same world but the log is truncated back to its
-        pre-measurement length afterward, so measurement events never reach the
-        defender's training data.
-        """
-        import torch
-
-        snapshot = len(self.sim.log)
-        total_value = 0.0
-        for _ in range(episodes):
-            env = self._make_env()
-            obs = env.reset()
-            done = False
-            while not done:
-                vec = torch.as_tensor(
-                    AttackEnv.encode(obs), device=self.trainer.device
-                ).unsqueeze(0)
-                mask = torch.as_tensor(
-                    AttackEnv.mask_vector(obs), device=self.trainer.device
-                ).unsqueeze(0)
-                with torch.no_grad():
-                    discrete, stealth, amount, delay = self.trainer.actor(vec, mask)
-                    a_idx = int(discrete.sample().item())
-                    a_stl = 0 if self.stealth_frozen else int(stealth.sample().item())
-                    a_amt = float(amount.sample().item())
-                    a_dly = float(delay.sample().item())
-                obs, _, done, outcome = env.step(a_idx, a_amt, a_dly, a_stl)
-                total_value += float(outcome.value_extracted)
-            env.close()
-        self.sim.log.truncate(snapshot)
-        return total_value / max(episodes, 1)
+        return measure_success(
+            self.sim, self.trainer, self._make_env, self.stealth_frozen, episodes,
+        )
 
     def _zero_shot_recall(self) -> dict[str, float]:
-        recalls: dict[str, float] = {}
-        for vertical in ZERO_SHOT_HOLDOUTS:
-            recalls[vertical] = self._recall_on_vertical(vertical)
-        return recalls
-
-    def _recall_on_vertical(self, vertical: str) -> float:
-        # Run only this held-out vertical into the log, then score its fraud.
-        runner = _SingleVerticalRunner(self.sim, self.config, vertical, seed=self.seed + 700)
-        before = len(self.sim.log)
-        runner.run(benign_seed=self.seed + 800)
-        new_events = self.sim.log.events[before:]
-
-        from ..features.schema import AuthAttemptEvent
-
-        fraud = [e for e in new_events if isinstance(e, AuthAttemptEvent) and e.is_fraud]
-        if not fraud:
-            return 0.0
-        caught = sum(1 for e in fraud if self.defender.score(e).risk_score >= 0.5)
-        return caught / len(fraud)
+        return zero_shot_recall(
+            self.sim, self.config, self.defender, self.seed, ZERO_SHOT_HOLDOUTS,
+        )
 
     def _log_sequences(self, episodes: int):
-        from collections import Counter
-
-        import torch
-
-        from ..engine.actions import ACTION_ORDER
-        from ..engine.outcome import OutcomeCode
-        from ..attacker.nets import STEALTH_LOUD, STEALTH_NAMES
-
-        snapshot = len(self.sim.log)
-        counter: Counter = Counter()
-        for _ in range(episodes):
-            env = self._make_env()
-            obs = env.reset()
-            names: list[str] = []
-            done = False
-            while not done:
-                vec = torch.as_tensor(
-                    AttackEnv.encode(obs), device=self.trainer.device
-                ).unsqueeze(0)
-                mask = torch.as_tensor(
-                    AttackEnv.mask_vector(obs), device=self.trainer.device
-                ).unsqueeze(0)
-                with torch.no_grad():
-                    discrete, stealth, amount, delay = self.trainer.actor(vec, mask)
-                    a_idx = int(discrete.probs.argmax().item())
-                    a_stl = 0 if self.stealth_frozen else int(stealth.probs.argmax().item())
-                    a_amt = float(amount.mean.item())
-                    a_dly = float(delay.mean.item())
-                # The posture rides in the sequence label. Two runs of identical
-                # actions under different postures are different attacks, and the
-                # whole point of the head is to make that difference visible here.
-                suffix = "" if a_stl == STEALTH_LOUD else f"[{STEALTH_NAMES[a_stl]}]"
-                obs, _, done, outcome = env.step(a_idx, a_amt, a_dly, a_stl)
-                # Marked with what the world did, not only with what was chosen.
-                # The name used to be recorded before the step, so an action the
-                # stage forbade or that simply failed read in the log exactly
-                # like one that worked. A sequence ending in six repeated
-                # transfers looked like six transfers; it was one, followed by
-                # five the stage did not allow, and the episode ending at the
-                # stuck limit. A log that overstates what happened is worse than
-                # no log, because it gets believed.
-                if outcome.code is OutcomeCode.ILLEGAL:
-                    suffix += "!illegal"
-                elif outcome.code is OutcomeCode.FAILED:
-                    suffix += "!failed"
-                names.append(ACTION_ORDER[a_idx].value + suffix)
-            env.close()
-            counter[">".join(names)] += 1
-        self.sim.log.truncate(snapshot)
-        return counter.most_common(8)
-
-
-class _SingleVerticalRunner(EpisodeRunner):
-    """An episode runner restricted to one vertical, for zero-shot evaluation."""
-
-    def __init__(self, simulator, config, vertical: str, seed: int = 0):
-        super().__init__(simulator, config, seed=seed, train_only=False)
-        self._verticals = [vertical]
+        return log_sequences(
+            self.sim, self.trainer, self._make_env, self.stealth_frozen, episodes,
+        )
 
 
 def run_coadapt(
