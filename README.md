@@ -7,6 +7,31 @@ GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simula
 > Mastercard Innovation Challenge 2026 | AI Defense Lab for Payment Security
 > Team **Band of the Hawk**, IIT Kharagpur
 
+## Working Prototype
+
+**https://gauntlet-eight-theta.vercel.app**
+
+A live operations console built from one real 63.7-minute run. Seven views, one per judged
+criterion:
+
+| View | Shows |
+|------|-------|
+| Architecture | One pass of the closed loop. Attack and benign traffic converge on a single event builder, which is the blindness rule made visible. Every stage expands to its mechanics. |
+| Dashboard | The arms race across 150 updates with all 12 defender refits, the attacker strategy stream, expert weights, risk bands to mitigation, and the five-way detector comparison. |
+| Simulator | Calibration expressed as ratios against the noise floor of real data split against itself, the eight rule trigger rates, hard-negative composition, and fan-out variance to mean. |
+| The Loop | Selectable refit markers, the entropy spike that forces re-exploration, and the final trained policy at full length. |
+| Live | Authorisations scoring against the real cost bands, each row expanding to show why. |
+| Demo | Attack explorer across all 11 identified verticals, scripted attacker against learned. |
+
+Every figure comes from `run.log` and the committed calibration artifacts. Two things are
+labelled rather than presented as measured: precision, recall and F1 at the alert budget are
+marked `derived`, because `DetectionMetrics` does not compute F1; and the authorisation stream
+samples individual events from fitted distributions, which the panel states on itself. The cost
+curve is labelled relative cost, never a currency figure.
+
+The prototype does not drive the pipeline. A full run is six stages and 3819 seconds on a GPU
+server, so it replays one real run rather than pretending to launch another.
+
 ## Key Results
 
 | Metric | Value |
