@@ -36,6 +36,8 @@ over the live phase, showing each responding to the other.
 from __future__ import annotations
 
 import time
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -66,9 +68,24 @@ from .coadapt_eval import (
     refusal_rate,
     zero_shot_recall,
 )
-from .coadapt_report import CoadaptReport, _Progress
+from .coadapt_report import (
+    CheckpointPaths,
+    CoadaptReport,
+    SelectionSummary,
+    SequenceCount,
+    StrategySnapshot,
+    _Progress,
+)
 from .retention import RetentionBuffer
 from .run import EpisodeRunner
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from ..attacker.scripted import ScriptedPolicy
+    from ..defender.table import FeatureTable
+    from ..engine.bands import RiskBands
+    from ..features.schema import AuthAttemptEvent
 
 _log = get_logger(__name__)
 
@@ -83,8 +100,8 @@ class CoadaptEngine:
         learned_defender: bool = False,
         benign_rounds: int = 3,
         ppo_config: PPOConfig | None = None,
-        pool_path=None,
-        cfpb_path=None,
+        pool_path: Path | str | None = None,
+        cfpb_path: Path | str | None = None,
         candidates: int = 5,
         selection_warmup: int = 10,
         label_latency_minutes: int = 0,
@@ -171,22 +188,22 @@ class CoadaptEngine:
 
     # ----------------------------------------------------------- checkpoints
 
-    def save(self, directory) -> dict:
+    def save(self, directory: Path | str) -> CheckpointPaths:
         """Write the attacker and the defender, returning where each landed."""
-        from pathlib import Path
-
         from ..defender.persist import save_defender
 
-        directory = Path(directory)
-        directory.mkdir(parents=True, exist_ok=True)
+        target = Path(directory)
+        target.mkdir(parents=True, exist_ok=True)
 
-        attacker_path = directory / "attacker.pt"
+        attacker_path = target / "attacker.pt"
         self.trainer.save(attacker_path)
 
-        defender_path = directory / "defender.joblib"
+        defender_path = target / "defender.joblib"
         save_defender(self.defender, defender_path)
 
-        return {"attacker": str(attacker_path), "defender": str(defender_path)}
+        return CheckpointPaths(
+            attacker=str(attacker_path), defender=str(defender_path)
+        )
 
     # ------------------------------------------------------------ env thunks
 
@@ -244,13 +261,13 @@ class CoadaptEngine:
         env.selection_context = self._pending_context
         return env
 
-    def _credit_selection(self, env, total_reward: float) -> None:
+    def _credit_selection(self, env: AttackEnv, total_reward: float) -> None:
         """Fold one episode's return into the selector's posterior."""
         context = getattr(env, "selection_context", None)
         if context is not None:
             self.selector.record(context, total_reward)
 
-    def _make_env_and_policy(self):
+    def _make_env_and_policy(self) -> tuple[AttackEnv, ScriptedPolicy]:
         target = self._target()
         env = AttackEnv(self.sim, target)
         vertical = self._train_verticals[int(self.rng.integers(len(self._train_verticals)))]
@@ -285,7 +302,7 @@ class CoadaptEngine:
         step.done()
         return int((table.y == 1).sum())
 
-    def _fit_defender(self, train) -> RiskScorer:
+    def _fit_defender(self, train: FeatureTable) -> RiskScorer:
         if len(train) == 0 or train.y.sum() == 0:
             return self.defender
         if self.learned_defender:
@@ -295,7 +312,7 @@ class CoadaptEngine:
         model.bands = self._search_bands(model, train)
         return model
 
-    def _search_bands(self, model, train):
+    def _search_bands(self, model: RiskScorer, train: FeatureTable) -> RiskBands:
         """Place the decision thresholds on the business cost curve.
 
         Without this the live defender ran on the round-number defaults and had
@@ -391,7 +408,7 @@ class CoadaptEngine:
             extracted = self._measure_success(episodes=self.loop.eval_episodes)
             report.attacker_success.append(extracted)
             report.mean_return.append(float(batch.ret.mean().item()))
-            report.entropy.append(stats["entropy"])
+            report.entropy.append(stats.entropy)
 
             # The critic's error relative to the spread of the returns, which is
             # comparable across runs; the absolute loss is not, since it scales
@@ -403,7 +420,7 @@ class CoadaptEngine:
             eta = (elapsed / (update + 1)) * (n_updates - update - 1)
             _log.info(
                 "  %-7d%9.1f%9.2f%10.3f%8.2f   %5.1fm  eta %5.1fm",
-                update, extracted, report.mean_return[-1], stats["entropy"],
+                update, extracted, report.mean_return[-1], stats.entropy,
                 crit_rel, elapsed / 60, eta / 60,
             )
 
@@ -411,14 +428,16 @@ class CoadaptEngine:
                 # Record what the attacker was doing just before the defender
                 # retrains, so the strategy either side of a refit is visible.
                 report.strategy_history.append(
-                    {
-                        "update": update,
-                        "when": "before_refit",
-                        "sequences": [
-                            {"sequence": seq, "count": n}
-                            for seq, n in self._log_sequences(episodes=12)
-                        ],
-                    }
+                    StrategySnapshot(
+                        update=update,
+                        when="before_refit",
+                        sequences=tuple(
+                            SequenceCount(sequence=seq, count=n)
+                            for seq, n in self._log_sequences(
+                                episodes=self.loop.eval_episodes
+                            )
+                        ),
+                    )
                 )
                 positives = self._refit_defender()
                 report.defender_refits.append(update)
@@ -430,11 +449,11 @@ class CoadaptEngine:
                     f"{positives:,}", self._last_fp_rate * 100,
                 )
 
-        report.selection = {
-            "describe": self.selector.describe(),
-            "weights": self.selector.weights().tolist(),
-            "active": self.selector.active,
-        }
+        report.selection = SelectionSummary(
+            describe=self.selector.describe(),
+            weights=tuple(self.selector.weights().tolist()),
+            active=self.selector.active,
+        )
         report.zero_shot = self._zero_shot_recall()
         report.top_sequences = self._log_sequences(episodes=40)
         return report
@@ -550,7 +569,7 @@ class CoadaptEngine:
     # class, and independent of population size so a larger world costs no more
     # here than a small one.
 
-    def _refusal_rate(self, events) -> float:
+    def _refusal_rate(self, events: Sequence[AuthAttemptEvent]) -> float:
         return refusal_rate(self.defender, events, self.loop.false_positive_sample)
 
     def _measure_success(self, episodes: int) -> float:
@@ -563,7 +582,7 @@ class CoadaptEngine:
             self.sim, self.config, self.defender, self.seed, ZERO_SHOT_HOLDOUTS,
         )
 
-    def _log_sequences(self, episodes: int):
+    def _log_sequences(self, episodes: int) -> list[tuple[str, int]]:
         return log_sequences(
             self.sim, self.trainer, self._make_env, self.stealth_frozen, episodes,
         )
@@ -581,9 +600,9 @@ def run_coadapt(
     episodes_per_update: int,
     refit_every: int,
     ppo_config: PPOConfig | None = None,
-    pool_path=None,
-    cfpb_path=None,
-    checkpoint_dir=None,
+    pool_path: Path | str | None = None,
+    cfpb_path: Path | str | None = None,
+    checkpoint_dir: Path | str | None = None,
     candidates: int = 5,
     selection_warmup: int = 10,
     label_latency_minutes: int = 0,

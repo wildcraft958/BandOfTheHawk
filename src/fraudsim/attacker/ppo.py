@@ -35,6 +35,22 @@ from .env import AttackEnv
 from .nets import Actor, Critic, NetConfig
 
 
+@dataclass(frozen=True, slots=True)
+class PPOStats:
+    """What one update reports. Every other metrics record here is a dataclass.
+
+    This one was a bare dict, so `stats["entropy"]` at two call sites in the
+    co-adaptation loop was unchecked and a rename here would have failed there
+    at runtime rather than at import.
+    """
+
+    policy_loss: float
+    value_loss: float
+    entropy: float
+    bc_kl: float
+    bc_coef: float
+
+
 @dataclass
 class RolloutBatch:
     """A collected set of transitions as tensors, ready for the update."""
@@ -339,11 +355,13 @@ class PPOTrainer:
 
     # --------------------------------------------------------------- update
 
-    def update(self, batch: RolloutBatch, rng: np.random.Generator) -> dict:
+    def update(self, batch: RolloutBatch, rng: np.random.Generator) -> PPOStats:
         """One PPO update: clipped surrogate, value loss, entropy, BC penalty."""
         cfg = self.config
         bc_coef = self._bc_coef()
-        stats = {"policy_loss": [], "value_loss": [], "entropy": [], "bc_kl": []}
+        stats: dict[str, list[float]] = {
+            "policy_loss": [], "value_loss": [], "entropy": [], "bc_kl": []
+        }
 
         for _ in range(cfg.epochs_per_update):
             for mb in batch.minibatches(cfg.minibatch_size, rng):
@@ -385,7 +403,8 @@ class PPOTrainer:
                 stats["bc_kl"].append(float(bc_kl.item()))
 
         self._updates += 1
-        return {k: float(np.mean(v)) for k, v in stats.items()} | {"bc_coef": bc_coef}
+        means = {name: float(np.mean(values)) for name, values in stats.items()}
+        return PPOStats(**means, bc_coef=bc_coef)
 
     # -------------------------------------------------------------- internals
 

@@ -94,3 +94,26 @@ def test_top_sequences_logged(coadapt_report):
     r = coadapt_report
     assert r.top_sequences
     assert ">" in r.top_sequences[0][0] or r.top_sequences[0][0]
+
+
+def test_the_report_renders_and_serialises(coadapt_report) -> None:
+    """The two consumers of a report: the rendered text and the metrics JSON.
+
+    Converting the report's dicts to dataclasses broke `orchestration/cli.py`,
+    which iterated `checkpoints.items()`, and nothing caught it because no test
+    exercised that path. The JSON shape is a contract: the writeup and the
+    prototype both read it.
+    """
+    import json
+
+    report = coadapt_report
+    text = report.render()
+    assert "live co-adaptation" in text
+
+    payload = json.loads(json.dumps(report.to_dict()))
+    assert sorted(payload["checkpoints"]) == ["attacker", "defender"]
+    assert sorted(payload["selection"]) == ["active", "describe", "weights"]
+    for snapshot in payload["strategy_history"]:
+        assert sorted(snapshot) == ["sequences", "update", "when"]
+        for item in snapshot["sequences"]:
+            assert sorted(item) == ["count", "sequence"]

@@ -2,11 +2,36 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sequence
+from typing import TYPE_CHECKING
+
+import numpy as np
+
 from .coadapt_report import _REFUSING_ACTIONS
 from .run import EpisodeRunner
 
+if TYPE_CHECKING:
+    # Under TYPE_CHECKING so the annotations cost no import: this module is
+    # reached from the co-adaptation loop, and pulling the trainer in eagerly
+    # would drag torch onto a path that does not need it.
+    from ..attacker.env import AttackEnv
+    from ..attacker.ppo import PPOTrainer
+    from ..defender.table import FeatureTable
+    from ..engine.simulator import Simulator
+    from ..features.schema import AuthAttemptEvent
+    from ..protocols import RiskScorer
+    from ..settings.simulation import SimulationConfig
 
-def measure_success(sim, trainer, make_env_fn, stealth_frozen: bool, episodes: int) -> float:
+    MakeEnv = Callable[[], AttackEnv]
+
+
+def measure_success(
+    sim: Simulator,
+    trainer: PPOTrainer,
+    make_env_fn: MakeEnv,
+    stealth_frozen: bool,
+    episodes: int,
+) -> float:
     """What the attacker extracts per episode under the defender in force.
 
     Value extracted per episode covers every monetisation channel, so it falls
@@ -42,7 +67,11 @@ def measure_success(sim, trainer, make_env_fn, stealth_frozen: bool, episodes: i
     return total_value / max(episodes, 1)
 
 
-def refusal_rate(defender, events, sample_size: int) -> float:
+def refusal_rate(
+    defender: RiskScorer,
+    events: Sequence[AuthAttemptEvent],
+    sample_size: int,
+) -> float:
     """Share of events the defender in force would refuse."""
     sample = events[:sample_size]
     if not sample:
@@ -55,7 +84,13 @@ def refusal_rate(defender, events, sample_size: int) -> float:
     return refused / len(sample)
 
 
-def zero_shot_recall(sim, config, defender, seed: int, holdouts) -> dict[str, float]:
+def zero_shot_recall(
+    sim: Simulator,
+    config: SimulationConfig,
+    defender: RiskScorer,
+    seed: int,
+    holdouts: Iterable[str],
+) -> dict[str, float]:
     """Recall on verticals held out of training."""
     recalls: dict[str, float] = {}
     for vertical in holdouts:
@@ -63,7 +98,13 @@ def zero_shot_recall(sim, config, defender, seed: int, holdouts) -> dict[str, fl
     return recalls
 
 
-def _recall_on_vertical(sim, config, defender, vertical: str, seed: int) -> float:
+def _recall_on_vertical(
+    sim: Simulator,
+    config: SimulationConfig,
+    defender: RiskScorer,
+    vertical: str,
+    seed: int,
+) -> float:
     runner = _SingleVerticalRunner(sim, config, vertical, seed=seed + 700)
     before = len(sim.log)
     runner.run(benign_seed=seed + 800)
@@ -78,7 +119,13 @@ def _recall_on_vertical(sim, config, defender, vertical: str, seed: int) -> floa
     return caught / len(fraud)
 
 
-def log_sequences(sim, trainer, make_env_fn, stealth_frozen: bool, episodes: int):
+def log_sequences(
+    sim: Simulator,
+    trainer: PPOTrainer,
+    make_env_fn: MakeEnv,
+    stealth_frozen: bool,
+    episodes: int,
+) -> list[tuple[str, int]]:
     """Top action sequences the trained attacker produces."""
     from collections import Counter
 
@@ -122,7 +169,7 @@ def log_sequences(sim, trainer, make_env_fn, stealth_frozen: bool, episodes: int
     return counter.most_common(8)
 
 
-def mask_table(table, mask):
+def mask_table(table: FeatureTable, mask: np.ndarray) -> FeatureTable:
     """A row subset of a feature table, keeping every aligned column."""
     from ..defender.table import FeatureTable
 
@@ -137,6 +184,12 @@ def mask_table(table, mask):
 class _SingleVerticalRunner(EpisodeRunner):
     """An episode runner restricted to one vertical, for zero-shot evaluation."""
 
-    def __init__(self, simulator, config, vertical: str, seed: int = 0):
+    def __init__(
+        self,
+        simulator: Simulator,
+        config: SimulationConfig,
+        vertical: str,
+        seed: int = 0,
+    ) -> None:
         super().__init__(simulator, config, seed=seed, train_only=False)
         self._verticals = [vertical]

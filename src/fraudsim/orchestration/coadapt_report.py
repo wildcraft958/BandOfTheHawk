@@ -39,6 +39,60 @@ class _Progress:
         _log.info("  %s done in %.1fs%s", self._label, elapsed, tail)
 
 
+@dataclass(frozen=True, slots=True)
+class SequenceCount:
+    """One action sequence and how often the attacker produced it."""
+
+    sequence: str
+    count: int
+
+    def as_dict(self) -> dict[str, object]:
+        return {"sequence": self.sequence, "count": self.count}
+
+
+@dataclass(frozen=True, slots=True)
+class StrategySnapshot:
+    """The attacker's top sequences at one point in the live phase."""
+
+    update: int
+    when: str
+    sequences: tuple[SequenceCount, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "update": self.update,
+            "when": self.when,
+            "sequences": [item.as_dict() for item in self.sequences],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SelectionSummary:
+    """What the victim-selection bandit settled on."""
+
+    describe: str = ""
+    weights: tuple[float, ...] = ()
+    active: bool = False
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "describe": self.describe,
+            "weights": list(self.weights),
+            "active": self.active,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CheckpointPaths:
+    """Where a finished run left the trained attacker and the final defender."""
+
+    attacker: str = ""
+    defender: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        return {"attacker": self.attacker, "defender": self.defender}
+
+
 @dataclass
 class CoadaptReport:
     """The live-phase curve and the phase-boundary facts."""
@@ -55,11 +109,11 @@ class CoadaptReport:
     zero_shot: dict[str, float] = field(default_factory=dict)
     false_positive_rate: list[float] = field(default_factory=list)
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
-    strategy_history: list[dict] = field(default_factory=list)
-    selection: dict = field(default_factory=dict)
-    checkpoints: dict = field(default_factory=dict)
+    strategy_history: list[StrategySnapshot] = field(default_factory=list)
+    selection: SelectionSummary = field(default_factory=SelectionSummary)
+    checkpoints: CheckpointPaths = field(default_factory=CheckpointPaths)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         """Everything as plain data, for plotting and for the writeup."""
         return {
             "initial_defender_positives": self.initial_defender_positives,
@@ -76,9 +130,9 @@ class CoadaptReport:
             "top_sequences": [
                 {"sequence": seq, "count": count} for seq, count in self.top_sequences
             ],
-            "strategy_history": list(self.strategy_history),
-            "selection": dict(self.selection),
-            "checkpoints": dict(self.checkpoints),
+            "strategy_history": [s.as_dict() for s in self.strategy_history],
+            "selection": self.selection.as_dict(),
+            "checkpoints": self.checkpoints.as_dict(),
         }
 
     def render(self) -> str:
@@ -109,15 +163,15 @@ class CoadaptReport:
         if self.strategy_history:
             lines += ["", "  how the attacker's strategy changed (sampled at each refit)"]
             for snap in self.strategy_history:
-                top = snap["sequences"][0] if snap["sequences"] else None
+                top = snap.sequences[0] if snap.sequences else None
                 if top:
                     lines.append(
-                        f"    update {snap['update']:<4} {top['count']:>3}x  "
-                        f"{top['sequence'][:92]}"
+                        f"    update {snap.update:<4} {top.count:>3}x  "
+                        f"{top.sequence[:92]}"
                     )
 
-        if self.selection.get("describe"):
-            lines += ["", self.selection["describe"]]
+        if self.selection.describe:
+            lines += ["", self.selection.describe]
 
         lines += ["", "  top action sequences (final trained attacker)"]
         for seq, count in self.top_sequences[:8]:

@@ -263,7 +263,9 @@ class EpisodeRunner:
             # stamps the benign backdrop at the end — which is exactly right,
             # since a legitimate dispute is benign ground truth.
 
-    def _benign_text_actor(self, holder_id: int, card_id: int, stage: Stage):
+    def _benign_text_actor(
+        self, holder_id: int, card_id: int, stage: Stage
+    ) -> ActorId:
         """A benign actor at the stage where the intended text action is legal."""
         actor_id = ActorId(self._next_actor)
         self._next_actor += 1
@@ -280,7 +282,9 @@ class EpisodeRunner:
 
     # --------------------------------------------------------------- episode
 
-    def _episode(self, vertical: str, target: Target, scorer):
+    def _episode(
+        self, vertical: str, target: Target, scorer: RiskScorer | None
+    ) -> tuple[int, int, bool, str]:
         sim = self.simulator
         actor_id = ActorId(self._next_actor)
         self._next_actor += 1

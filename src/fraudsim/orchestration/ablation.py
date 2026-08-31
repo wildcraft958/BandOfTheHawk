@@ -23,6 +23,9 @@ from __future__ import annotations
 
 import json
 import statistics as st
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -32,33 +35,53 @@ from ..paths import ABLATION_DIR
 REFIT_AT = 6  # first defender refit, at --refit-every 6
 
 
-def load(arm):
-    out = {}
+@dataclass(frozen=True, slots=True)
+class ArmSummary:
+    """One arm's extraction curve, split at the first defender refit.
+
+    A five-key dict before, read by string at three call sites, so a renamed key
+    would have failed in the middle of rendering rather than at import.
+    """
+
+    pre: float
+    post: float
+    post_median: float
+    post_max: float
+    tail: float
+
+
+def load(arm: str) -> dict[int, dict[str, Any]]:
+    """Every completed run of one arm, keyed by seed."""
+    out: dict[int, dict[str, Any]] = {}
     for path in sorted(ABLATION_DIR.glob(f"{arm}_s*.json")):
         seed = int(path.name.split("_s")[1].split(".")[0])
         out[seed] = json.loads(path.read_text())
     return out
 
 
-def summarise(d):
-    s = d["attacker_success"]
-    return {
-        "pre": st.mean(s[:REFIT_AT]),
-        "post": st.mean(s[REFIT_AT:]),
-        "post_median": st.median(s[REFIT_AT:]),
-        "post_max": max(s[REFIT_AT:]),
-        "tail": st.mean(s[-6:]),
-    }
+def summarise(metrics: dict[str, Any]) -> ArmSummary:
+    """One run's extraction, before and after the first refit."""
+    curve = metrics["attacker_success"]
+    return ArmSummary(
+        pre=st.mean(curve[:REFIT_AT]),
+        post=st.mean(curve[REFIT_AT:]),
+        post_median=st.median(curve[REFIT_AT:]),
+        post_max=max(curve[REFIT_AT:]),
+        tail=st.mean(curve[-6:]),
+    )
 
 
-def bootstrap_paired(diffs, n=20000, seed=0):
+def bootstrap_paired(
+    diffs: Sequence[float], n: int = 20_000, seed: int = 0
+) -> np.ndarray:
+    """A percentile interval on the paired difference, resampled by seed pair."""
     rng = np.random.default_rng(seed)
     d = np.asarray(diffs, dtype=float)
     means = np.array([rng.choice(d, size=len(d), replace=True).mean() for _ in range(n)])
     return np.percentile(means, [2.5, 97.5])
 
 
-def main():
+def main() -> None:
     A, B = load("stealth"), load("control")
     seeds = sorted(set(A) & set(B))
     if not seeds:
@@ -70,15 +93,15 @@ def main():
     diffs = []
     for s in seeds:
         a, b = summarise(A[s]), summarise(B[s])
-        diff = a["post"] - b["post"]
+        diff = a.post - b.post
         diffs.append(diff)
-        emit(f"{s:>5}{a['post']:>14.1f}{b['post']:>14.1f}{diff:>+10.1f}")
+        emit(f"{s:>5}{a.post:>14.1f}{b.post:>14.1f}{diff:>+10.1f}")
 
     emit(f"\n{'':>5}{'mean':>14}{'mean':>14}{'mean diff':>10}")
     emit(
         f"{'':>5}"
-        f"{st.mean([summarise(A[s])['post'] for s in seeds]):>14.1f}"
-        f"{st.mean([summarise(B[s])['post'] for s in seeds]):>14.1f}"
+        f"{st.mean([summarise(A[s]).post for s in seeds]):>14.1f}"
+        f"{st.mean([summarise(B[s]).post for s in seeds]):>14.1f}"
         f"{st.mean(diffs):>+10.1f}"
     )
 

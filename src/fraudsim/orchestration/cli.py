@@ -95,8 +95,8 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         args.metrics.parent.mkdir(parents=True, exist_ok=True)
         args.metrics.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
         emit(f"\n  metrics written to {args.metrics}")
-    for name, where in report.checkpoints.items():
-        emit(f"  {name} saved to {where}")
+    emit(f"  attacker saved to {report.checkpoints.attacker}")
+    emit(f"  defender saved to {report.checkpoints.defender}")
     return 0
 
 
