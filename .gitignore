@@ -1,16 +1,13 @@
-# Datasets are NOT committed -- see README for how to fetch them.
-# Public sets download from Kaggle/CFPB; the derived CFPB parquets are
-# reproducible with tools/filter_cfpb.py.
+# Datasets (not committed; see README for how to fetch them)
 Dataset/
 
-# fitted parameter artifacts + run outputs
-artifacts/
+# Run outputs (committed calibration artifacts live in artifacts/)
 outputs/
 runs/
 *.ckpt
 *.pt
 
-# python
+# Python
 __pycache__/
 *.py[cod]
 .venv/
@@ -20,13 +17,13 @@ env/
 *.egg-info/
 .pytest_cache/
 
-# editors / os
+# Editors / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# scratch
+# Scratch
 scratch/
 tmp/
 *.log

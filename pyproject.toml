@@ -4,9 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fraudsim"
-version = "0.1.0"
-description = "Entity-graph world model and simulator for payment fraud research"
+version = "1.0.0"
+description = "GAUNTLET -- closed-loop adversarial simulation for GenAI-enabled payment fraud"
 requires-python = ">=3.13"
+license = "MIT"
+authors = [
+    { name = "Shehryaar Shah Khan", email = "khanshehryaar705@gmail.com" },
+    { name = "Animesh Raj", email = "animeshraj958@gmail.com" },
+    { name = "Saksham Tiwari", email = "hellosaksham@kgpian.iitkgp.ac.in" },
+    { name = "Eisa Shaiju", email = "eisashaiju@gmail.com" },
+    { name = "Monika Kumari", email = "khicharmonika15@gmail.com" },
+]
+keywords = ["payment-fraud", "adversarial-simulation", "red-team", "blue-team", "reinforcement-learning"]
+
+[project.urls]
+Repository = "https://github.com/wildcraft958/BandOfTheHawk"
 
 # Runtime tier. Deliberately excludes pandas/pyarrow/networkx so that a stray
 # import in the simulation path fails in a clean install instead of silently
