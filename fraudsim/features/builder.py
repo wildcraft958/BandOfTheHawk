@@ -15,6 +15,13 @@ from __future__ import annotations
 
 import math
 
+from ..clock import (
+    MINUTES_PER_DAY,
+    SECONDS_PER_MINUTE,
+    SECONDS_PER_DAY as DAY,
+    SECONDS_PER_HOUR as HOUR,
+    SECONDS_PER_WEEK as WEEK,
+)
 from ..config.engine import WindowConfig
 from ..ids import CardId, DeviceId, MerchantId
 from ..timing.circadian import HolderClockModel
@@ -23,12 +30,6 @@ from ..world.graph import EntityGraph
 from .schema import AuthAttemptEvent, BindingEvent, EventType
 from .state import FeatureStateStore
 from .windows import CompoundKey
-
-MINUTES_PER_DAY = 1440
-SECONDS_PER_MINUTE = 60
-HOUR = 3600
-DAY = 86_400
-WEEK = 604_800
 EARTH_RADIUS_KM = 6371.0
 
 _CLUSTER_INDEX = {cluster: index for index, cluster in enumerate(CategoryCluster)}

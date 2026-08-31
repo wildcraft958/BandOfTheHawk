@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 from ..config.engine import WindowConfig
 from ..ids import CardId
+from ..clock import SECONDS_PER_DAY as DAY, SECONDS_PER_HOUR as HOUR, SECONDS_PER_WEEK as WEEK
 from .windows import (
     CompoundKey,
     CompoundWindowIndex,
@@ -24,10 +25,6 @@ from .windows import (
     RollingSum,
     RunningMedian,
 )
-
-HOUR = 3600
-DAY = 86_400
-WEEK = 604_800
 
 
 @dataclass(slots=True)

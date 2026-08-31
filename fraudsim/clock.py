@@ -12,6 +12,14 @@ HOUR = 60
 DAY = 24 * HOUR
 WEEK = 7 * DAY
 
+MINUTES_PER_HOUR = HOUR
+MINUTES_PER_DAY = DAY
+SECONDS_PER_MINUTE = 60
+
+SECONDS_PER_HOUR = 3600
+SECONDS_PER_DAY = 86_400
+SECONDS_PER_WEEK = 604_800
+
 
 class SimClock:
     """Monotonic minute-resolution clock."""

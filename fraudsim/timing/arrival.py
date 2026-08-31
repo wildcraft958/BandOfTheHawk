@@ -23,10 +23,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..clock import SECONDS_PER_MINUTE
 from ..config.behavior import ArrivalConfig
 from ..world.entities import ActivityTier, Archetype
-
-SECONDS_PER_MINUTE = 60
 
 
 @dataclass(slots=True)

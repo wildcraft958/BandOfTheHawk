@@ -17,11 +17,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..clock import MINUTES_PER_DAY
 from ..config.behavior import CircadianConfig
 
 HOURS_PER_DAY = 24.0
 TWO_PI = 2.0 * np.pi
-MINUTES_PER_DAY = 1440
 _GRID = np.linspace(0.0, HOURS_PER_DAY, 480, endpoint=False)
 
 

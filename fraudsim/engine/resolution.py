@@ -25,11 +25,9 @@ from ..features.schema import EventType
 from ..ids import AccountId, CardId, DeviceId, MerchantId, PayeeId
 from ..world.edges import AddedEdge, AddMethod, BindMethod, ProvisionedEdge
 from ..world.entities import Device, Payee
+from ..clock import MINUTES_PER_DAY, MINUTES_PER_HOUR
 from .actions import Action, ActionName
 from .outcome import Outcome, OutcomeCode
-
-MINUTES_PER_HOUR = 60
-MINUTES_PER_DAY = 1440
 
 # Which event each action emits, where it emits one.
 EVENT_FOR_ACTION: Mapping[ActionName, EventType] = {

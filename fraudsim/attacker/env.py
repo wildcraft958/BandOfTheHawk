@@ -78,9 +78,9 @@ _FEATURE_KEYS = (
 # whole number of days: a floor of exactly twenty-four hours lands the action at
 # the same hour it would have run at anyway, so the wait would buy separation in
 # the velocity windows while leaving the time-of-day tell exactly where it was.
-COOL_OFF_MINUTES = 20 * 60
+from ..clock import MINUTES_PER_DAY
 
-MINUTES_PER_DAY = 1440
+COOL_OFF_MINUTES = 20 * 60
 
 
 @dataclass(slots=True)

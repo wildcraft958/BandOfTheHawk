@@ -25,9 +25,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..clock import MINUTES_PER_HOUR
 from ..world.entities import CardStatus
-
-MINUTES_PER_HOUR = 60
 
 
 @dataclass(frozen=True, slots=True)

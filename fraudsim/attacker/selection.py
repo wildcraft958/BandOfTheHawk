@@ -35,11 +35,11 @@ import numpy as np
 
 # Card ages are banded rather than passed raw: a dump tells a buyer roughly how
 # old an account is, not the issue timestamp, and a band is what generalises.
+from ..clock import MINUTES_PER_DAY
+
 AGE_BAND_EDGES_DAYS = (180, 365, 1095)  # under 6m, 6m-1y, 1-3y, over 3y
 N_AGE_BANDS = len(AGE_BAND_EDGES_DAYS) + 1
 N_BIN_TIERS = 4
-
-MINUTES_PER_DAY = 1440
 
 
 def card_context(bin_tier: int, card_age_days: float) -> np.ndarray:
