@@ -142,9 +142,24 @@ python main.py --profile quick     # 600 holders, 12 updates  -- 45.5 s measured
 python main.py baseline
 python main.py coadapt --profile server
 
+# Run the stealth ablation: four paired seeds, then read it
+for s in 1 2 3 4; do
+  python main.py coadapt --profile gpu --seed $s
+  python main.py control --profile gpu --seed $s
+done
+python -m fraudsim.orchestration.ablation
+python make_figures.py            # regenerates the paper's five measured figures
+
 # Run tests
 pytest tests/ -q
 ```
+
+A seeded `coadapt` or `control` run files its own metrics into
+`artifacts/ablation/` under the name the ablation reader looks for, so the four
+commands above work in that order with nothing copied by hand. `make_figures.py`
+reads the same files and takes its statistics from the ablation module itself,
+so a figure and the number quoted beside it cannot drift apart. It needs the
+analysis extra (`pip install -e ".[analysis]"`).
 
 Both durations are measured, not estimated. The 63.7 min is the run that produced every
 number in this README, on the GPU box; the 45.5 s is `--profile quick --mock` on an
@@ -202,6 +217,7 @@ holds the code that reads it.
 ```
 BandOfTheHawk/
 ├── main.py                      # Pipeline entrypoint (all stages, or one)
+├── make_figures.py              # Regenerates the paper's five measured figures
 ├── pyproject.toml               # The dependency contract: base + five extras
 ├── requirements.txt             # One exact set of versions, verified together
 ├── configs/                     # The data. Plain YAML, no code.

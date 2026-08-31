@@ -122,6 +122,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -129,7 +130,7 @@ from pathlib import Path
 import yaml
 
 from fraudsim.logs import configure, emit, get_logger
-from fraudsim.paths import ARTIFACT_DIR, CONFIG_DIR
+from fraudsim.paths import ABLATION_DIR, ARTIFACT_DIR, CONFIG_DIR
 
 _log = get_logger("fraudsim.pipeline")
 
@@ -279,6 +280,28 @@ def _run_stage(name: str, module: str, argv: list[str]) -> tuple[bool, float]:
     return ok, elapsed
 
 
+def _file_for_ablation(stage: str, seed: int | None) -> None:
+    """Copy a finished arm's metrics to where the ablation reader looks.
+
+    `fraudsim.orchestration.ablation` reads artifacts/ablation/{arm}_s{seed}.json
+    and nothing wrote them, so the documented four-command reproduction ended in
+    "no completed pairs yet" and the copy had to be done by hand. The arms are
+    only comparable when paired by seed, so an unseeded run is not filed: it
+    cannot be matched to its opposite arm.
+    """
+    if seed is None:
+        return
+    arm = "control" if stage == "control" else "stealth"
+    source = ARTIFACT_DIR / ("control_metrics.json" if stage == "control" else "coadapt_metrics.json")
+    if not source.exists():
+        _log.warning("no metrics at %s, nothing filed for the ablation", source)
+        return
+    ABLATION_DIR.mkdir(parents=True, exist_ok=True)
+    target = ABLATION_DIR / f"{arm}_s{seed}.json"
+    shutil.copyfile(source, target)
+    _log.info("filed for the ablation: %s", target)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="run the whole pipeline, or one stage",
@@ -334,6 +357,8 @@ def main(argv: list[str] | None = None) -> int:
         module, stage_argv = _stage_args(stage, scales, use_models=not args.mock)
         # Top-level options first: argparse rejects them after the subcommand.
         ok, elapsed = _run_stage(stage, module, _common_args(scales) + stage_argv)
+        if ok and stage in ("coadapt", "control"):
+            _file_for_ablation(stage, scales.get("seed"))
         results.append((stage, ok, elapsed))
 
     emit(f"\n{bar}")

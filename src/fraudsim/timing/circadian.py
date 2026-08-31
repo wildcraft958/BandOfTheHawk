@@ -14,6 +14,7 @@ two places.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 
@@ -186,18 +187,7 @@ class HolderClock:
         """
         if self.kappa <= 1e-6:
             return True
-        # Density at angular distance d is proportional to exp(kappa*cos(d)).
-        # The arc holding `coverage` of the mass is bounded where the density
-        # falls to the level whose enclosed mass equals coverage; solved by
-        # bisection on the enclosed mass, which is monotone in the half-width.
-        low, high = 0.0, np.pi
-        for _ in range(40):
-            mid = 0.5 * (low + high)
-            if _vonmises_mass(self.kappa, mid) < coverage:
-                low = mid
-            else:
-                high = mid
-        half_width = 0.5 * (low + high)
+        half_width = _half_width(self.kappa, coverage)
 
         delta = _to_angle(float(hour)) - _to_angle(self.preferred_hour)
         distance = abs((delta + np.pi) % TWO_PI - np.pi)
@@ -207,13 +197,43 @@ class HolderClock:
         return self.contains((minutes % MINUTES_PER_DAY) / 60.0, coverage)
 
 
+@lru_cache(maxsize=1024)
+def _vonmises_total(kappa: float) -> float:
+    """The full-circle integral, which depends on kappa alone."""
+    full_grid = np.linspace(-np.pi, np.pi, 512)
+    return float(np.trapezoid(np.exp(kappa * np.cos(full_grid)), full_grid))
+
+
 def _vonmises_mass(kappa: float, half_width: float) -> float:
     """Mass of a von Mises within `half_width` radians of its mean."""
     grid = np.linspace(-half_width, half_width, 256)
     inside = np.trapezoid(np.exp(kappa * np.cos(grid)), grid)
-    full_grid = np.linspace(-np.pi, np.pi, 512)
-    total = np.trapezoid(np.exp(kappa * np.cos(full_grid)), full_grid)
+    total = _vonmises_total(kappa)
     return float(inside / total) if total else 1.0
+
+
+@lru_cache(maxsize=4096)
+def _half_width(kappa: float, coverage: float) -> float:
+    """The arc about the mean holding `coverage` of the mass.
+
+    Density at angular distance d is proportional to exp(kappa*cos(d)), so the
+    arc is bounded where the enclosed mass equals coverage; solved by bisection,
+    which is monotone in the half-width.
+
+    Cached because it depends on nothing else, while `contains` runs once per
+    event. Uncached this was forty bisection steps and eighty numerical
+    integrations for every event in the simulation, which profiling put at
+    about a third of a co-adaptation run. The cache returns the same float the
+    bisection would have, so results are unchanged.
+    """
+    low, high = 0.0, np.pi
+    for _ in range(40):
+        mid = 0.5 * (low + high)
+        if _vonmises_mass(kappa, mid) < coverage:
+            low = mid
+        else:
+            high = mid
+    return 0.5 * (low + high)
 
 
 class HolderClockModel:
