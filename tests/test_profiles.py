@@ -23,7 +23,7 @@ def pipeline() -> ModuleType:
 
 def test_profiles_file_defines_the_advertised_profiles() -> None:
     names = set(yaml.safe_load(PROFILES.read_text()))
-    assert names == {"quick", "default", "gpu", "server"}
+    assert names == {"quick", "ablation", "default", "gpu", "server"}
 
 
 def test_argparse_choices_come_from_the_file() -> None:
@@ -31,7 +31,7 @@ def test_argparse_choices_come_from_the_file() -> None:
     assert set(pipeline().PROFILES) == set(yaml.safe_load(PROFILES.read_text()))
 
 
-@pytest.mark.parametrize("profile", ["quick", "default", "gpu", "server"])
+@pytest.mark.parametrize("profile", ["quick", "ablation", "default", "gpu", "server"])
 def test_every_profile_supplies_every_key_a_stage_reads(profile: str) -> None:
     """A missing key would surface as a KeyError mid-run, after minutes of work."""
     main = pipeline()
@@ -53,3 +53,22 @@ def test_sizes_increase_with_the_profile() -> None:
     main = pipeline()
     holders = [main._scales(p)["holders"] for p in ("quick", "default", "gpu", "server")]
     assert holders == sorted(holders)
+
+
+def test_ablation_profile_refits_where_the_reader_splits() -> None:
+    """The ablation profile and the ablation reader must agree on the first refit.
+
+    `orchestration.ablation` splits every curve at REFIT_AT to form the pre and
+    post means that the paired comparison is built from. If a run refits on a
+    different cadence the split lands mid-block, and the reported difference is
+    computed over the wrong updates while still looking entirely plausible.
+    That is how this went unnoticed: the published comparison needs 600 holders
+    and a refit every 6, and no profile supplied both, so the documented
+    commands could not reproduce Section 8.
+    """
+    from fraudsim.orchestration.ablation import REFIT_AT
+
+    profile = yaml.safe_load(PROFILES.read_text())["ablation"]
+    assert profile["refit_every"] == REFIT_AT
+    # And the run has to be long enough for a post-refit block to exist at all.
+    assert profile["updates"] > REFIT_AT

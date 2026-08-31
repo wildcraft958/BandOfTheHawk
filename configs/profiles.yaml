@@ -35,6 +35,33 @@ quick:
   fraud_rounds: 3
   target_prevalence: 0.02
 
+# The stealth ablation's size, and the one the paper's Section 8 reports. Same as
+# quick except for the run length and the refit spacing.
+#
+# It exists because neither of those could be borrowed. The reader in
+# orchestration/ablation.py splits each curve at REFIT_AT = 6, so an arm run at
+# any other refit spacing is summarised across the wrong updates and reports a
+# paired difference that looks fine and is not. quick refits every 4, and gpu is
+# the right spacing at ten times the population. Reproducing the published
+# comparison needs both numbers together, so they get a name.
+ablation:
+  holders: 600
+  fraud_rate: 0.06
+  per_key: 25
+  demo_episodes: 40
+  bc_epochs: 6
+  critic_rollouts: 16
+  critic_epochs: 8
+  updates: 24
+  episodes_per_update: 12
+  refit_every: 6
+  hidden: 128
+  minibatch: 128
+  embed_dim: 256
+  label_latency: 2880
+  fraud_rounds: 3
+  target_prevalence: 0.02
+
 # A real run, one to two hours.
 default:
   holders: 3000
