@@ -94,6 +94,17 @@ class EpisodeConfig(StrictModel):
     max_actions: Annotated[int, Field(ge=1, le=500)] = 40
     max_hours: Annotated[int, Field(ge=1, le=8760)] = 720
     max_value_per_merchant: PositiveFloat = 2000.0
+    # Per-episode jitter on the decision thresholds, the last of the five
+    # anti-reward-hacking controls. A fixed boundary is a number a policy can
+    # find and then sit just underneath, which is memorising one detector rather
+    # than learning to evade detection. Drawn once per episode, so the amount is
+    # stable while an attacker acts and different the next time it tries — the
+    # attacker cannot binary-search a threshold that moves between attempts.
+    #
+    # Zero disables it, which is what the static benchmarks want: a fixed
+    # adversary against a fixed detector needs a fixed operating point for its
+    # numbers to be comparable.
+    threshold_jitter: Annotated[float, Field(ge=0.0, le=0.2)] = 0.03
 
 
 class EngineConfig(StrictModel):

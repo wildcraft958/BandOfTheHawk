@@ -57,6 +57,21 @@ class Target:
     holder_id: int
     account_id: int | None
     merchants: tuple[int, ...]
+    # The rest of the dump. A buyer gets a batch, not a single number, and an
+    # attacker that can move to another card when one starts drawing declines is
+    # doing something a single-card episode cannot express. Defaults to empty, in
+    # which case the episode works `card_id` alone exactly as it did before.
+    card_ids: tuple[int, ...] = ()
+
+    def __post_init__(self) -> None:
+        # The primary is always first, so `card_ids` is a superset of the old
+        # behaviour rather than a replacement for it.
+        if not self.card_ids:
+            self.card_ids = (self.card_id,)
+        elif self.card_ids[0] != self.card_id:
+            self.card_ids = (self.card_id,) + tuple(
+                c for c in self.card_ids if c != self.card_id
+            )
 
 
 @dataclass
@@ -70,6 +85,11 @@ class RunReport:
     reached_monetized: int = 0
     per_vertical: dict[str, int] = field(default_factory=dict)
     top_sequences: list[tuple[str, int]] = field(default_factory=list)
+    # Set when the run stopped on its episode budget rather than on reaching the
+    # prevalence target. It means the world could no longer produce fraud
+    # authorisations — every binding blocklisted, every card frozen — which is a
+    # real outcome worth reporting rather than a silent shortfall.
+    exhausted: bool = False
 
     @property
     def fraud_auth_share(self) -> float:
@@ -94,9 +114,13 @@ class RunReport:
             f"  fraud auth share    {self.fraud_auth_share:>10.4f}",
             f"  episodes            {self.episodes:>10,}",
             f"  reached monetized   {self.reached_monetized:>10,}",
-            "",
-            "  episodes per vertical",
         ]
+        if self.exhausted:
+            lines.append(
+                "  NOTE: stopped on the episode budget, not on the prevalence "
+                "target -- the world could no longer produce fraud auths"
+            )
+        lines += ["", "  episodes per vertical"]
         for name in sorted(self.per_vertical):
             lines.append(f"    {name:<20}{self.per_vertical[name]:>8,}")
         lines += ["", "  top action sequences"]
@@ -166,7 +190,27 @@ class EpisodeRunner:
         if not cards:
             return report
 
+        # A budget on episodes, not only on auths. The loop's exit condition is a
+        # count of auth *events*, and an episode can produce none: an
+        # authorisation whose card has no usable binding fails before an event is
+        # built, and a vertical that monetises through a refund or a transfer may
+        # never attempt one at all. Both were reachable — a long co-adaptation run
+        # ends with mitigations having blocklisted devices and frozen cards, and
+        # the zero-shot holdout then runs a single vertical against that world.
+        # The result was a process that finished training and hung indefinitely in
+        # the evaluation afterwards, with the whole run lost.
+        #
+        # The budget is generous enough that it never binds on a healthy world;
+        # it exists so that an unproductive one ends the loop instead of spinning
+        # in it, and says so.
+        budget = max(200, wanted * 20)
+        attempts = 0
+
         while report.fraud_auths < wanted:
+            if attempts >= budget:
+                report.exhausted = True
+                break
+            attempts += 1
             vertical = self._verticals[int(self.rng.integers(len(self._verticals)))]
             pool = bound_cards if vertical in self.TAKEOVER_VERTICALS else cards
             if not pool:
@@ -289,8 +333,15 @@ class EpisodeRunner:
         auths = 0
         approved = 0
         names: list[str] = []
-        cap = self.config.engine.episode.max_actions
-        for _ in range(cap):
+        episode_cfg = self.config.engine.episode
+        # The wall clock at the episode's start, for the duration cap. Enforced
+        # here as well as in the learned environment: a control that only one of
+        # the two attackers obeys is not a control, and the scripted episodes are
+        # what the behaviour clone is fitted to.
+        started_at = sim.clock.now
+        for _ in range(episode_cfg.max_actions):
+            if (sim.clock.now - started_at) / 60.0 >= episode_cfg.max_hours:
+                break
             obs = self._observe(actor)
             action = policy.act(obs)
             if action is None:

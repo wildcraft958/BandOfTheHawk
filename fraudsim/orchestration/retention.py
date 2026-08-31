@@ -72,6 +72,25 @@ class RetentionBuffer:
     # on windows and do age out attack patterns that stopped occurring. None
     # keeps everything, which is the original behaviour.
     fraud_rounds: int | None = None
+    # The prevalence the assembled training set is held to, by subsampling the
+    # fraud. None keeps every retained example, which is the original behaviour.
+    #
+    # This exists because the live phase produces fraud and benign in whatever
+    # ratio the training loop happens to generate them, and that ratio was 42%
+    # against a design that specifies 0.5%. A detector fitted at 42% is solving
+    # a different and far easier problem than the deployed one — at that balance
+    # nearly any split separates the classes — so the defender's dominance was
+    # substantially an artefact of the mixture rather than a property of the
+    # model or of the attacker it faced.
+    #
+    # Reaching 0.5% by generating benign instead would need roughly six hundred
+    # thousand benign rows per refit window against three thousand fraud, which
+    # is not tractable. Subsampling the fraud reaches the same ratio at the cost
+    # of discarding positives, and the cost is worth paying: prevalence becomes
+    # a number that is stated and controlled rather than an accident of how busy
+    # the attacker happened to be.
+    target_prevalence: float | None = None
+    seed: int = 0
     _fraud: list[FeatureTable] = field(default_factory=list)
     _benign: list[FeatureTable] = field(default_factory=list)
 
@@ -89,7 +108,38 @@ class RetentionBuffer:
             self._fraud if self.fraud_rounds is None
             else self._fraud[-self.fraud_rounds :]
         )
-        return _concat(fraud + recent_benign)
+        table = _concat(fraud + recent_benign)
+        return self._to_prevalence(table)
+
+    def _to_prevalence(self, table: FeatureTable) -> FeatureTable:
+        """Thin the fraud until it is `target_prevalence` of the whole.
+
+        Only ever removes positives. Adding benign would mean inventing traffic
+        the world did not produce, and dropping benign would throw away the
+        negatives that make the problem hard. Where there is already too little
+        fraud to need thinning, the table is returned untouched — the target is
+        a ceiling on prevalence, not a quota to be met.
+        """
+        target = self.target_prevalence
+        if target is None or not 0.0 < target < 1.0 or len(table) == 0:
+            return table
+
+        is_fraud = table.y == 1.0
+        n_fraud = int(is_fraud.sum())
+        n_benign = int((table.y == 0.0).sum())
+        if n_fraud == 0 or n_benign == 0:
+            return table
+
+        keep_fraud = int(round(target * n_benign / (1.0 - target)))
+        if keep_fraud >= n_fraud:
+            return table
+
+        rng = np.random.default_rng(self.seed + len(self._fraud))
+        fraud_idx = np.flatnonzero(is_fraud)
+        chosen = rng.choice(fraud_idx, size=max(1, keep_fraud), replace=False)
+        mask = table.y != 1.0
+        mask[chosen] = True
+        return _mask(table, mask)
 
     @property
     def n_rounds(self) -> int:

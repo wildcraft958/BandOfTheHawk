@@ -130,7 +130,7 @@ class WarmStartRunner:
         # with a device that already exists.
         self._next_device = 10_000_000
 
-    def run(self, live: bool = False) -> WarmStartReport:
+    def run(self, live: bool = False, card_fraction: float = 1.0) -> WarmStartReport:
         """Fill the world with benign traffic.
 
         The default run backdates history and flags it, so training can exclude
@@ -146,6 +146,15 @@ class WarmStartRunner:
         self.simulator.builder.set_warm_start(not live)
 
         cards = self._eligible_cards()
+        # A live sweep may run over a sample of the population rather than all
+        # of it. The full sweep is right for building history once, but the live
+        # phase repeats it at every refit purely to supply a negative class, and
+        # at twelve thousand holders that dominated the run. A sample of the
+        # same cards behaves the same way; there is simply less of it.
+        if live and 0.0 < card_fraction < 1.0 and cards:
+            keep = max(1, int(len(cards) * card_fraction))
+            idx = self.rng.choice(len(cards), size=keep, replace=False)
+            cards = [cards[i] for i in sorted(idx)]
         # Each card gets its own amount level before any of them transacts, so
         # a card's purchases look like that card's rather than the population's.
         # Its holder gets their own hours for the same reason.

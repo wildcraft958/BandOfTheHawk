@@ -85,6 +85,14 @@ class Actor:
     payees: list[int] = field(default_factory=list)
     laundered: float = 0.0
     launder_hops: int = 0
+    # Value already taken at each merchant this episode, for the per-merchant
+    # cap. A real card stops working at a merchant long before an attacker has
+    # drained it there, and without this the cheapest strategy is to point every
+    # authorisation at one merchant and repeat until the action cap.
+    value_by_merchant: dict[int, float] = field(default_factory=dict)
+    # This episode's offset on the defender's decision thresholds. Drawn once
+    # when the episode opens; see EpisodeConfig.threshold_jitter.
+    threshold_offset: float = 0.0
     disputes: int = 0
     refunds: int = 0
 
@@ -155,7 +163,17 @@ class Simulator:
     def open_episode(self, actor_id: ActorId) -> int:
         episode_id = self._next_episode
         self._next_episode += 1
-        self._actors[actor_id].episode_id = episode_id
+        actor = self._actors[actor_id]
+        actor.episode_id = episode_id
+        # Fresh caps and a fresh threshold offset for the new episode. The
+        # per-merchant tally must not carry over from the last one, and the
+        # jitter is drawn once here so it is stable while this actor acts and
+        # different the next time anyone tries.
+        actor.value_by_merchant = {}
+        spread = self.config.engine.episode.threshold_jitter
+        actor.threshold_offset = (
+            float(self._hub.stream("jitter").uniform(-spread, spread)) if spread else 0.0
+        )
         return episode_id
 
     def close_episode(self, actor_id: ActorId) -> int:
@@ -255,6 +273,23 @@ class Simulator:
             device_id = self._pick_device(devices, rng)
         amount = action.amount if action.amount is not None else 50.0
 
+        # The per-merchant value cap, one of the anti-reward-hacking controls the
+        # design specifies. It was declared in the configuration and enforced
+        # nowhere, and the consequence was exactly what the control exists to
+        # prevent: with no ceiling on what one merchant would absorb, the policy
+        # learned to rotate cards and then hammer authorisations, taking eight to
+        # twenty-eight thousand an episode against a stated cap of two thousand.
+        # That is a hole in the simulator, not a strategy, and a curve produced
+        # against it measures the hole.
+        #
+        # An attempt over the remaining headroom is refused rather than trimmed
+        # to fit. Trimming would silently reward the overreach with whatever was
+        # left, which teaches the policy to always ask for more than it can have.
+        cap = self.config.engine.episode.max_value_per_merchant
+        taken = actor.value_by_merchant.get(int(merchant_id), 0.0)
+        if taken + amount > cap:
+            return Outcome(code=OutcomeCode.FAILED, stage=actor.stage, cost=cost)
+
         card = self.graph.cards[card_id]
         holder = self.graph.holders[card.holder_id]
         merchant = self.graph.merchants[merchant_id]
@@ -272,6 +307,12 @@ class Simulator:
         event.episode_id = actor.episode_id
 
         assessment = self._scorer.score(event)
+        # The episode's threshold offset, applied by shifting the score rather
+        # than by rebuilding the bands: the scorer owns its own bands and may not
+        # be a banded scorer at all, and moving the score is equivalent to moving
+        # every threshold by the same amount in the opposite direction.
+        if actor.threshold_offset:
+            assessment = _shift(assessment, actor.threshold_offset, event, self._scorer)
         code = RISK_TO_OUTCOME[assessment.action]
 
         if code is OutcomeCode.APPROVED and not card.is_usable(self.clock.now):
@@ -289,6 +330,8 @@ class Simulator:
 
         extracted = amount if approved else 0.0
         actor.value_extracted += extracted
+        if extracted:
+            actor.value_by_merchant[int(merchant_id)] = taken + extracted
 
         # A score changes nothing on its own; its mitigations are what mutate the
         # world. Applied here, after the event is logged and before the stage is
@@ -394,3 +437,36 @@ class Simulator:
 
 
 
+
+
+def _shift(assessment, offset: float, event, scorer):
+    """Re-decide an assessment with the episode's threshold offset applied.
+
+    The offset moves the score rather than the thresholds. The two are
+    equivalent — raising every boundary by x is the same as lowering the score
+    by x — and moving the score works for any scorer, including one carrying no
+    bands at all, without reaching into whichever implementation is in force.
+
+    The decision is rebuilt from scratch at the shifted score, mitigations
+    included. Keeping the original mitigations would let an episode be declined
+    at one threshold while its card was frozen at another, which is two
+    detectors disagreeing rather than one detector being harder to map.
+
+    The reported `risk_score` stays the model's own, unshifted: it is what the
+    detector actually believes, and the metrics read it. The jitter belongs to
+    the decision, not to the belief.
+    """
+    from ..defender.bands import RiskBands
+    from ..protocols import RiskAssessment
+
+    # The bands belong to the scorer, not to the assessment: a RiskAssessment is
+    # a frozen record of a judgement and carries no thresholds. A scorer with
+    # none of its own falls back to the defaults, which is the same operating
+    # point it would have used anyway.
+    bands = getattr(scorer, "bands", None) or RiskBands()
+    action, mitigations = bands.decide(assessment.risk_score - offset, event)
+    return RiskAssessment(
+        risk_score=assessment.risk_score,
+        action=action,
+        mitigations=tuple(mitigations),
+    )

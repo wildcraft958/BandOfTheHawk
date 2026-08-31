@@ -23,7 +23,14 @@ import numpy as np
 
 from ..engine.actions import ACTION_INDEX
 from .env import AttackEnv, RewardWeights
-from .nets import AMOUNT_MAX, AMOUNT_MIN
+from .nets import (
+    AMOUNT_MAX,
+    AMOUNT_MIN,
+    DELAY_MAX,
+    DELAY_MIN,
+    STEALTH_LOUD,
+    STEALTH_NAMES,
+)
 from .ppo import PPOConfig, PPOTrainer
 
 
@@ -36,6 +43,35 @@ class Demo:
     action_idx: int
     amount_raw: float
     delay_raw: float
+    # The posture the demonstration was carried out under. The scripts predate
+    # the stealth head and act loudly, so this is the loud index for all of them;
+    # it is a field rather than a constant because a script that later chooses a
+    # posture should be clonable on it without touching this module.
+    stealth_idx: int = STEALTH_LOUD
+
+
+def _inverse_delay_raw(minutes: float) -> float:
+    """The raw pre-squash value that produces a delay, for cloning targets.
+
+    The mirror of `_inverse_amount_raw`, and it exists for a defect rather than
+    for symmetry. Every demonstration used to store a raw delay of zero, which
+    squashes to the midpoint of the range — thirty-six hours — no matter what
+    delay the script had actually chosen. The clone therefore learned one
+    constant wait and learned nothing about timing, while the scripts' own
+    delays, which do vary, were thrown away before the head ever saw them.
+
+    That mattered more than it looks. Genuine traffic follows a circadian curve
+    and an attacker with no sense of the clock spreads itself uniformly across
+    the day, which lands roughly a third of its activity in hours when real
+    volume is near zero — a tell as decisive as a brand-new device, and one no
+    posture can cover.
+    """
+    import math
+
+    span = DELAY_MAX - DELAY_MIN
+    unit = (min(max(minutes, DELAY_MIN), DELAY_MAX) - DELAY_MIN) / span
+    unit = min(max(unit, 1e-4), 1 - 1e-4)
+    return math.log(unit / (1 - unit))  # logit
 
 
 def _inverse_amount_raw(amount: float) -> float:
@@ -73,10 +109,8 @@ def collect_demos(make_env_and_policy, n_episodes: int, rng: np.random.Generator
             vec = AttackEnv.encode(obs)
             mask = AttackEnv.mask_vector(obs)
             amount_raw = _inverse_amount_raw(action.amount if action.amount else AMOUNT_MIN + 1)
-            # Delay is stored as a raw logit around the sigmoid midpoint; the
-            # scripts' delays are coarse, so the continuous head only needs a
-            # gentle nudge rather than a precise target.
-            delay_raw = 0.0
+            delay_raw = _inverse_delay_raw(float(action.delay_minutes))
+            stealth_idx = int(getattr(action, "params", {}).get("stealth", STEALTH_LOUD))
             demos.append(
                 Demo(
                     obs=vec,
@@ -84,9 +118,12 @@ def collect_demos(make_env_and_policy, n_episodes: int, rng: np.random.Generator
                     action_idx=ACTION_INDEX[action.name],
                     amount_raw=amount_raw,
                     delay_raw=delay_raw,
+                    stealth_idx=stealth_idx,
                 )
             )
-            nxt, _, done, _ = env.step(ACTION_INDEX[action.name], amount_raw, delay_raw)
+            nxt, _, done, _ = env.step(
+                ACTION_INDEX[action.name], amount_raw, delay_raw, stealth_idx
+            )
             policy.observe(env_last_outcome(env))
             obs = nxt
         env.close()
@@ -191,6 +228,7 @@ def _log_sequences(trainer, make_env, n_episodes: int, rng) -> Counter:
     import torch
 
     from ..engine.actions import ACTION_ORDER
+    from ..engine.outcome import OutcomeCode
 
     counter: Counter = Counter()
     for _ in range(n_episodes):
@@ -208,12 +246,26 @@ def _log_sequences(trainer, make_env, n_episodes: int, rng) -> Counter:
                 AttackEnv.mask_vector(obs), device=trainer.device
             ).unsqueeze(0)
             with torch.no_grad():
-                discrete, amount, delay = trainer.actor(vec, mask)
+                discrete, stealth, amount, delay = trainer.actor(vec, mask)
                 a_idx = int(discrete.probs.argmax().item())
+                a_stl = int(stealth.probs.argmax().item())
                 a_amt = float(amount.mean.item())
                 a_dly = float(delay.mean.item())
-            names.append(ACTION_ORDER[a_idx].value)
-            obs, _, done, _ = env.step(a_idx, a_amt, a_dly)
+            # The posture is part of the strategy, so it is part of what gets
+            # read. A sequence that is identical in actions but differs in
+            # posture is a different attack, and logging only the action names
+            # would hide exactly the thing this head was added to produce.
+            suffix = "" if a_stl == STEALTH_LOUD else f"[{STEALTH_NAMES[a_stl]}]"
+            obs, _, done, outcome = env.step(a_idx, a_amt, a_dly, a_stl)
+            # What the world did, not only what was chosen. Recording the name
+            # before the step made a forbidden or failed action read exactly
+            # like one that worked, which flatters the sequence log precisely
+            # where it is being read for signs of an exploit.
+            if outcome.code is OutcomeCode.ILLEGAL:
+                suffix += "!illegal"
+            elif outcome.code is OutcomeCode.FAILED:
+                suffix += "!failed"
+            names.append(ACTION_ORDER[a_idx].value + suffix)
         env.close()
         counter[">".join(names)] += 1
     return counter

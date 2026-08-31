@@ -29,7 +29,7 @@ def test_masked_head_never_proposes_illegal():
     # Only action 0 is legal.
     mask = torch.zeros(1, N_ACTIONS, dtype=torch.bool)
     mask[0, 0] = True
-    discrete, _, _ = actor(obs, mask)
+    discrete, _, _, _ = actor(obs, mask)
     # All probability mass on the one legal action.
     probs = discrete.probs[0]
     assert probs[0] > 0.999

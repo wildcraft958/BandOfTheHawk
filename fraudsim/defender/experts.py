@@ -208,10 +208,19 @@ class ExpertBank:
         scores = np.zeros((n, len(self.experts)))
         mask = np.zeros((n, len(self.experts)), dtype=bool)
         for j, expert in enumerate(self.experts):
-            scores[:, j] = expert.predict_scores(table.X)
-            mask[:, j] = np.array(
+            applies = np.array(
                 [expert.applies_to(et) for et in table.event_type], dtype=bool
             )
+            mask[:, j] = applies
+            # An expert whose remit covers none of these rows is not run at all.
+            # Its scores would be masked out by the combiner anyway, and the
+            # single-row path — one event scored as it happens, five experts, a
+            # scikit-learn call each — is dominated by per-call overhead rather
+            # than by arithmetic. Skipping the four that do not apply is most of
+            # the cost of scoring one event.
+            if not applies.any():
+                continue
+            scores[:, j] = expert.predict_scores(table.X)
         return scores, mask
 
     @property

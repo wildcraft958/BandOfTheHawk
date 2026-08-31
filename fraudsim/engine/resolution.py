@@ -426,7 +426,12 @@ class ActionResolver:
         if edge is None or edge.count == 0:
             return self._fail(actor, cost)
 
+        # A settled transaction can be disputed once, and the dispute consumes
+        # it. Leaving it in place lets the same charge be reclaimed repeatedly,
+        # which is an accounting hole rather than a fraud technique.
         recovered = edge.total_amount / edge.count
+        edge.count -= 1
+        edge.total_amount = max(0.0, edge.total_amount - recovered)
         actor.disputes += 1
         return self._ok(actor, cost, value=recovered)
 
@@ -441,8 +446,17 @@ class ActionResolver:
         edge = self.graph.transacts.get((card_id, MerchantId(next(iter(merchants)))))
         if edge is None or edge.count == 0:
             return self._fail(actor, cost)
+
+        # The refund consumes the transaction it is claimed against. Without
+        # this the same purchase can be refunded without limit, and a policy
+        # will find that: a learned attacker drilled it thirty-eight times in one
+        # episode, minting money from an accounting hole rather than committing
+        # fraud. A merchant refunds a purchase once.
+        recovered = edge.total_amount / edge.count
+        edge.count -= 1
+        edge.total_amount = max(0.0, edge.total_amount - recovered)
         actor.refunds += 1
-        return self._ok(actor, cost, value=edge.total_amount / edge.count)
+        return self._ok(actor, cost, value=recovered)
 
     # ------------------------------------------------------------ dispatch
 

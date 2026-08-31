@@ -144,13 +144,23 @@ def _schema(events: list[object]) -> list[str]:
     """The union of feature names across every event, in stable order.
 
     Different event types carry different fields, so the flat matrix is their
-    union. Order follows first appearance, which is deterministic given the log.
+    union. The order is sorted rather than first-appearance, and the difference
+    is not cosmetic.
+
+    First-appearance order is deterministic given one log and unstable across
+    two. Two windows holding exactly the same event types in a different
+    sequence produce the same column set in a different order, and the retention
+    buffer — which concatenates a window against every window before it — then
+    refuses them as incompatible despite their being identical. That failure
+    surfaced only when a change to the attacker altered which event happened
+    first; it was latent before, waiting for any reordering at all. Sorting
+    depends on the field names alone, so a column order is a property of the
+    schema rather than of the traffic that happened to arrive.
     """
-    seen: dict[str, None] = {}
+    seen: set[str] = set()
     for event in events:
-        for name in _row_fields(event):
-            seen.setdefault(name, None)
-    return list(seen)
+        seen.update(_row_fields(event))
+    return sorted(seen)
 
 
 def _columns(base: list[str]) -> tuple[list[str], list[str]]:

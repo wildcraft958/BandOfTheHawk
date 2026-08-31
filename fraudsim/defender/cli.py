@@ -70,7 +70,10 @@ def cmd_baseline(args: argparse.Namespace) -> int:
     table = build_table(sim.log, exclude_warm_start=True)
     split = entity_split(table, test_fraction=0.3, seed=config.seed)
 
-    print("defender baseline")
+    print("defender baseline  [STATIC BENCHMARK vs the scripted red team]")
+    print("  a fixed adversary and fixed data, so architectures can be compared and")
+    print("  the per-entity ablation means something. NOT a claim about the learned")
+    print("  attacker -- that is the co-adaptation curve.")
     print(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
     print(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
 
@@ -152,7 +155,9 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     table = build_table(sim.log, exclude_warm_start=True)
     split = entity_split(table, test_fraction=0.3, seed=config.seed)
 
-    print("mixture of experts")
+    print("mixture of experts  [STATIC BENCHMARK vs the scripted red team]")
+    print("  the same fixed data as the baseline, so the two are comparable. NOT a")
+    print("  claim about the learned attacker.")
     print(f"  train rows          {len(split.train):>10,}  ({int(split.train.y.sum()):,} fraud)")
     print(f"  test rows           {len(split.test):>10,}  ({int(split.test.y.sum()):,} fraud)")
 

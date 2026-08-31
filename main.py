@@ -19,23 +19,66 @@ The stages, in the order the full run executes them:
                    python -m fraudsim.generative.cli build --qwen --embed --rebuild
     fraud      add scripted fraud at the base rate; prints prevalence and the
                top scripted action sequences
-    baseline   fit the flat gradient-boosted detector; prints PR-AUC, recall at
-               fixed false-positive budgets, and the per-entity ablation (H.6)
-    mixture    fit the five experts and the combiner; prints each against the
-               flat baseline, the learned combiner weights, and the cost-curve
-               bands
+    baseline   STATIC BENCHMARK against the scripted red team. Fits the flat
+               gradient-boosted detector; prints PR-AUC, recall at fixed
+               false-positive budgets, and the per-entity ablation (H.6). A fixed
+               adversary on fixed data, which is what makes the ablation
+               interpretable -- in the live phase the defender refits under you
+               and there is no fixed point to measure at.
+    mixture    STATIC BENCHMARK, same data as baseline. Fits the five experts and
+               the combiner and reports both against the flat tree, so the
+               mixture-versus-flat ablation is a like-for-like comparison.
+
+               Neither of these is a claim about the learned attacker. Their
+               models are reported and discarded; the co-adaptation stage fits
+               its own defender from scratch.
     coadapt    THE SOLUTION. Warm-start the defender, then the actor, then the
                critic, then run live: the reinforcement-learning attacker adapts
                continuously while the defender refits every K updates. Prints the
                live curve, the zero-shot recall, and the attack strategies the
                policy found. Also writes a JSON of the same numbers for plotting.
+    control    THE SAME RUN WITH STEALTH DISABLED. Identical in every other
+               respect, with the attacker's posture head pinned to the loud
+               setting and its dump cut to one card -- which is exactly the
+               attacker that existed before those were added. Not part of the
+               default pipeline; run it when the question is whether stealth
+               earned its place:
+
+                   python main.py control --profile server
+
+               Read it against coadapt's curve -- but read several seeds of
+               each, not one. A single run is one sample from a heavy-tailed
+               distribution: the first comparison showed a 1.5x gap that looked
+               convincing and was not (Mann-Whitney p = 0.98, the whole gap
+               carried by one spike). Use --seed on the underlying command to
+               repeat it.
+
+               MEASURED, four seeds each, paired: mean post-refit extraction
+               33.5 (stealth) against 37.3 (control), a paired difference of
+               -3.8 with a 95% bootstrap interval of [-15.0, +9.3]. The interval
+               spans zero and the sign favours the control. The two arms
+               collapse alike, retaining about 2% of pre-refit extraction, and
+               neither recovers.
+
+               So the finding is the defender's, and it is the stronger claim:
+               the attacker had the capability and it did not save it. The
+               aged posture is not decorative -- it moves median device age on a
+               fraudulent auth from 18.5 days to 327, and on a fitted detector
+               that alone takes the mean fraud score from 0.972 to 0.554,
+               under the 0.80 decline threshold. The policy adopted it (two of
+               four seeds converge on [aged]) and still lost. A detector refit
+               on the traffic beats a single-feature evasion because it simply
+               moves to the features that remain.
 
 SCALE
 -----
 
     --profile quick     a fast smoke of everything            (~10 min)
     --profile default   a real run                            (~1-2 h)
-    --profile server    large, for a GPU box                  (hours)
+    --profile gpu       large, sized to finish in a few hours  (~4 h)
+    --profile server    the full thing; 150 updates at 12,000
+                        holders is ~40 h, so use it only when
+                        that is genuinely affordable
 
 Scale only changes sizes — population, training length — never which stages run
 or what they print.
@@ -72,12 +115,17 @@ import time
 import traceback
 from datetime import datetime
 
-PROFILES = ("quick", "default", "server")
+PROFILES = ("quick", "default", "gpu", "server")
 
 # The pipeline, in order. Each entry is (stage name, module, argument builder).
 # The module is the stage's own command-line entry point, so running a stage here
 # and running it directly are the same code path.
 STAGE_ORDER = ("demo", "text", "fraud", "baseline", "mixture", "coadapt")
+
+# Runnable on its own but never part of the full pipeline: it is the control arm
+# of an ablation, and folding it into the default run would double every run's
+# cost to answer a question that is only asked once.
+EXTRA_STAGES = ("control",)
 
 
 def _scales(profile: str) -> dict:
@@ -93,21 +141,36 @@ def _scales(profile: str) -> dict:
             demo_episodes=40, bc_epochs=6, critic_rollouts=16, critic_epochs=8,
             updates=12, episodes_per_update=12, refit_every=4,
             hidden=128, minibatch=128, embed_dim=256,
-            label_latency=2880, fraud_rounds=3,
+            label_latency=2880, fraud_rounds=3, target_prevalence=0.02,
         ),
         "default": dict(
             holders=3000, fraud_rate=0.02, per_key=150,
             demo_episodes=300, bc_epochs=10, critic_rollouts=48, critic_epochs=20,
             updates=60, episodes_per_update=48, refit_every=10,
             hidden=256, minibatch=256, embed_dim=256,
-            label_latency=4320, fraud_rounds=4,
+            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
+        ),
+        # Sized to finish inside a working day on the GPU box. The full "server"
+        # profile is ~19 min per update at twelve thousand holders and eighty
+        # episodes, which is forty hours for a hundred and fifty updates -- fine
+        # as a number, useless as a schedule. Halving the population and the
+        # episodes per update quarters the per-update cost; sixty updates at a
+        # refit every six still gives ten refit points, which is more of the
+        # arms-race curve than the full profile's twelve at a fraction of the
+        # time.
+        "gpu": dict(
+            holders=6000, fraud_rate=0.02, per_key=300,
+            demo_episodes=400, bc_epochs=12, critic_rollouts=64, critic_epochs=25,
+            updates=60, episodes_per_update=32, refit_every=6,
+            hidden=256, minibatch=256, embed_dim=256,
+            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
         ),
         "server": dict(
             holders=12000, fraud_rate=0.01, per_key=500,
             demo_episodes=800, bc_epochs=15, critic_rollouts=128, critic_epochs=40,
             updates=150, episodes_per_update=80, refit_every=12,
             hidden=512, minibatch=512, embed_dim=256,
-            label_latency=4320, fraud_rounds=4,
+            label_latency=4320, fraud_rounds=4, target_prevalence=0.02,
         ),
     }[profile]
 
@@ -142,7 +205,20 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
             "mixture", "--holders", holders, "--fraud-rate", fraud_rate,
         ]
 
-    if stage == "coadapt":
+    if stage in ("coadapt", "control"):
+        # The control arm differs in exactly two flags. Sharing the builder is
+        # deliberate: an ablation whose arms are assembled separately drifts
+        # apart, and then the comparison is measuring the drift.
+        # Appended, never prepended: these are subcommand options, and argparse
+        # rejects them before the subcommand name.
+        ablation = (
+            ["--stealth-frozen", "--dump-size", "1",
+             # A separate metrics file, or the second arm silently overwrites
+             # the first and the ablation has nothing left to compare.
+             "--metrics", "artifacts/control_metrics.json"]
+            if stage == "control"
+            else []
+        )
         return "fraudsim.orchestration.cli", [
             "coadapt", "--holders", holders, "--fraud-rate", fraud_rate,
             "--learned",
@@ -160,7 +236,13 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
             # and keeps it forever, and there is no contest to observe.
             "--label-latency", str(s["label_latency"]),
             "--fraud-rounds", str(s["fraud_rounds"]),
-        ]
+            # The share of fraud the defender is fitted at. Left to the loop it
+            # was whatever the attacker happened to produce -- forty-two percent,
+            # against a design that specifies half of one. A detector fitted at
+            # that balance is solving a much easier problem, and the contest was
+            # decided by the mixture rather than by either side.
+            "--target-prevalence", str(s["target_prevalence"]),
+        ] + ablation
 
     raise ValueError(f"unknown stage {stage!r}")
 
@@ -204,8 +286,10 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
-        "stage", nargs="?", choices=STAGE_ORDER, default=None,
-        help="a single stage to run; omit to run the whole pipeline in order",
+        "stage", nargs="?", choices=STAGE_ORDER + EXTRA_STAGES, default=None,
+        help="a single stage to run; omit to run the whole pipeline in order. "
+             "'control' is the stealth ablation's control arm and is never part "
+             "of the full pipeline",
     )
     parser.add_argument("--profile", choices=PROFILES, default="default")
     parser.add_argument(

@@ -68,6 +68,8 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         overrides["population"] = {"n_holders": args.holders}
     if args.fraud_rate:
         overrides["engine"] = {"fraud_base_rate": args.fraud_rate}
+    if args.seed is not None:
+        overrides["seed"] = args.seed
     config = resolve(args.config, artifact=artifact, overrides=overrides or None).config
 
     ppo_cfg = PPOConfig(
@@ -94,6 +96,9 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         selection_warmup=args.selection_warmup,
         label_latency_minutes=args.label_latency,
         fraud_rounds=args.fraud_rounds,
+        dump_size=args.dump_size,
+        stealth_frozen=args.stealth_frozen,
+        target_prevalence=args.target_prevalence,
     )
     print(report.render())
 
@@ -150,6 +155,23 @@ def main(argv: list[str] | None = None) -> int:
                          "what leaves an adapting attacker room to exploit")
     co.add_argument("--fraud-rounds", type=int, default=None,
                     help="refits a fraud example is retained for (default: forever)")
+    co.add_argument("--target-prevalence", type=float, default=None,
+                    help="hold the defender's training set to this fraud share "
+                         "by subsampling positives. Without it the share is "
+                         "whatever the loop happens to produce, which was 42%% "
+                         "against a design that specifies 0.5%% -- a far easier "
+                         "problem than the deployed one")
+    co.add_argument("--seed", type=int, default=None,
+                    help="override the config seed. A single run of this is one "
+                         "sample from a heavy-tailed distribution, so any claim "
+                         "comparing two configurations needs several seeds each")
+    co.add_argument("--dump-size", type=int, default=3,
+                    help="cards an episode's dump holds; the attacker may move "
+                         "between them mid-episode. 1 reproduces the "
+                         "single-card behaviour")
+    co.add_argument("--stealth-frozen", action="store_true",
+                    help="pin the stealth head to the loud posture — the control "
+                         "arm for measuring whether stealth changed anything")
     co.add_argument("--candidates", type=int, default=5,
                     help="cards the victim-selection bandit chooses among each episode")
     co.add_argument("--selection-warmup", type=int, default=10,
