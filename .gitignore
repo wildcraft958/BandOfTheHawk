@@ -27,3 +27,6 @@ Thumbs.db
 scratch/
 tmp/
 *.log
+
+# Web prototype. Delivered as a hosted link rather than in-repo.
+web/
