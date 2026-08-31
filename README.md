@@ -98,7 +98,7 @@ A tenth (`merchant_collusion`) is documented but deliberately not simulated. It 
 ## Directory Structure
 
 ```
-.
+BandOfTheHawk/
 ├── main.py                  # Pipeline entrypoint (run all stages or one)
 ├── pyproject.toml           # Package metadata and dependency tiers
 ├── requirements.txt         # Pinned versions for reproducibility
