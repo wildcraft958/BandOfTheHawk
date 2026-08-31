@@ -2,11 +2,14 @@
 
 The working prototype for the Mastercard Innovation Challenge 2026 submission. Three views:
 
-| View | What it shows |
-|---|---|
-| **Home** | The pitch, the headline numbers, and the arms-race curve from one real run |
-| **Dashboard** | The console: KPI strip, extraction curve with defender refits, attacker strategy stream, expert weights, risk bands, and the five-way detector comparison |
-| **Demo** | Attack explorer: pick a vertical, see its generative capability, its legal actions, and the chains the scripted and learned attackers actually produced |
+| View | Judged criterion | What it shows |
+|---|---|---|
+| **Home** | | The pitch, headline numbers, the arms-race curve, and the result worth reading twice |
+| **Dashboard** | Efficacy | KPI strip, extraction curve with all twelve defender refits, attacker strategy stream, expert weights, risk bands to mitigation, and the five-way detector comparison with a derived F1 |
+| **Simulator** | Fidelity | Calibration as ratios against the noise floor of real data split against itself, the eight rule trigger rates, hard-negative composition, fan-out variance to mean, fitted amount and category distributions, and the blindness rule |
+| **The Loop** | Novelty | The instrumented curve with selectable refit markers, the entropy spike, how the strategy mutated, the final policy at full length, and victim selection |
+| **Live** | Feasibility | Authorisations scoring against the real cost bands with a per-event explanation, plus what deploys, operating constraints, scalability, and commercial viability |
+| **Demo** | Diversity | Attack explorer: pick one of eleven verticals, see its generative capability, its legal actions, and the chains the scripted and learned attackers actually produced |
 
 ## Run it
 
@@ -51,6 +54,11 @@ Nothing is invented. Two things are labelled rather than presented as measured:
   generated output carries no such flag, so the banner is normally absent. It exists because
   the earlier prototype branch shipped placeholder values, and a placeholder reaching a judge
   should be loud rather than silent.
+
+The **Live** view samples individual authorisations rather than replaying measured ones. The
+distribution parameters and the four band thresholds are fitted from real data, and the score is
+a transparent linear stand-in whose weights are shown on screen, not the trained XGBoost
+ensemble. The panel says so itself, and carries an `illustrative` badge and its seed.
 
 The cost curve is labelled **relative cost**, never a currency figure: the simulator states
 amounts are unit where event value is not to hand.

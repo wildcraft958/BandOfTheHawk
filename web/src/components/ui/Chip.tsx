@@ -7,7 +7,7 @@ export function Chip({
   title,
 }: {
   children: ReactNode
-  tone?: 'atk' | 'def' | 'value' | 'holdout'
+  tone?: 'atk' | 'def' | 'value' | 'holdout' | 'pass'
   title?: string
 }) {
   return (
@@ -19,6 +19,7 @@ export function Chip({
         tone === 'def' && 'border-def/40 text-def',
         tone === 'value' && 'border-value/40 text-value',
         tone === 'holdout' && 'border-holdout/45 text-holdout',
+        tone === 'pass' && 'border-pass/40 text-pass',
         !tone && 'border-rule bg-surface text-ink-2',
       )}
     >

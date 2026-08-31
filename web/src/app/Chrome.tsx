@@ -8,6 +8,7 @@ const ROUTES = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/simulator', label: 'Simulator' },
   { to: '/loop', label: 'The Loop' },
+  { to: '/live', label: 'Live' },
   { to: '/demo', label: 'Demo' },
 ]
 
