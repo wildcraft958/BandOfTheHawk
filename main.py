@@ -116,6 +116,7 @@ import argparse
 import importlib
 import time
 from datetime import datetime
+from pathlib import Path
 
 import yaml
 
@@ -154,13 +155,30 @@ def _scales(profile: str) -> dict:
     return profiles[profile]
 
 
+def _common_args(s: dict) -> list[str]:
+    """Flags every stage accepts, when the run set them.
+
+    These are top-level options, so they go before the subcommand name; the
+    per-stage lists below are subcommand options and go after it.
+    """
+    args: list[str] = []
+    if s.get("config"):
+        args += ["--config", str(s["config"])]
+    if s.get("log_level"):
+        args += ["--log-level", str(s["log_level"])]
+    return args
+
+
 def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
     """The module and argument list for one stage at one scale."""
     holders = str(s["holders"])
     fraud_rate = str(s["fraud_rate"])
+    # A seed the run pins, passed only to the stages that accept it. Unset means
+    # each stage uses the configured seed, which is the previous behaviour.
+    seed = ["--seed", str(s["seed"])] if s.get("seed") is not None else []
 
     if stage == "demo":
-        return "fraudsim.engine.cli", ["demo", "--holders", holders]
+        return "fraudsim.engine.cli", ["demo", "--holders", holders, *seed]
 
     if stage == "text":
         args = ["build", "--per-key", str(s["per_key"])]
@@ -172,16 +190,18 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
         return "fraudsim.generative.cli", args
 
     if stage == "fraud":
-        return "fraudsim.orchestration.cli", ["run", "--holders", holders, "--train-only"]
+        return "fraudsim.orchestration.cli", [
+            "run", "--holders", holders, "--train-only", *seed,
+        ]
 
     if stage == "baseline":
         return "fraudsim.defender.cli", [
-            "baseline", "--holders", holders, "--fraud-rate", fraud_rate,
+            "baseline", "--holders", holders, "--fraud-rate", fraud_rate, *seed,
         ]
 
     if stage == "mixture":
         return "fraudsim.defender.cli", [
-            "mixture", "--holders", holders, "--fraud-rate", fraud_rate,
+            "mixture", "--holders", holders, "--fraud-rate", fraud_rate, *seed,
         ]
 
     if stage in ("coadapt", "control"):
@@ -200,7 +220,7 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
         )
         return "fraudsim.orchestration.cli", [
             "coadapt", "--holders", holders, "--fraud-rate", fraud_rate,
-            "--learned",
+            "--learned", *seed,
             "--demo-episodes", str(s["demo_episodes"]),
             "--bc-epochs", str(s["bc_epochs"]),
             "--critic-rollouts", str(s["critic_rollouts"]),
@@ -270,6 +290,10 @@ def main(argv: list[str] | None = None) -> int:
              "of the full pipeline",
     )
     parser.add_argument("--profile", choices=PROFILES, default="default")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="pin the seed for every stage that accepts one")
+    parser.add_argument("--config", type=Path, default=None,
+                        help="simulation config YAML passed to every stage")
     parser.add_argument(
         "--log-level", default=None,
         help="diagnostic verbosity on stderr (DEBUG, INFO, WARNING, ERROR)",
@@ -283,7 +307,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     configure(level=args.log_level)
 
-    scales = _scales(args.profile)
+    scales = dict(_scales(args.profile))
+    scales.update(seed=args.seed, config=args.config, log_level=args.log_level)
     stages = [args.stage] if args.stage else list(STAGE_ORDER)
 
     bar = "=" * 78
@@ -298,7 +323,8 @@ def main(argv: list[str] | None = None) -> int:
     results = []
     for stage in stages:
         module, stage_argv = _stage_args(stage, scales, use_models=not args.mock)
-        ok, elapsed = _run_stage(stage, module, stage_argv)
+        # Top-level options first: argparse rejects them after the subcommand.
+        ok, elapsed = _run_stage(stage, module, _common_args(scales) + stage_argv)
         results.append((stage, ok, elapsed))
 
     emit(f"\n{bar}")

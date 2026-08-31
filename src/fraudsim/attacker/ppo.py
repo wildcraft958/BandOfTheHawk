@@ -108,6 +108,15 @@ class PPOTrainer:
 
     def __init__(self, obs_dim: int, config: PPOConfig | None = None) -> None:
         self.config = config or PPOConfig()
+        # Seed before the networks exist. Initialisation draws from torch's
+        # global generator, and so does every action, amount and delay sample,
+        # because they go through torch.distributions. Unseeded, two runs at the
+        # same config seed produced different attackers, which is what the
+        # repository's reproducibility claim rested on.
+        if self.config.seed is not None:
+            torch.manual_seed(self.config.seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self.config.seed)
         net_cfg = NetConfig(
             obs_dim=obs_dim, hidden_dim=self.config.hidden_dim, n_layers=self.config.n_layers
         )

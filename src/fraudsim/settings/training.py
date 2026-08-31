@@ -124,3 +124,13 @@ class TrainingConfig(StrictModel):
     reward: RewardConfig = Field(default_factory=RewardConfig)
     bootstrap: BootstrapConfig = Field(default_factory=BootstrapConfig)
     loop: LoopConfig = Field(default_factory=LoopConfig)
+
+
+def seeded(ppo: PPOConfig, root_seed: int) -> PPOConfig:
+    """PPO settings that follow the run's root seed unless given their own.
+
+    `training.ppo.seed` is null by default so that one --seed reseeds the whole
+    run, torch included. Setting it explicitly pins the network independently of
+    the world, which is what an ablation on initialisation would want.
+    """
+    return ppo if ppo.seed is not None else ppo.model_copy(update={"seed": root_seed})

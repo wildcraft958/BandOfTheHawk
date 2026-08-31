@@ -15,6 +15,7 @@ from pathlib import Path
 
 from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config, overlay
+from ..settings.training import seeded
 from ..paths import DEFAULT_CFPB, DEFAULT_CHECKPOINTS, DEFAULT_METRICS, DEFAULT_POOL
 from ..population.factory import build_warm_world
 from .coadapt import run_coadapt
@@ -60,6 +61,7 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
         config.training.ppo,
         hidden_dim=args.hidden, minibatch_size=args.minibatch,
     ).model_copy(update={"bc_kl_anneal_updates": max(1, loop.updates // 3)})
+    ppo_cfg = seeded(ppo_cfg, config.seed)
     report = run_coadapt(
         config,
         seed=config.seed,

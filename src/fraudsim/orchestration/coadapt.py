@@ -43,6 +43,7 @@ from ..logs import get_logger
 from ..attacker.bootstrap import collect_demos
 from ..attacker.env import AttackEnv
 from ..attacker.ppo import PPOConfig, PPOTrainer
+from ..settings.training import seeded
 from ..attacker.selection import ThompsonSelector, card_context
 from ..settings.simulation import SimulationConfig
 from ..defender.baseline import GBDTBaseline
@@ -117,7 +118,7 @@ class CoadaptEngine:
         # rather than each call site remembering to. Copied rather than mutated
         # in place: the caller's config is theirs, and an ablation that silently
         # edits it would carry the freeze into whatever ran next.
-        base = ppo_config or PPOConfig()
+        base = seeded(ppo_config or config.training.ppo, seed)
         self.ppo_config = base.model_copy(update={"stealth_frozen": stealth_frozen})
         self.trainer = PPOTrainer(AttackEnv.obs_dim(), self.ppo_config)
         # Victim choice is a contextual bandit, not part of the sequential

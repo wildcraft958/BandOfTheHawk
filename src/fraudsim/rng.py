@@ -1,15 +1,39 @@
-"""Named random streams.
+"""Named random streams, and the process-wide seeding a run starts from.
 
 Every generator draws from its own stream, seeded by a stable hash of its name.
 Adding a new stream therefore never shifts the draws of an existing one, which
 is what makes a parameter sweep isolate the parameter being swept.
+
+`set_seed` covers the two global generators the package can reach from here.
+Torch is deliberately not seeded in this module: it sits on the runtime side of
+the import firewall, and the firewall's AST check walks into function bodies, so
+even a lazy `import torch` would fail it. `PPOTrainer` seeds torch from
+`training.ppo.seed` instead, in the tier that already carries the dependency.
 """
 
 from __future__ import annotations
 
 import hashlib
+import random
 
 import numpy as np
+
+from .logs import get_logger
+
+_log = get_logger(__name__)
+
+
+def set_seed(seed: int) -> int:
+    """Seed the global generators and say so, returning the seed applied.
+
+    Named streams from `RngHub` are the preferred source and are unaffected by
+    this. It exists for the libraries that reach for a global generator anyway,
+    and so a run records the seed it used.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    _log.info("seed %d", seed)
+    return seed
 
 
 def _name_to_int(name: str) -> int:

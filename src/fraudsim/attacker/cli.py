@@ -17,6 +17,7 @@ import numpy as np
 
 from ..logs import emit
 from ..cli import add_scale_flags, base_parser, load_config, overlay
+from ..settings.training import seeded
 from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
@@ -87,6 +88,7 @@ def cmd_train(args: argparse.Namespace) -> int:
         config.training.ppo,
         hidden_dim=args.hidden, n_layers=args.layers, minibatch_size=args.minibatch,
     ).model_copy(update={"bc_kl_anneal_updates": max(1, loop.updates // 3)})
+    ppo_cfg = seeded(ppo_cfg, config.seed)
     trainer = PPOTrainer(AttackEnv.obs_dim(), ppo_cfg)
 
     report = bootstrap_and_train(
