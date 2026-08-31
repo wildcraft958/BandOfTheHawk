@@ -27,7 +27,10 @@ from .base import (
     load_yaml,
 )
 from .behavior import BehaviorConfig
+from .detector import DetectorConfig
 from .engine import EngineConfig
+from .generation import GenerativeConfig
+from .training import TrainingConfig
 from .world import PopulationConfig, WarmStartConfig
 
 # Which artifact entry maps onto which place in the config tree.
@@ -70,6 +73,11 @@ class SimulationConfig(StrictModel):
     behavior: BehaviorConfig = Field(default_factory=BehaviorConfig)
     engine: EngineConfig = Field(default_factory=EngineConfig)
     warm_start: WarmStartConfig = Field(default_factory=WarmStartConfig)
+    # The learned tiers. Plain data here; the tiers that consume it are the ones
+    # that carry torch, sklearn and transformers.
+    training: TrainingConfig = Field(default_factory=TrainingConfig)
+    detector: DetectorConfig = Field(default_factory=DetectorConfig)
+    generative: GenerativeConfig = Field(default_factory=GenerativeConfig)
 
     @classmethod
     def from_yaml(

@@ -102,3 +102,139 @@ warm_start:
   lookback_days: 180
   tenure_days_median: 400.0
   tenure_days_spread: 1.1
+
+# ---------------------------------------------------------------------------
+# The learned tiers.
+#
+# Everything below used to be a literal in Python, spread across PPOConfig, the
+# argparse defaults of two different CLIs that disagreed with each other, and a
+# profile table in main.py. It is all design choice, never fitted, which is why
+# none of it carries provenance beyond `free`.
+#
+# Sizes for a given run come from configs/profiles.yaml, which overrides these.
+# ---------------------------------------------------------------------------
+
+training:
+  ppo:
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_eps: 0.2
+    entropy_coef: 0.01
+    max_grad_norm: 0.5
+    lr_actor: 3.0e-4
+    lr_critic: 1.0e-3
+    epochs_per_update: 4
+    minibatch_size: 256
+    hidden_dim: 256
+    n_layers: 2
+    bc_kl_coef: 0.5
+    bc_kl_anneal_updates: 20
+    # auto takes the GPU when one is visible; CUDA_VISIBLE_DEVICES decides.
+    device: auto
+    # null follows the root seed. Torch was previously never seeded at all.
+    seed: null
+    stealth_frozen: false
+
+  # The network's own output ranges. Note these are independent of
+  # engine.episode.max_value_per_merchant: the policy can propose an amount the
+  # engine will not allow, which is deliberate but worth knowing.
+  action_space:
+    amount_min: 1.0
+    amount_max: 5000.0
+    delay_min_hours: 0.0
+    delay_max_hours: 72.0
+    n_stealth_postures: 4
+    cool_off_hours: 20.0
+    stuck_limit: 6
+
+  reward:
+    detection_penalty: 2.0
+    failed_action_penalty: 0.25
+    stage_bonus: 1.0
+    terminal_bonus: 10.0
+    value_scale: 0.05
+
+  bootstrap:
+    demo_episodes: 300
+    bc_epochs: 10
+    critic_rollouts: 48
+    critic_epochs: 20
+
+  loop:
+    updates: 60
+    episodes_per_update: 48
+    refit_every: 10
+    eval_episodes: 12
+    false_positive_sample: 400
+    benign_target_events: 6000
+    benign_rounds: 3
+    candidates: 5
+    selection_warmup: 10
+    dump_size: 3
+    label_latency_minutes: 0
+
+detector:
+  baseline:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    min_child_weight: 5.0
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    tree_method: hist
+    random_state: 0
+    n_jobs: -1
+    eval_metric: aucpr
+
+  expert:
+    n_estimators: 150
+    max_depth: 4
+    learning_rate: 0.05
+    min_child_weight: 3.0
+    subsample: 0.9
+    colsample_bytree: 0.9
+    reg_lambda: 1.0
+    tree_method: hist
+    random_state: 0
+    n_jobs: -1
+    eval_metric: aucpr
+
+  logistic:
+    max_iter: 2000
+    class_weight: balanced
+    C: 1.0
+
+  bands:
+    step_up_at: 0.30
+    hold_at: 0.60
+    decline_at: 0.80
+    block_at: 0.95
+
+  cost:
+    friction_cost: 5.0
+    review_cost: 8.0
+    search_steps: 9
+    search_low: 0.10
+    search_high: 0.95
+
+  split:
+    test_fraction: 0.3
+
+  metrics:
+    alert_budget: 100
+    false_positive_budgets: [0.001, 0.01]
+
+generative:
+  generation:
+    model_name: Qwen/Qwen2.5-7B-Instruct
+    max_new_tokens: 400
+    temperature: 0.9
+    top_p: 0.95
+    batch_size: 16
+
+  embedding:
+    model_name: Qwen/Qwen3-Embedding-0.6B
+    full_dim: 1024
+    truncate_dim: 256
+    batch_size: 64
