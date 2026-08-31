@@ -17,7 +17,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..features.schema import AuthAttemptEvent
 from ..protocols import RiskAction, RiskAssessment
 from .mitigation import BlocklistDevice, FreezeCard, UnbindDevice
 

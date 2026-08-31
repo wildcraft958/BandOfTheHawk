@@ -25,7 +25,7 @@ from ..features.schema import EventType
 from ..ids import AccountId, CardId, DeviceId, MerchantId, PayeeId
 from ..world.edges import AddedEdge, AddMethod, BindMethod, ProvisionedEdge
 from ..world.entities import Device, Payee
-from ..clock import MINUTES_PER_DAY, MINUTES_PER_HOUR
+from ..clock import MINUTES_PER_HOUR
 from .actions import Action, ActionName
 from .outcome import Outcome, OutcomeCode
 

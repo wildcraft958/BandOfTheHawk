@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from fraudsim.settings.behavior import CircadianConfig
 from fraudsim.settings.engine import WindowConfig
 from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.features.builder import EventBuilder, haversine_km

@@ -37,7 +37,7 @@ from ..behavior.amount import AmountModel
 from ..behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
 from ..population.archetypes import build_profiles
 from ..clock import MINUTES_PER_DAY, SECONDS_PER_MINUTE
-from .negatives import NegativeInjector, Plan
+from .negatives import NegativeInjector
 
 # Which action produces each non-payment event.
 _ACTION_FOR_EVENT = {

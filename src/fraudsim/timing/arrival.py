@@ -25,7 +25,7 @@ import numpy as np
 
 from ..clock import SECONDS_PER_MINUTE
 from ..settings.behavior import ArrivalConfig
-from ..world.entities import ActivityTier, Archetype
+from ..world.entities import Archetype
 
 
 @dataclass(slots=True)

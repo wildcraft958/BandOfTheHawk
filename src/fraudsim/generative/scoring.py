@@ -60,7 +60,6 @@ class TextScorer:
     _ref_matrix: object = None
 
     def __post_init__(self) -> None:
-        import numpy as np
 
         if not self.reference:
             self._ref_matrix = None

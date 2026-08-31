@@ -30,7 +30,7 @@ from ..behavior.loyalty import LoyaltyModel
 from ..settings.behavior import AmountConfig, HardNegativeConfig
 from ..settings.world import GeoConfig
 from ..features.schema import EventType
-from ..ids import CardId, DeviceId, MerchantId
+from ..ids import DeviceId, MerchantId
 
 
 class NegativeKind(Enum):

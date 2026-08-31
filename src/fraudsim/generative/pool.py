@@ -30,7 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ..protocols import Artifact, ArtifactRequest, ArtifactSource
+from ..protocols import Artifact, ArtifactRequest
 from .prompts import (
     DETAILS,
     PERSONAS,

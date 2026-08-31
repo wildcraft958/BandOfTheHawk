@@ -20,7 +20,7 @@ from fraudsim.engine.simulator import Actor, ActorKind, Simulator
 from fraudsim.engine.stages import Stage
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
-from fraudsim.orchestration.coadapt import CoadaptEngine, run_coadapt
+from fraudsim.orchestration.coadapt import run_coadapt
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer, RiskAction, RiskAssessment
 

@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from fraudsim.settings.simulation import SimulationConfig
-from fraudsim.engine.bands import CostModel, RiskBands, grid_search_bands
+from fraudsim.engine.bands import CostModel, grid_search_bands
 from fraudsim.defender.combiner import (
     FixedAverageCombiner,
     LearnedCombiner,

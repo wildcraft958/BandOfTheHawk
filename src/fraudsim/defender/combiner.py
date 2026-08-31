@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..features.schema import AuthAttemptEvent, EventLog
+from ..features.schema import EventLog
 from ..protocols import RiskAction, RiskAssessment
 from .experts import ExpertBank
 from .table import build_table

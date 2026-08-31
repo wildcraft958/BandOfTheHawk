@@ -20,7 +20,7 @@ from ..orchestration.run import EpisodeRunner
 from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleScorer
 from .baseline import PER_ENTITY_FEATURES, GBDTBaseline
-from .combiner import FixedAverageCombiner, LearnedCombiner, MixtureScorer
+from .combiner import FixedAverageCombiner, LearnedCombiner
 from .experts import ExpertBank
 from .metrics import DetectionMetrics
 from .split import entity_split

@@ -14,7 +14,6 @@ from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.table import build_table
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
-from fraudsim.features.schema import EventType
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.orchestration.run import EpisodeRunner
 from fraudsim.population.builder import PopulationBuilder

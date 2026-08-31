@@ -23,7 +23,7 @@ import numpy as np
 from ..clock import SimClock
 from ..settings.simulation import SimulationConfig
 from ..features.builder import EventBuilder
-from ..features.schema import AuthAttemptEvent, EventLog, EventType
+from ..features.schema import EventLog
 from ..ids import ActorId, CardId, DeviceId, MerchantId
 from ..protocols import (
     AlwaysApproveScorer,

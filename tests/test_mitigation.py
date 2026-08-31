@@ -19,7 +19,6 @@ from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
 from fraudsim.engine.mitigation import (
     BlocklistDevice,
-    DetachPayee,
     FreezeCard,
     UnbindDevice,
     apply_all,

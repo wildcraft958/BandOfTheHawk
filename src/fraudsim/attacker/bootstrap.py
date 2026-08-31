@@ -22,7 +22,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..engine.actions import ACTION_INDEX
-from .env import AttackEnv, RewardWeights
+from .env import AttackEnv
 from .nets import (
     AMOUNT_MAX,
     AMOUNT_MIN,
@@ -31,7 +31,7 @@ from .nets import (
     STEALTH_LOUD,
     STEALTH_NAMES,
 )
-from .ppo import PPOConfig, PPOTrainer
+from .ppo import PPOTrainer
 
 
 @dataclass(slots=True)
