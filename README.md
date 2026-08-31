@@ -22,26 +22,28 @@ every reported run used, and Appendix D the commands to re-run them.
 
 **https://gauntlet-eight-theta.vercel.app**
 
-A live operations console built from one real 63.7-minute run. Six views, one per judged
-criterion, behind a landing page:
+A live operations console over the recorded runs. Seven views, in the order the work is
+judged: identify the attack surface, generate a world faithful enough to test against,
+defend it, close the loop, then follow it down an authorisation path.
 
 | View | Shows |
 |------|-------|
+| Overview | The claim, and the route into each piece of evidence behind it. |
 | Architecture | One pass of the closed loop. Attack and benign traffic converge on a single event builder, which is the blindness rule made visible. Every stage expands to its mechanics. |
-| Dashboard | The arms race across 150 updates with all 12 defender refits, the attacker strategy stream, expert weights, risk bands to mitigation, and the five-way detector comparison. |
-| Simulator | Calibration expressed as ratios against the noise floor of real data split against itself, the eight rule trigger rates, hard-negative composition, and fan-out variance to mean. |
-| The Loop | Selectable refit markers, the entropy spike that forces re-exploration, and the final trained policy at full length. |
-| Live | Authorisations scoring against the real cost bands, each row expanding to show why. |
-| Demo | Attack explorer across all 11 identified verticals, scripted attacker against learned. |
+| Attack surface | The identified verticals over one shared action space, scripted attacker against learned. |
+| Fidelity | Calibration expressed as ratios against the noise floor of real data split against itself, the rule trigger rates, hard-negative composition, and fan-out variance to mean. |
+| Detection | The five-way detector comparison, the expert weights, and risk bands through to mitigation. |
+| Co-evolution | The paired arms race: extraction rising, a defender refit suppressing it, the attacker recovering, with the refit markers selectable. |
+| Auth stream | Authorisations scoring against the real cost bands, each row expanding to show why. |
 
-Every figure comes from `run.log` and the committed calibration artifacts. Two things are
-labelled rather than presented as measured: precision, recall and F1 at the alert budget are
-marked `derived`, because `DetectionMetrics` does not compute F1; and the authorisation stream
-samples individual events from fitted distributions, which the panel states on itself. The cost
-curve is labelled relative cost, never a currency figure.
+Every figure traces to a recorded run or to the calibration artifacts committed here. Two
+things are labelled rather than presented as measured: precision, recall and F1 at the alert
+budget are marked `derived`, because `DetectionMetrics` does not compute F1; and the
+authorisation stream samples individual events from fitted distributions, which the panel
+states on itself. The cost curve is labelled relative cost, never a currency figure.
 
-The prototype does not drive the pipeline. A full run is six stages and 3819 seconds on a GPU
-server, so it replays one real run rather than pretending to launch another.
+The prototype does not drive the pipeline. It replays recorded runs rather than pretending to
+launch one. To regenerate those runs, see the commands below.
 
 ## Key Results
 
@@ -117,7 +119,7 @@ graph LR
 |-------|-------------|
 | `demo` | Build and warm-start a synthetic bank: 12k cardholders, entity graph, per-card behavioral calibration |
 | `text` | Generate dispute letters and embed them with Qwen3-Embedding-0.6B |
-| `fraud` | Inject scripted fraud episodes across the 7 training verticals at a realistic base rate. The 2 held-out families never appear here; they are first seen at evaluation, which is what makes the zero-shot number zero-shot |
+| `fraud` | Inject scripted fraud episodes across the 7 training verticals at a realistic base rate. The 2 held-out families are withheld from this stage by design |
 | `baseline` | Fit a flat gradient-boosted detector as a static benchmark |
 | `mixture` | Fit 5 specialized experts (transaction, binding, identity, network, text) and a combiner |
 | `coadapt` | The closed loop: warm-start defender and RL attacker, then run live co-adaptation |
@@ -213,6 +215,11 @@ Profiles set sizes and never which stages run or what they print. There are five
 `default`; every static detection benchmark comes from `server`; the paired co-adaptation
 comparison comes from four seeds under `ablation`, which fixes 600 cardholders, 24 updates
 and a refit every 6.
+
+The paired runs behind the reported comparison ship in `artifacts/ablation/`, so
+`python -m fraudsim.orchestration.ablation` and `python make_figures.py` produce the
+comparison and the figures on a fresh clone without running anything first. The loop above
+regenerates them in place.
 
 A seeded `coadapt` or `control` run files its own metrics into `artifacts/ablation/` under
 the name the ablation reader expects, so the commands above work in that order with

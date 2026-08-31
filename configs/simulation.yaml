@@ -123,7 +123,8 @@ training:
     bc_kl_anneal_updates: 20
     # auto takes the GPU when one is visible; CUDA_VISIBLE_DEVICES decides.
     device: auto
-    # null follows the root seed. Torch was previously never seeded at all.
+    # null follows the root seed, which is what makes a run repeatable: the
+    # trainer seeds torch from it, so the same seed gives the same attacker.
     seed: null
     stealth_frozen: false
 

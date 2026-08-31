@@ -4,12 +4,16 @@ Dataset/
 # Run outputs. The calibration artifacts in artifacts/ are committed because a
 # run reuses them; everything a run *writes* is ignored, listed by path rather
 # than by extension so a new output format does not silently become tracked.
+#
+# artifacts/ablation/ is the exception: the paired runs behind the reported
+# co-adaptation comparison are committed, so the ablation reader and
+# make_figures.py have something to read on a fresh clone. Re-running the
+# documented commands overwrites them in place.
 outputs/
 runs/
 *.ckpt
 *.pt
 artifacts/checkpoints/
-artifacts/ablation/
 artifacts/coadapt_metrics.json
 artifacts/control_metrics.json
 

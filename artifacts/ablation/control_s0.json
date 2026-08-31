@@ -1,0 +1,256 @@
+{
+  "initial_defender_positives": 239,
+  "bc_final_loss": 4.573567867279053,
+  "critic_final_loss": 383.55181884765625,
+  "attacker_success": [
+    536.2750827074051,
+    541.2599711990356,
+    705.6314931583405,
+    458.66737129290897,
+    719.4657371068,
+    1655.1267488567034,
+    750.268326317072,
+    549.4598109078407,
+    454.3429749623934,
+    1466.122494196143,
+    1511.2790474232036,
+    1345.2537114524841,
+    4417.17647008578,
+    4205.290037706163,
+    7377.613154287236,
+    7732.138363864422,
+    11190.489323405689,
+    10810.163962324461,
+    3472.011118768056,
+    2518.5989740096197,
+    1515.3767769622802,
+    3228.800243180593,
+    3621.4813487497963,
+    2571.00839272817
+  ],
+  "mean_return": [
+    4.139616966247559,
+    12.872974395751953,
+    11.279828071594238,
+    10.520445823669434,
+    8.748802185058594,
+    11.451804161071777,
+    16.431686401367188,
+    2.858297824859619,
+    14.994897842407227,
+    15.802983283996582,
+    25.295297622680664,
+    18.411304473876953,
+    46.42005157470703,
+    83.97631072998047,
+    60.40761184692383,
+    93.41631317138672,
+    123.2880630493164,
+    147.89305114746094,
+    33.9310188293457,
+    50.6959342956543,
+    41.534881591796875,
+    71.45552062988281,
+    76.03160858154297,
+    83.2613525390625
+  ],
+  "entropy": [
+    4.431655764579773,
+    4.306023836135864,
+    4.280402898788452,
+    4.2383726835250854,
+    4.29842746257782,
+    4.091340661048889,
+    4.0701093673706055,
+    4.131736993789673,
+    4.199451208114624,
+    4.193645119667053,
+    4.101517081260681,
+    4.029134750366211,
+    3.8943746387958527,
+    3.824071854352951,
+    3.7786605060100555,
+    3.679236501455307,
+    3.5709297358989716,
+    3.4604656398296356,
+    3.4377857446670532,
+    3.4423163533210754,
+    3.43027126789093,
+    3.3924306631088257,
+    3.463489830493927,
+    3.5492889881134033
+  ],
+  "critic_relative": [
+    1.0347016010697292,
+    1.0177355072533019,
+    0.9993918519831891,
+    0.9988227613163679,
+    1.008415407258526,
+    0.9982097619242644,
+    1.0202334264400743,
+    1.1816602482883412,
+    1.0036303815752519,
+    1.003523005181385,
+    1.077978741011521,
+    1.008337437837491,
+    1.264103963605616,
+    1.4993700282884148,
+    1.2203161210156714,
+    1.4533401618085886,
+    1.8686197077015465,
+    1.6004266657281572,
+    1.0087042470590173,
+    1.0650863088658542,
+    1.023912333734424,
+    1.205406248899632,
+    1.1432146557979181,
+    1.1493002528193346
+  ],
+  "defender_refits": [
+    5,
+    11,
+    17,
+    23
+  ],
+  "defender_positives_at_refit": [
+    150,
+    196,
+    187,
+    129
+  ],
+  "zero_shot": {
+    "sim_swap": 0.01053639846743295,
+    "refund_abuse": 0.032388663967611336
+  },
+  "false_positive_rate": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "top_sequences": [
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+      "count": 15
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth",
+      "count": 11
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth",
+      "count": 6
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+      "count": 5
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+      "count": 1
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+      "count": 1
+    },
+    {
+      "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+      "count": 1
+    }
+  ],
+  "strategy_history": [
+    {
+      "update": 5,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "update": 11,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 4
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "update": 17,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 10
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "update": 23,
+      "when": "before_refit",
+      "sequences": [
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 5
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 4
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed>attempt_auth!failed",
+          "count": 2
+        },
+        {
+          "sequence": "buy_creds>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "describe": "  victim selection (posterior mean by feature)\n    (coefficients are differences from the reference level)\n    bin tier 0       reference\n    bin tier 1        +8.566\n    bin tier 2      +129.908\n    bin tier 3       +94.058\n    age under 6m     reference\n    age 6m to 1y      +0.000\n    age 1y to 3y     -41.015\n    age over 3y      +37.095\n    observations        288\n    selecting      yes",
+    "weights": [
+      8.56559225875526,
+      129.90781231039105,
+      94.057716575621,
+      0.0,
+      -41.01544738837683,
+      37.0954118782074,
+      -3.9200355103105085
+    ],
+    "active": true
+  },
+  "checkpoints": {
+    "attacker": "/private/tmp/claude-501/-Users-bakasur-Desktop-MC-Hackathon/2a56358a-2c76-4e46-bdb6-f9b6a3e8725f/scratchpad/verify_abl/checkpoints/attacker.pt",
+    "defender": "/private/tmp/claude-501/-Users-bakasur-Desktop-MC-Hackathon/2a56358a-2c76-4e46-bdb6-f9b6a3e8725f/scratchpad/verify_abl/checkpoints/defender.joblib"
+  }
+}
