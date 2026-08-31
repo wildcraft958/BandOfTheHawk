@@ -1,0 +1,127 @@
+{
+  "source": "artifacts/noise_floors.json + artifacts/fitted_params.json",
+  "created_utc": "2026-08-26T13:28:38+00:00",
+  "verdict_ladder": {
+    "indistinguishable": 1.5,
+    "close": 3.0,
+    "structural_gap": 10.0
+  },
+  "split": {
+    "left_entities": 20433,
+    "left_rows": 289881,
+    "right_entities": 20433,
+    "right_rows": 279996,
+    "fingerprint": "457a2e82269a81b0c6441c6d2168f876"
+  },
+  "comparisons": [
+    {
+      "name": "arrival burstiness",
+      "observed": 0.07853942761202651,
+      "target": 0.07190455863075104,
+      "gap": 0.006635,
+      "noise_floor": 0.005118233286868765,
+      "ratio": 1.296,
+      "unit": null
+    },
+    {
+      "name": "arrival autocorrelation",
+      "observed": 0.020265504782938565,
+      "target": 0.0378066165955314,
+      "gap": 0.017541,
+      "noise_floor": 0.003838435319546106,
+      "ratio": 4.57,
+      "unit": null
+    },
+    {
+      "name": "amount median",
+      "observed": 68.5,
+      "target": 68.5,
+      "gap": 0.0,
+      "noise_floor": 2.949214343817223,
+      "ratio": 0.0,
+      "unit": "currency units"
+    },
+    {
+      "name": "entity activity median",
+      "observed": 2.0,
+      "target": 2.0,
+      "gap": 0.0,
+      "noise_floor": 1.3906425879703948,
+      "ratio": 0.0,
+      "unit": null
+    }
+  ],
+  "amount": {
+    "lognormal_mu": 4.244967354112219,
+    "lognormal_sigma": 0.8032703483714673,
+    "mean": 134.51166457849678,
+    "median": 68.5,
+    "n_samples": 569877.0,
+    "tail_fraction": 0.05,
+    "tail_index": 1.7941856607528015,
+    "tail_threshold": 435.0,
+    "upper_bound": 31937.391,
+    "whole_number_share": 0.5161306738120682
+  },
+  "amount_heterogeneity": {
+    "between_sd": 0.5662713190472879,
+    "between_share": 0.39162785108140025,
+    "grand_mean": 4.473216448146,
+    "n_entities": 12968.0,
+    "n_events": 569877.0,
+    "total_sd": 0.9048733149518163,
+    "within_sd": 0.7057850305414062
+  },
+  "circadian": {
+    "concentrations": [
+      1.619079696279592,
+      2.2939380489498715
+    ],
+    "means": [
+      23.54869464337258,
+      16.865022543281633
+    ],
+    "n_samples": 569877,
+    "resultant_length": 0.43406614224941475,
+    "weights": [
+      0.5742020636888003,
+      0.42579793631120716
+    ]
+  },
+  "category_mix": {
+    "dining": 0.07082857251454232,
+    "entertainment": 0.07274531112678012,
+    "fuel_transit": 0.10164765054077472,
+    "grocery": 0.12970603543833276,
+    "health": 0.13674235108042468,
+    "online": 0.12271626140560314,
+    "retail": 0.33428278216432444,
+    "travel": 0.03133103572921781
+  },
+  "fanout_targets": {
+    "fanout_hill_index": 1.0500272109603217,
+    "fanout_max": 1642.0,
+    "fanout_mean": 8.143540161495963,
+    "fanout_n_nodes": 9412.0,
+    "fanout_p99": 138.77999999999884,
+    "fanout_share_shared": 0.48395665108372293,
+    "fanout_variance": 1866.2164570440782,
+    "fanout_variance_to_mean": 229.16525491798586
+  },
+  "rejected": {},
+  "all_floors": {
+    "active_lifetime_w1": 58649.85504002646,
+    "amount_log_w1": 0.012707835755209562,
+    "amount_w1": 2.949214343817223,
+    "autocorrelation_gap": 0.003838435319546106,
+    "burst_length_w1_1800s": 0.03410812630779725,
+    "burst_length_w1_300s": 0.005170616841013387,
+    "burst_length_w1_60s": 0.003794973172207783,
+    "burstiness_gap": 0.005118233286868765,
+    "entity_activity_w1": 1.3906425879703948,
+    "hour_jsd": 4.666559466232848e-05,
+    "hour_w1": 0.03865605698913906,
+    "inter_event_log_w1": 0.12003871875331183,
+    "inter_event_w1": 5982.755780848998
+  }
+}
