@@ -34,8 +34,5 @@ scratch/
 tmp/
 *.log
 
-# Web prototype: tracked. The competition allows it to live in the repo with run
-# instructions, and no deployment is required, so it ships here.
-web/node_modules/
-web/dist/
-web/.vite/
+# Web prototype. Delivered as a hosted link rather than in-repo.
+web/
