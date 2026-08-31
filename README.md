@@ -113,6 +113,28 @@ installed to prove it.
 **Requirements:** Python 3.13+. No GPU is needed to reproduce the pipeline: the text
 corpus is the only part that wants one, and it ships prebuilt in `artifacts/`.
 
+**Data:** the fitted parameters, noise floors and text corpus ship with this repo, so the
+system runs on a clone alone. The public source datasets are not redistributed here and
+live in Drive:
+
+**https://drive.google.com/drive/folders/1c1J4jxLpswAmu3te7RlfK2BGwQIV4SLT**
+
+Take `1-gauntlet-data-runtime.zip` (211 MB) and unzip it so `Dataset/` sits beside
+`main.py`, or set `GAUNTLET_DATASET` to wherever you put it. Take
+`2-gauntlet-data-full.zip` (657 MB) instead only if you want to refit calibration from
+scratch; it is a superset.
+
+That one download matters more than it looks. Exactly one file,
+`Dataset/complaints/cfpb_payments_all.parquet`, is read while the system runs: it supplies
+the real complaint narratives the text scorer compares generated ones against. **Without
+it the pipeline still runs and still exits 0**, silently scoring the generated corpus
+against itself instead, which moves the text expert's inputs and the detector's scores
+without reporting anything. Check it is wired up before trusting a run:
+
+```bash
+python -c "from fraudsim.paths import DEFAULT_CFPB; print(DEFAULT_CFPB.exists())"
+```
+
 ```bash
 # Clone
 git clone https://github.com/wildcraft958/BandOfTheHawk.git
