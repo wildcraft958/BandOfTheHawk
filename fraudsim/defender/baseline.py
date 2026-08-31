@@ -52,7 +52,7 @@ class GBDTBaseline:
         # The banding turns a score into an action and a graph mutation. Without
         # it this detects and never acts, which would leave the mitigation layer
         # dormant wherever the flat model is the defender in force.
-        from .bands import RiskBands
+        from ..engine.bands import RiskBands
 
         self.bands = bands or RiskBands()
 

@@ -22,9 +22,8 @@ from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
-from ..protocols import AlwaysApproveScorer
+from ..protocols import AlwaysApproveScorer, Target
 from ..timing.circadian import HolderClockModel
-from ..orchestration.run import Target
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .bootstrap import bootstrap_and_train
 from .env import AttackEnv

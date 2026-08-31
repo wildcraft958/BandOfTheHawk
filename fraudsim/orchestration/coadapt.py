@@ -53,12 +53,12 @@ from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
 from ..population.warmstart import WarmStartRunner
-from ..protocols import RiskAction, RiskScorer
+from ..protocols import RiskAction, RiskScorer, Target
 from ..rules.engine import VelocityRuleScorer
 from ..timing.circadian import HolderClockModel
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .retention import RetentionBuffer
-from .run import EpisodeRunner, Target
+from .run import EpisodeRunner
 
 class _Progress:
     """Announces a long step and how long it took.

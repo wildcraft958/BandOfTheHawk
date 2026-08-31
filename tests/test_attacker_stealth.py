@@ -37,7 +37,7 @@ from fraudsim.engine.actions import ACTION_INDEX, N_ACTIONS, ActionName
 from fraudsim.engine.simulator import Simulator
 from fraudsim.features.builder import EventBuilder
 from fraudsim.features.state import FeatureStateStore
-from fraudsim.orchestration.run import Target
+from fraudsim.protocols import Target
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer
 

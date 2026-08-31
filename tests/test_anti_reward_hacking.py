@@ -189,7 +189,7 @@ def test_episode_duration_cap_ends_a_long_running_attack():
     from fraudsim.attacker.env import AttackEnv
     from fraudsim.attacker.nets import STEALTH_AGED_COOL
     from fraudsim.engine.actions import ACTION_INDEX
-    from fraudsim.orchestration.run import Target
+    from fraudsim.protocols import Target
 
     config, graph, sim = _world({"engine": {"episode": {"max_hours": 48}}})
     card_id = _bound_card(graph)
@@ -276,8 +276,7 @@ def test_zero_jitter_leaves_the_decision_exactly_as_scored():
 
 def test_jitter_can_change_the_action_taken():
     """The offset must reach the decision, not merely be recorded on the actor."""
-    from fraudsim.engine.simulator import _shift
-    from fraudsim.defender.bands import RiskBands
+    from fraudsim.engine.bands import RiskBands, shift_assessment
 
     class Scorer:
         bands = RiskBands()
@@ -285,8 +284,8 @@ def test_jitter_can_change_the_action_taken():
     # A score just under the decline band: a negative offset pushes it over.
     scored = RiskAssessment(risk_score=0.78, action=RiskAction.HOLD, mitigations=())
 
-    lenient = _shift(scored, +0.05, None, Scorer())
-    strict = _shift(scored, -0.05, None, Scorer())
+    lenient = shift_assessment(scored, +0.05, None, Scorer())
+    strict = shift_assessment(scored, -0.05, None, Scorer())
 
     assert lenient.action is not strict.action, "the offset must move the decision"
     # The belief itself is untouched; the jitter belongs to the decision.

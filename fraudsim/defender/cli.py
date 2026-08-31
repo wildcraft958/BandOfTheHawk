@@ -28,7 +28,7 @@ from ..timing.circadian import HolderClockModel
 from ..orchestration.run import EpisodeRunner
 from .baseline import PER_ENTITY_FEATURES, GBDTBaseline
 from .metrics import DetectionMetrics
-from .bands import CostModel, grid_search_bands
+from ..engine.bands import CostModel, grid_search_bands
 from .combiner import FixedAverageCombiner, LearnedCombiner, MixtureScorer
 from .experts import ExpertBank
 from .split import entity_split

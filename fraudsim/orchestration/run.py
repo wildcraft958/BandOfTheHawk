@@ -37,41 +37,11 @@ from ..engine.simulator import Actor, ActorKind, Simulator
 from ..engine.stages import Stage, StageGate
 from ..features.schema import EventType
 from ..ids import ActorId, CardId
-from ..protocols import ActorObservation, RiskScorer
+from ..protocols import ActorObservation, RiskScorer, Target
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from ..population.warmstart import WarmStartRunner
 
 _STAGE_INDEX = {stage: i for i, stage in enumerate(Stage)}
-
-
-@dataclass(slots=True)
-class Target:
-    """What an episode acts against.
-
-    A card, a merchant pool and an account — the equivalent of what an attacker
-    knows about a victim, not the graph itself. Passed to the policy's
-    constructor, never exposed through the observation.
-    """
-
-    card_id: int
-    holder_id: int
-    account_id: int | None
-    merchants: tuple[int, ...]
-    # The rest of the dump. A buyer gets a batch, not a single number, and an
-    # attacker that can move to another card when one starts drawing declines is
-    # doing something a single-card episode cannot express. Defaults to empty, in
-    # which case the episode works `card_id` alone exactly as it did before.
-    card_ids: tuple[int, ...] = ()
-
-    def __post_init__(self) -> None:
-        # The primary is always first, so `card_ids` is a superset of the old
-        # behaviour rather than a replacement for it.
-        if not self.card_ids:
-            self.card_ids = (self.card_id,)
-        elif self.card_ids[0] != self.card_id:
-            self.card_ids = (self.card_id,) + tuple(
-                c for c in self.card_ids if c != self.card_id
-            )
 
 
 @dataclass

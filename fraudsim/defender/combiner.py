@@ -110,7 +110,7 @@ class MixtureScorer:
         dormant and the loop would not actually close. A default banding is
         attached unless the caller supplies one it has searched.
         """
-        from .bands import RiskBands
+        from ..engine.bands import RiskBands
 
         bank = ExpertBank.build(table.columns).fit(table)
         scores, mask = bank.score_matrix(table)

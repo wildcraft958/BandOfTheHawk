@@ -106,6 +106,30 @@ class NullArtifactSource:
         return Artifact()
 
 
+@dataclass(slots=True)
+class Target:
+    """What an episode acts against.
+
+    A card, a merchant pool and an account -- the equivalent of what an attacker
+    knows about a victim, not the graph itself. Passed to the policy's
+    constructor, never exposed through the observation.
+    """
+
+    card_id: int
+    holder_id: int
+    account_id: int | None
+    merchants: tuple[int, ...]
+    card_ids: tuple[int, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.card_ids:
+            self.card_ids = (self.card_id,)
+        elif self.card_ids[0] != self.card_id:
+            self.card_ids = (self.card_id,) + tuple(
+                c for c in self.card_ids if c != self.card_id
+            )
+
+
 class AlwaysApproveScorer:
     """Baseline scorer used during warm start and before a real one exists."""
 
