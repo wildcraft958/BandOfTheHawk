@@ -42,7 +42,8 @@ server, so it replays one real run rather than pretending to launch another.
 | Zero-shot recall (held-out verticals) | 1.000 |
 | Co-adaptation updates | 150 |
 | Defender refits during co-adaptation | 12 |
-| Attack families simulated | 9 (+ 2 held out of training) |
+| Attack families simulated | 9, of which 2 are held out of training |
+| Attack families identified | 11 (merchant collusion and bust-out described, not simulated) |
 | Full pipeline runtime | 63.7 min |
 
 Zero-shot recall means the detector catches attack types it has never seen in training. Two verticals (SIM swap and refund abuse) are withheld entirely and still detected at 100% recall.
@@ -104,7 +105,7 @@ pip install -r requirements.txt
 
 # Run the full pipeline
 python main.py --profile server    # GPU, 12k holders, ~64 min
-python main.py --profile fast      # CPU, smaller population, ~10 min
+python main.py --profile quick     # CPU, smaller population, ~10 min
 
 # Run a single stage
 python main.py baseline
