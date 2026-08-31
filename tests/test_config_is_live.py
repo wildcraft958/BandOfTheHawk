@@ -26,13 +26,14 @@ PACKAGE = Path(__file__).resolve().parent.parent / "src" / "fraudsim"
 
 # Fields the config declares that the package does not name directly, each with
 # the reason. Anything added here needs a reason a reviewer would accept.
-#
-# Deliberately empty. It held four entries once: three were config that had been
-# declared and never implemented, which is exactly the "the YAML says one thing
-# and the code does another" trap this suite exists to catch, so they were
-# deleted rather than documented. The fourth was this test's own blind spot,
-# now handled by the accessor rule in names_used_outside_settings().
-ALLOWED_UNREAD: dict[str, str] = {}
+ALLOWED_UNREAD: dict[str, str] = {
+    # Carried as one of the nine swept ranges the calibration artifact records
+    # (SWEPT_ROUTES -> amount_by_category_spread). The sweep documents that a
+    # per-category amount conditional cannot be taken from the taxonomy source;
+    # the amount model does not condition on category, so nothing reads the
+    # value. It belongs to the provenance record rather than to the draw.
+    "behavior.amount.category_spread": "swept range, recorded not consumed",
+}
 
 
 def leaf_fields(model: type[BaseModel], prefix: str = "") -> dict[str, str]:

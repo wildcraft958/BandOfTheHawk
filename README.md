@@ -185,8 +185,8 @@ python main.py --profile quick     # a fast smoke of every stage
 # Run a single stage
 python main.py baseline
 
-# The stealth ablation: four paired seeds, then read it
-for s in 1 2 3 4; do
+# The stealth ablation: the four paired seeds behind the reported comparison
+for s in 0 1 2 3; do
   python main.py coadapt --profile ablation --seed $s
   python main.py control --profile ablation --seed $s
 done

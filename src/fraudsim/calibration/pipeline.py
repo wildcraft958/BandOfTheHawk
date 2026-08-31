@@ -198,6 +198,16 @@ def _record_swept(params: FittedParams) -> None:
         ),
     )
     params.add_swept(
+        "amount_by_category_spread",
+        value=0.35,
+        low=0.1,
+        high=0.8,
+        reason=(
+            "per-category amounts in the taxonomy source are inverted, with travel below "
+            "grocery, so the conditional cannot be taken from it"
+        ),
+    )
+    params.add_swept(
         "merchant_loyalty",
         value=0.55,
         low=0.0,

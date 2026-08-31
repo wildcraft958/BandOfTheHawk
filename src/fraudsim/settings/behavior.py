@@ -43,6 +43,11 @@ class AmountConfig(StrictModel):
     upper_bound: PositiveFloat = 31937.39
     whole_number_share: UnitInterval = 0.516
 
+    # Swept, not fitted: per-category amounts in the taxonomy source are
+    # inverted against expectation, so the conditional cannot be taken from it.
+    # Carried as a stated range rather than a measured value.
+    category_spread: Annotated[float, Field(ge=0.05, le=1.0)] = 0.35
+
 
 class ArrivalConfig(StrictModel):
     """Gaps between an entity's transactions.

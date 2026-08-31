@@ -58,6 +58,7 @@ SWEPT_ROUTES: dict[str, tuple[str, ...]] = {
     "device_household_max": ("population", "devices", "household_max"),
     "geo_home_radius_km": ("population", "geo", "home_radius_km"),
     "merchant_popularity_exponent": ("population", "merchants", "popularity_exponent"),
+    "amount_by_category_spread": ("behavior", "amount", "category_spread"),
     "recovery_chain_probability": ("behavior", "hard_negatives", "recovery_chain_probability"),
     "merchant_loyalty": ("behavior", "loyalty", "merchant_loyalty"),
     "merchant_preferred_set_mean": ("behavior", "loyalty", "merchant_preferred_set_mean"),
