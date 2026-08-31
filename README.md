@@ -26,8 +26,20 @@ Zero-shot recall means the detector catches attack types it has never seen in tr
 
 The pipeline runs six stages in order:
 
-```
-demo --> text --> fraud --> baseline --> mixture --> coadapt
+```mermaid
+graph LR
+    demo["demo<br/><small>build world</small>"] --> text["text<br/><small>generate + embed</small>"]
+    text --> fraud["fraud<br/><small>inject episodes</small>"]
+    fraud --> baseline["baseline<br/><small>static GBDT</small>"]
+    baseline --> mixture["mixture<br/><small>5 experts</small>"]
+    mixture --> coadapt["coadapt<br/><small>closed loop</small>"]
+
+    style demo fill:#1a1a2e,stroke:#6E63FF,color:#EEEDFA
+    style text fill:#1a1a2e,stroke:#6E63FF,color:#EEEDFA
+    style fraud fill:#1a1a2e,stroke:#FB1E39,color:#EEEDFA
+    style baseline fill:#1a1a2e,stroke:#04B492,color:#EEEDFA
+    style mixture fill:#1a1a2e,stroke:#04B492,color:#EEEDFA
+    style coadapt fill:#2d1a3e,stroke:#F5BF00,color:#EEEDFA
 ```
 
 | Stage | What it does |
