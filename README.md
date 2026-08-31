@@ -7,6 +7,17 @@ GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simula
 > Mastercard Innovation Challenge 2026 | AI Defense Lab for Payment Security
 > Team **Band of the Hawk**, IIT Kharagpur
 
+## Solution Document
+
+The full write-up: the attacks identified, how they are generated and simulated, the
+detection and mitigation model with its efficacy results, and real-world feasibility.
+
+- **[docs/BandOfTheHawk.pdf](docs/BandOfTheHawk.pdf)** — 26 pages, the readable version
+- **[docs/BandOfTheHawk.docx](docs/BandOfTheHawk.docx)** — the same document as submitted
+
+Section 8 carries the results this repository reproduces, Appendix B the configuration
+every reported run used, and Appendix D the commands to re-run them.
+
 ## Working Prototype
 
 **https://gauntlet-eight-theta.vercel.app**
@@ -264,7 +275,8 @@ holds the code that reads it.
 ```
 BandOfTheHawk/
 ├── main.py                      # Pipeline entrypoint (all stages, or one)
-├── make_figures.py              # Regenerates the paper's five measured figures
+├── make_figures.py              # Regenerates the five measured figures
+├── docs/                        # The solution document, as PDF and .docx
 ├── pyproject.toml               # The dependency contract: base + five extras
 ├── requirements.txt             # One exact set of versions, verified together
 ├── configs/                     # The data. Plain YAML, no code.
