@@ -99,21 +99,10 @@ restore it.
 
 The pipeline runs six stages in order:
 
-```mermaid
-graph LR
-    demo["demo<br/><small>build world</small>"] --> text["text<br/><small>generate + embed</small>"]
-    text --> fraud["fraud<br/><small>inject episodes</small>"]
-    fraud --> baseline["baseline<br/><small>static GBDT</small>"]
-    baseline --> mixture["mixture<br/><small>5 experts</small>"]
-    mixture --> coadapt["coadapt<br/><small>closed loop</small>"]
+<img src="docs/pipeline.svg" alt="The six pipeline stages in order: demo builds the world, text generates and embeds the corpus, fraud injects episodes, baseline fits a flat gradient-boosted detector, mixture fits five experts and a combiner, and coadapt runs the closed loop." width="100%">
 
-    style demo fill:#1a1a2e,stroke:#6E63FF,color:#EEEDFA
-    style text fill:#1a1a2e,stroke:#6E63FF,color:#EEEDFA
-    style fraud fill:#1a1a2e,stroke:#FB1E39,color:#EEEDFA
-    style baseline fill:#1a1a2e,stroke:#04B492,color:#EEEDFA
-    style mixture fill:#1a1a2e,stroke:#04B492,color:#EEEDFA
-    style coadapt fill:#2d1a3e,stroke:#F5BF00,color:#EEEDFA
-```
+Colour follows the operations console: red is the attacker, blue the defender, amber the
+closed loop, purple the generative layer.
 
 | Stage | What it does |
 |-------|-------------|
