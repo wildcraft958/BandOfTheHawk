@@ -15,13 +15,7 @@ from pathlib import Path
 
 from ..calibration.artifact import FittedParams
 from ..config.simulation import resolve
-from ..engine.simulator import Simulator
-from ..features.builder import EventBuilder
-from ..features.state import FeatureStateStore
-from ..population.builder import PopulationBuilder
-from ..population.warmstart import WarmStartRunner
-from ..protocols import AlwaysApproveScorer
-from ..timing.circadian import HolderClockModel
+from ..population.factory import build_warm_world
 from .coadapt import run_coadapt
 from .run import EpisodeRunner
 
@@ -36,23 +30,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     config = resolve(args.config, artifact=artifact, overrides=overrides).config
 
     started = time.perf_counter()
-    graph, _ = PopulationBuilder(config).build()
-    states = FeatureStateStore(config.engine.windows)
-    builder = EventBuilder(
-        graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
-    )
-    simulator = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
+    world = build_warm_world(config)
 
-    warm = WarmStartRunner(simulator, config, seed=config.seed).run()
-
-    runner = EpisodeRunner(simulator, config, seed=config.seed + 1, train_only=args.train_only)
+    runner = EpisodeRunner(world.simulator, config, seed=config.seed + 1, train_only=args.train_only)
     report = runner.run(benign_seed=config.seed + 2)
     elapsed = time.perf_counter() - started
 
-    print(warm.render())
-    print()
     print(report.render())
-    simulator.graph.check_invariants()
+    world.graph.check_invariants()
     print(f"\n  graph invariants   {'hold':>10}")
     print(f"  built and run      {elapsed:>10.1f}s")
     return 0

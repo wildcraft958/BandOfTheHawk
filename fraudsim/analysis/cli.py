@@ -12,13 +12,8 @@ from pathlib import Path
 
 from ..calibration.artifact import FittedParams
 from ..config.simulation import resolve
-from ..engine.simulator import Simulator
-from ..features.builder import EventBuilder
-from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
-from ..population.warmstart import WarmStartRunner
-from ..protocols import AlwaysApproveScorer
-from ..timing.circadian import HolderClockModel
+from ..population.factory import build_warm_world
 from .entity_report import render_entity_report
 from .graph_snapshot import GraphSnapshot
 
@@ -38,19 +33,11 @@ def _build(args: argparse.Namespace, warm: bool = True):
     overrides = {"population": {"n_holders": args.holders}} if args.holders else None
     config = resolve(args.config, artifact=artifact, overrides=overrides).config
 
-    graph, _ = PopulationBuilder(config).build()
-    simulator = None
     if warm:
-        states = FeatureStateStore(config.engine.windows)
-        # The clock was omitted here, which left `within_usual_hours` at None
-        # for every event on the one path that exists to compare generated
-        # traffic against real.
-        builder = EventBuilder(
-            graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
-        )
-        simulator = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
-        WarmStartRunner(simulator, config, seed=config.seed).run()
-    return graph, config, simulator
+        world = build_warm_world(config)
+        return world.graph, config, world.simulator
+    graph, _ = PopulationBuilder(config).build()
+    return graph, config, None
 
 
 def cmd_metrics(args: argparse.Namespace) -> int:

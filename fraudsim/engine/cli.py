@@ -11,14 +11,8 @@ from pathlib import Path
 
 from ..calibration.artifact import FittedParams
 from ..config.simulation import resolve
-from ..features.builder import EventBuilder
-from ..features.state import FeatureStateStore
-from ..population.builder import PopulationBuilder
-from ..population.warmstart import WarmStartRunner
-from ..protocols import AlwaysApproveScorer
+from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleEngine
-from ..timing.circadian import HolderClockModel
-from .simulator import Simulator
 from .stages import describe_stages
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,22 +26,14 @@ def cmd_demo(args: argparse.Namespace) -> int:
     config = resolve(args.config, artifact=artifact, overrides=overrides).config
 
     started = time.perf_counter()
-    graph, population = PopulationBuilder(config).build()
-    states = FeatureStateStore(config.engine.windows)
-    builder = EventBuilder(
-        graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
-    )
-    # History is not shaped by a defender that does not exist yet.
-    simulator = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
-    report = WarmStartRunner(simulator, config, seed=config.seed).run()
+    world = build_warm_world(config)
     elapsed = time.perf_counter() - started
 
     print("stage machine")
     print(describe_stages())
     print()
-    print(report.render())
 
-    events = [event for event in simulator.log.events if hasattr(event, "amount")]
+    events = [event for event in world.simulator.log.events if hasattr(event, "amount")]
     if events:
         stamps = [event.ts for event in events]
         span = (max(stamps) - min(stamps)) / 1440
@@ -63,10 +49,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
             )
         )
 
-    graph.check_invariants()
+    world.graph.check_invariants()
     print(f"\n  graph invariants   {'hold':>10}")
-    print(f"  fan-out mean       {population.fanout['mean']:>10.2f}"
-          f"  (target {population.fanout['target_mean']:.2f})")
     print(f"  built and warmed   {elapsed:>10.1f}s")
     return 0
 

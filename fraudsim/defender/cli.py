@@ -17,20 +17,14 @@ from pathlib import Path
 
 from ..calibration.artifact import FittedParams
 from ..config.simulation import resolve
-from ..engine.simulator import Simulator
-from ..features.builder import EventBuilder
-from ..features.state import FeatureStateStore
-from ..population.builder import PopulationBuilder
-from ..population.warmstart import WarmStartRunner
-from ..protocols import AlwaysApproveScorer
-from ..rules.engine import VelocityRuleScorer
-from ..timing.circadian import HolderClockModel
-from ..orchestration.run import EpisodeRunner
-from .baseline import PER_ENTITY_FEATURES, GBDTBaseline
-from .metrics import DetectionMetrics
 from ..engine.bands import CostModel, grid_search_bands
+from ..orchestration.run import EpisodeRunner
+from ..population.factory import build_warm_world
+from ..rules.engine import VelocityRuleScorer
+from .baseline import PER_ENTITY_FEATURES, GBDTBaseline
 from .combiner import FixedAverageCombiner, LearnedCombiner, MixtureScorer
 from .experts import ExpertBank
+from .metrics import DetectionMetrics
 from .split import entity_split
 from .table import build_table
 
@@ -40,17 +34,11 @@ DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def _collect(config, holders: int | None):
-    graph, _ = PopulationBuilder(config).build()
-    states = FeatureStateStore(config.engine.windows)
-    builder = EventBuilder(
-        graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
-    )
-    sim = Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
-    WarmStartRunner(sim, config, seed=config.seed).run()
-    EpisodeRunner(sim, config, seed=config.seed + 1, train_only=True).run(
+    world = build_warm_world(config)
+    EpisodeRunner(world.simulator, config, seed=config.seed + 1, train_only=True).run(
         benign_seed=config.seed + 2
     )
-    return sim
+    return world.simulator
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:

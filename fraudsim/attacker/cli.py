@@ -17,13 +17,8 @@ import numpy as np
 
 from ..calibration.artifact import FittedParams
 from ..config.simulation import resolve
-from ..engine.simulator import Simulator
-from ..features.builder import EventBuilder
-from ..features.state import FeatureStateStore
-from ..population.builder import PopulationBuilder
-from ..population.warmstart import WarmStartRunner
+from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
-from ..timing.circadian import HolderClockModel
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .bootstrap import bootstrap_and_train
 from .env import AttackEnv
@@ -46,14 +41,9 @@ class WorldFactory:
         self.config = config
         self.scorer = scorer
         self.rng = np.random.default_rng(seed)
-        graph, _ = PopulationBuilder(config).build()
-        states = FeatureStateStore(config.engine.windows)
-        builder = EventBuilder(
-            graph, states, config.engine.windows, HolderClockModel(config.behavior.circadian)
-        )
-        self.sim = Simulator(graph, config, builder, scorer=scorer)
-        WarmStartRunner(self.sim, config, seed=config.seed).run()
-        self._cards = [int(c) for c in graph.cards if graph.devices_of_card(c)]
+        world = build_warm_world(config, scorer=scorer)
+        self.sim = world.simulator
+        self._cards = [int(c) for c in world.graph.cards if world.graph.devices_of_card(c)]
         self._verticals = [
             v for v in VERTICALS if not (train_only and v in ZERO_SHOT_HOLDOUTS)
         ]
