@@ -1,11 +1,17 @@
 # Datasets (not committed; see README for how to fetch them)
 Dataset/
 
-# Run outputs (committed calibration artifacts live in artifacts/)
+# Run outputs. The calibration artifacts in artifacts/ are committed because a
+# run reuses them; everything a run *writes* is ignored, listed by path rather
+# than by extension so a new output format does not silently become tracked.
 outputs/
 runs/
 *.ckpt
 *.pt
+artifacts/checkpoints/
+artifacts/ablation/
+artifacts/coadapt_metrics.json
+artifacts/control_metrics.json
 
 # Python
 __pycache__/
@@ -28,5 +34,8 @@ scratch/
 tmp/
 *.log
 
-# Web prototype. Delivered as a hosted link rather than in-repo.
-web/
+# Web prototype: tracked. The competition allows it to live in the repo with run
+# instructions, and no deployment is required, so it ships here.
+web/node_modules/
+web/dist/
+web/.vite/
