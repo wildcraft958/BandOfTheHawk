@@ -15,9 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import add_scale_flags, base_parser, load_config
 from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
@@ -71,9 +69,7 @@ class WorldFactory:
 
 
 def cmd_train(args: argparse.Namespace) -> int:
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides = {"population": {"n_holders": args.holders}} if args.holders else None
-    config = resolve(args.config, artifact=artifact, overrides=overrides).config
+    config = load_config(args)
 
     factory = WorldFactory(config, AlwaysApproveScorer(), train_only=True, seed=config.seed)
 
@@ -105,13 +101,11 @@ def cmd_train(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.attacker")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.attacker")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     train = subparsers.add_parser("train", help="bootstrap and train the learned attacker")
-    train.add_argument("--holders", type=int, default=None)
+    add_scale_flags(train)
     # Real-run defaults; a smoke test passes smaller.
     train.add_argument("--demo-episodes", type=int, default=400)
     train.add_argument("--bc-epochs", type=int, default=10)

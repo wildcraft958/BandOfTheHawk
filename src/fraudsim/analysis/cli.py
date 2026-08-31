@@ -10,9 +10,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import add_scale_flags, base_parser, load_config
 from ..population.builder import PopulationBuilder
 from ..population.factory import build_warm_world
 from .entity_report import render_entity_report
@@ -26,9 +24,7 @@ def _build(args: argparse.Namespace, warm: bool = True):
     generated side of every comparison here. Building the world again to get
     at it would draw a different one.
     """
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides = {"population": {"n_holders": args.holders}} if args.holders else None
-    config = resolve(args.config, artifact=artifact, overrides=overrides).config
+    config = load_config(args)
 
     if warm:
         world = build_warm_world(config)
@@ -95,23 +91,22 @@ def cmd_entity_stats(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.analysis")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.analysis")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     metrics = subparsers.add_parser("metrics", help="degree and motif metrics")
-    metrics.add_argument("--holders", type=int, default=None)
+    add_scale_flags(metrics)
     metrics.set_defaults(func=cmd_metrics)
 
     compare = subparsers.add_parser("compare", help="generated beside measured")
-    compare.add_argument("--holders", type=int, default=None)
+    add_scale_flags(compare)
     compare.set_defaults(func=cmd_compare)
 
     entity = subparsers.add_parser(
         "entity-stats", help="per-entity structure, generated beside real"
     )
-    entity.add_argument("--holders", type=int, default=4000)
+    add_scale_flags(entity)
+    entity.set_defaults(holders=4000)
     entity.add_argument("--min-events", type=int, default=5)
     entity.add_argument(
         "--judge", type=Path, default=None,

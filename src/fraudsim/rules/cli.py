@@ -7,13 +7,10 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 import numpy as np
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import base_parser, load_config
 from ..features.builder import EventBuilder
 from ..features.state import FeatureStateStore
 from ..population.builder import PopulationBuilder
@@ -23,8 +20,7 @@ from .engine import VelocityRuleEngine
 
 
 def _load(args: argparse.Namespace):
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    return resolve(args.config, artifact=artifact).config
+    return load_config(args)
 
 
 def cmd_describe(args: argparse.Namespace) -> int:
@@ -89,9 +85,7 @@ def cmd_rate(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.rules")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.rules")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     describe = subparsers.add_parser("describe", help="list the rules and thresholds")

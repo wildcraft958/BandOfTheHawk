@@ -13,18 +13,15 @@ import argparse
 import time
 from pathlib import Path
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import add_scale_flags, base_parser, load_config
+from ..paths import DEFAULT_CFPB, DEFAULT_CHECKPOINTS, DEFAULT_METRICS, DEFAULT_POOL
 from ..population.factory import build_warm_world
 from .coadapt import run_coadapt
 from .run import EpisodeRunner
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides = {"population": {"n_holders": args.holders}} if args.holders else None
-    config = resolve(args.config, artifact=artifact, overrides=overrides).config
+    config = load_config(args)
 
     started = time.perf_counter()
     world = build_warm_world(config)
@@ -44,15 +41,7 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
     """Warm-start the defender, actor and critic, then live co-adaptation."""
     from ..attacker.ppo import PPOConfig
 
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides: dict = {}
-    if args.holders:
-        overrides["population"] = {"n_holders": args.holders}
-    if args.fraud_rate:
-        overrides["engine"] = {"fraud_base_rate": args.fraud_rate}
-    if args.seed is not None:
-        overrides["seed"] = args.seed
-    config = resolve(args.config, artifact=artifact, overrides=overrides or None).config
+    config = load_config(args)
 
     ppo_cfg = PPOConfig(
         hidden_dim=args.hidden,
@@ -98,13 +87,11 @@ def cmd_coadapt(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.orchestration")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.orchestration")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run = subparsers.add_parser("run", help="warm start, then adversarial episodes to prevalence")
-    run.add_argument("--holders", type=int, default=None)
+    add_scale_flags(run)
     run.add_argument(
         "--train-only",
         action="store_true",
@@ -113,8 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     run.set_defaults(func=cmd_run)
 
     co = subparsers.add_parser("coadapt", help="warm-start then live attacker/defender co-adaptation")
-    co.add_argument("--holders", type=int, default=None)
-    co.add_argument("--fraud-rate", type=float, default=None)
+    add_scale_flags(co, fraud_rate=True)
     co.add_argument("--learned", action="store_true", help="use the mixture defender")
     co.add_argument("--demo-episodes", type=int, default=300)
     co.add_argument("--bc-epochs", type=int, default=10)
@@ -125,11 +111,11 @@ def main(argv: list[str] | None = None) -> int:
     co.add_argument("--refit-every", type=int, default=10)
     co.add_argument("--hidden", type=int, default=256)
     co.add_argument("--minibatch", type=int, default=256)
-    co.add_argument("--pool", type=Path, default=ROOT / "artifacts" / "text_pool.json",
+    co.add_argument("--pool", type=Path, default=DEFAULT_POOL,
                     help="text pool to feed dispute/ticket/refund text and embeddings")
     co.add_argument("--cfpb", type=Path,
-                    default=ROOT / "Dataset" / "complaints" / "cfpb_payments_all.parquet")
-    co.add_argument("--metrics", type=Path, default=ROOT / "artifacts" / "coadapt_metrics.json",
+                    default=DEFAULT_CFPB)
+    co.add_argument("--metrics", type=Path, default=DEFAULT_METRICS,
                     help="write the live curve and attacker sequences as JSON, for plotting")
     co.add_argument("--label-latency", type=int, default=0,
                     help="simulated minutes before fraud is labelled and usable for a "
@@ -143,10 +129,6 @@ def main(argv: list[str] | None = None) -> int:
                          "whatever the loop happens to produce, which was 42%% "
                          "against a design that specifies 0.5%% -- a far easier "
                          "problem than the deployed one")
-    co.add_argument("--seed", type=int, default=None,
-                    help="override the config seed. A single run of this is one "
-                         "sample from a heavy-tailed distribution, so any claim "
-                         "comparing two configurations needs several seeds each")
     co.add_argument("--dump-size", type=int, default=3,
                     help="cards an episode's dump holds; the attacker may move "
                          "between them mid-episode. 1 reproduces the "
@@ -158,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="cards the victim-selection bandit chooses among each episode")
     co.add_argument("--selection-warmup", type=int, default=10,
                     help="updates of uniform victim sampling before the bandit selects")
-    co.add_argument("--checkpoint-dir", type=Path, default=ROOT / "artifacts" / "checkpoints",
+    co.add_argument("--checkpoint-dir", type=Path, default=DEFAULT_CHECKPOINTS,
                     help="where the trained attacker and final defender are written")
     co.set_defaults(func=cmd_coadapt)
 

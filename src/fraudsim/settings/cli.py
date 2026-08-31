@@ -7,19 +7,15 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from .simulation import resolve
+from ..cli import base_parser, load_artifact, load_resolved
 
 
 def _load(args: argparse.Namespace):
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    if artifact is None:
+    if load_artifact(args) is None:
         print(f"no artifact at {args.artifact}; showing configured values only")
         print("run: python -m fraudsim.calibration.cli fit\n")
-    return resolve(args.config, artifact=artifact)
+    return load_resolved(args)
 
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -62,9 +58,7 @@ def cmd_provenance(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.settings")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.settings")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     show = subparsers.add_parser("show", help="resolved values with their origin")

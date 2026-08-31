@@ -13,11 +13,8 @@ are resting on nothing, and it is better to learn that here.
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import add_scale_flags, base_parser, load_config
 from ..engine.bands import CostModel, grid_search_bands
 from ..orchestration.run import EpisodeRunner
 from ..population.factory import build_warm_world
@@ -39,17 +36,11 @@ def _collect(config, holders: int | None):
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides: dict = {}
-    if args.holders:
-        overrides["population"] = {"n_holders": args.holders}
-    if args.fraud_rate:
-        # H.6 is a measurement, not the deployed rate. Answering whether the
-        # per-entity features carry signal needs enough positives for a stable
-        # PR-AUC delta, so the experiment may run at a higher prevalence than the
-        # 0.5% a real system sees. Stated, not hidden.
-        overrides["engine"] = {"fraud_base_rate": args.fraud_rate}
-    config = resolve(args.config, artifact=artifact, overrides=overrides or None).config
+    # --fraud-rate here is a measurement, not the deployed rate. H.6 asks
+    # whether the per-entity features carry signal, and a stable PR-AUC delta
+    # needs enough positives, so the experiment may run at a higher prevalence
+    # than the 0.5% a real system sees. Stated, not hidden.
+    config = load_config(args)
 
     sim = _collect(config, args.holders)
     table = build_table(sim.log, exclude_warm_start=True)
@@ -128,13 +119,7 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     learned combination earned its place; the delta to the first says whether
     the mixture beat the flat table at all. Either way it is reported.
     """
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    overrides: dict = {}
-    if args.holders:
-        overrides["population"] = {"n_holders": args.holders}
-    if args.fraud_rate:
-        overrides["engine"] = {"fraud_base_rate": args.fraud_rate}
-    config = resolve(args.config, artifact=artifact, overrides=overrides or None).config
+    config = load_config(args)
 
     sim = _collect(config, args.holders)
     table = build_table(sim.log, exclude_warm_start=True)
@@ -187,13 +172,11 @@ def cmd_mixture(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.defender")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.defender")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     base = subparsers.add_parser("baseline", help="fit the baseline and answer H.6")
-    base.add_argument("--holders", type=int, default=None)
+    add_scale_flags(base, fraud_rate=True)
     base.add_argument(
         "--fraud-rate",
         type=float,
@@ -203,8 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     base.set_defaults(func=cmd_baseline)
 
     mix = subparsers.add_parser("mixture", help="fit experts + combiner, report vs baseline")
-    mix.add_argument("--holders", type=int, default=None)
-    mix.add_argument("--fraud-rate", type=float, default=None)
+    add_scale_flags(mix, fraud_rate=True)
     mix.set_defaults(func=cmd_mixture)
 
     args = parser.parse_args(argv)

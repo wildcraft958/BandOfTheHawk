@@ -7,22 +7,17 @@ from __future__ import annotations
 
 import argparse
 import time
-from pathlib import Path
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import add_scale_flags, base_parser, load_artifact, load_config
 from .builder import PopulationBuilder
 
 
 def cmd_preview(args: argparse.Namespace) -> int:
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    if artifact is None:
+    if load_artifact(args) is None:
         print(f"no artifact at {args.artifact}, using configured values only")
         print("run: python -m fraudsim.calibration.cli fit\n")
 
-    overrides = {"population": {"n_holders": args.holders}} if args.holders else None
-    config = resolve(args.config, artifact=artifact, overrides=overrides).config
+    config = load_config(args)
 
     started = time.perf_counter()
     graph, report = PopulationBuilder(config).build()
@@ -42,13 +37,11 @@ def cmd_preview(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.population")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.population")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     preview = subparsers.add_parser("preview", help="build a population and report it")
-    preview.add_argument("--holders", type=int, default=None)
+    add_scale_flags(preview)
     preview.set_defaults(func=cmd_preview)
 
     args = parser.parse_args(argv)

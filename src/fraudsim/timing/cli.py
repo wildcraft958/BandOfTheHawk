@@ -11,16 +11,14 @@ from pathlib import Path
 
 import numpy as np
 
-from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG, DEFAULT_FLOORS
-from ..calibration.artifact import FittedParams
-from ..settings.simulation import resolve
+from ..cli import base_parser, load_config
+from ..paths import DEFAULT_FLOORS
 from .arrival import DriftingRateProcess, burstiness, lag1_autocorrelation
 from .circadian import CircadianClock, resultant_length
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
-    artifact = FittedParams.load(args.artifact) if args.artifact.exists() else None
-    config = resolve(args.config, artifact=artifact).config
+    config = load_config(args)
     arrival = config.behavior.arrival
 
     process = DriftingRateProcess(arrival)
@@ -69,9 +67,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fraudsim.timing")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
+    parser = base_parser("fraudsim.timing")
     parser.add_argument("--floors", type=Path, default=DEFAULT_FLOORS)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
