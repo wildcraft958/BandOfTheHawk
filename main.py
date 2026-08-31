@@ -53,22 +53,25 @@ The stages, in the order the full run executes them:
                carried by one spike). Use --seed on the underlying command to
                repeat it.
 
-               MEASURED, four seeds each, paired: mean post-refit extraction
-               33.5 (stealth) against 37.3 (control), a paired difference of
-               -3.8 with a 95% bootstrap interval of [-15.0, +9.3]. The interval
-               spans zero and the sign favours the control. The two arms
-               collapse alike, retaining about 2% of pre-refit extraction, and
-               neither recovers.
+               MEASURED, four seeds each, paired, at 600 holders and 24 updates
+               with a refit every 6: mean post-refit extraction 4871 (stealth)
+               against 3232 (control), a paired difference of +1639 with a 95%
+               bootstrap interval of [+219, +2764] over 20,000 resamples. The
+               interval excludes zero, so the posture head earns its place.
 
-               So the finding is the defender's, and it is the stronger claim:
-               the attacker had the capability and it did not save it. The
-               aged posture is not decorative -- it moves median device age on a
-               fraudulent auth from 18.5 days to 327, and on a fitted detector
-               that alone takes the mean fraud score from 0.972 to 0.554,
-               under the 0.80 decline threshold. The policy adopted it (two of
-               four seeds converge on [aged]) and still lost. A detector refit
-               on the traffic beats a single-feature evasion because it simply
-               moves to the features that remain.
+               This reverses an earlier reading, and the reason matters more
+               than the number. That comparison ran before three of the five
+               anti-reward-hacking controls were enforced: the per-merchant
+               value cap, the episode duration cap and the per-episode
+               threshold jitter were all declared in configuration and applied
+               nowhere. With the caps off, both arms could farm one merchant
+               without bound, which swamped the difference between them.
+               Anything measured before those were wired up is not comparable
+               to anything measured after.
+
+               The effect is real but small-n: four seeds, a wide interval, and
+               one seed running the other way. It would not detect an effect
+               much smaller than this one.
 
 SCALE
 -----

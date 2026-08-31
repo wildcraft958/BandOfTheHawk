@@ -11,8 +11,8 @@ GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simula
 
 **https://gauntlet-eight-theta.vercel.app**
 
-A live operations console built from one real 63.7-minute run. Seven views, one per judged
-criterion:
+A live operations console built from one real 63.7-minute run. Six views, one per judged
+criterion, behind a landing page:
 
 | View | Shows |
 |------|-------|
@@ -39,14 +39,27 @@ server, so it replays one real run rather than pretending to launch another.
 | Flat GBDT PR-AUC | 0.9879 |
 | Flat GBDT ROC-AUC | 0.9998 |
 | Recall @ 0.1% FPR | 0.9727 |
-| Zero-shot recall (held-out verticals) | 1.000 |
+| Rule-engine PR-AUC (the baseline it beats) | 0.0266 |
+| Stealth ablation, mean post-refit extraction | +1639, 95% CI [+219, +2764] |
 | Co-adaptation updates | 150 |
 | Defender refits during co-adaptation | 12 |
 | Attack families simulated | 9, of which 2 are held out of training |
 | Attack families identified | 11 (merchant collusion and bust-out described, not simulated) |
 | Full pipeline runtime | 63.7 min |
 
-Zero-shot recall means the detector catches attack types it has never seen in training. Two verticals (SIM swap and refund abuse) are withheld entirely and still detected at 100% recall.
+The stealth ablation is the headline claim: across four paired seeds, removing the
+attacker's posture head costs it 1,639 in mean post-refit extraction, and the bootstrap
+interval excludes zero. Four seeds is a small n and the interval is wide, so it would not
+detect an effect much smaller than this one.
+
+**Zero-shot recall is deliberately not reported.** SIM swap is a held-out vertical, but
+`sim_swap` is also a legal action in the learned attacker's space and the policy uses it;
+the same is true of `request_refund` and held-out refund abuse, and refund abuse is in
+fact the strategy the policy converges on. The defender therefore trains on that traffic
+and is then asked whether it generalises to it. High recall could not be credited to
+generalisation, nor low recall blamed on it, so the measurement is withheld rather than
+explained away. Removing the held-out actions from the attacker's legality mask would
+restore it.
 
 ## Architecture
 
