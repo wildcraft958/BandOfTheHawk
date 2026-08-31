@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 from ..logs import emit
-from ..cli import add_scale_flags, base_parser, load_config
+from ..cli import add_scale_flags, base_parser, load_config, overlay
 from ..paths import DEFAULT_CFPB, DEFAULT_CHECKPOINTS, DEFAULT_METRICS, DEFAULT_POOL
 from ..population.factory import build_warm_world
 from .coadapt import run_coadapt
@@ -40,35 +40,46 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_coadapt(args: argparse.Namespace) -> int:
     """Warm-start the defender, actor and critic, then live co-adaptation."""
-    from ..attacker.ppo import PPOConfig
-
     config = load_config(args)
-
-    ppo_cfg = PPOConfig(
-        hidden_dim=args.hidden,
-        minibatch_size=args.minibatch,
-        bc_kl_anneal_updates=max(1, args.updates // 3),
+    boot = overlay(
+        config.training.bootstrap,
+        demo_episodes=args.demo_episodes, bc_epochs=args.bc_epochs,
+        critic_rollouts=args.critic_rollouts, critic_epochs=args.critic_epochs,
     )
+    loop = overlay(
+        config.training.loop,
+        updates=args.updates, episodes_per_update=args.episodes_per_update,
+        refit_every=args.refit_every, candidates=args.candidates,
+        selection_warmup=args.selection_warmup, dump_size=args.dump_size,
+        label_latency_minutes=args.label_latency,
+    )
+    # The anneal spans the first third of the run, so it follows --updates
+    # rather than the configured constant, which only applies to a direct
+    # PPOTrainer with no loop length to derive from.
+    ppo_cfg = overlay(
+        config.training.ppo,
+        hidden_dim=args.hidden, minibatch_size=args.minibatch,
+    ).model_copy(update={"bc_kl_anneal_updates": max(1, loop.updates // 3)})
     report = run_coadapt(
         config,
         seed=config.seed,
         learned_defender=args.learned,
-        demo_episodes=args.demo_episodes,
-        bc_epochs=args.bc_epochs,
-        critic_rollouts=args.critic_rollouts,
-        critic_epochs=args.critic_epochs,
-        n_updates=args.updates,
-        episodes_per_update=args.episodes_per_update,
-        refit_every=args.refit_every,
+        demo_episodes=boot.demo_episodes,
+        bc_epochs=boot.bc_epochs,
+        critic_rollouts=boot.critic_rollouts,
+        critic_epochs=boot.critic_epochs,
+        n_updates=loop.updates,
+        episodes_per_update=loop.episodes_per_update,
+        refit_every=loop.refit_every,
         ppo_config=ppo_cfg,
         pool_path=args.pool,
         cfpb_path=args.cfpb,
         checkpoint_dir=args.checkpoint_dir,
-        candidates=args.candidates,
-        selection_warmup=args.selection_warmup,
-        label_latency_minutes=args.label_latency,
+        candidates=loop.candidates,
+        selection_warmup=loop.selection_warmup,
+        label_latency_minutes=loop.label_latency_minutes,
         fraud_rounds=args.fraud_rounds,
-        dump_size=args.dump_size,
+        dump_size=loop.dump_size,
         stealth_frozen=args.stealth_frozen,
         target_prevalence=args.target_prevalence,
     )
@@ -103,22 +114,22 @@ def main(argv: list[str] | None = None) -> int:
     co = subparsers.add_parser("coadapt", help="warm-start then live attacker/defender co-adaptation")
     add_scale_flags(co, fraud_rate=True)
     co.add_argument("--learned", action="store_true", help="use the mixture defender")
-    co.add_argument("--demo-episodes", type=int, default=300)
-    co.add_argument("--bc-epochs", type=int, default=10)
-    co.add_argument("--critic-rollouts", type=int, default=48)
-    co.add_argument("--critic-epochs", type=int, default=20)
-    co.add_argument("--updates", type=int, default=60)
-    co.add_argument("--episodes-per-update", type=int, default=48)
-    co.add_argument("--refit-every", type=int, default=10)
-    co.add_argument("--hidden", type=int, default=256)
-    co.add_argument("--minibatch", type=int, default=256)
+    co.add_argument("--demo-episodes", type=int, default=None)
+    co.add_argument("--bc-epochs", type=int, default=None)
+    co.add_argument("--critic-rollouts", type=int, default=None)
+    co.add_argument("--critic-epochs", type=int, default=None)
+    co.add_argument("--updates", type=int, default=None)
+    co.add_argument("--episodes-per-update", type=int, default=None)
+    co.add_argument("--refit-every", type=int, default=None)
+    co.add_argument("--hidden", type=int, default=None)
+    co.add_argument("--minibatch", type=int, default=None)
     co.add_argument("--pool", type=Path, default=DEFAULT_POOL,
                     help="text pool to feed dispute/ticket/refund text and embeddings")
     co.add_argument("--cfpb", type=Path,
                     default=DEFAULT_CFPB)
     co.add_argument("--metrics", type=Path, default=DEFAULT_METRICS,
                     help="write the live curve and attacker sequences as JSON, for plotting")
-    co.add_argument("--label-latency", type=int, default=0,
+    co.add_argument("--label-latency", type=int, default=None,
                     help="simulated minutes before fraud is labelled and usable for a "
                          "refit; models the lag before a chargeback lands, which is "
                          "what leaves an adapting attacker room to exploit")
@@ -130,16 +141,16 @@ def main(argv: list[str] | None = None) -> int:
                          "whatever the loop happens to produce, which was 42%% "
                          "against a design that specifies 0.5%% -- a far easier "
                          "problem than the deployed one")
-    co.add_argument("--dump-size", type=int, default=3,
+    co.add_argument("--dump-size", type=int, default=None,
                     help="cards an episode's dump holds; the attacker may move "
                          "between them mid-episode. 1 reproduces the "
                          "single-card behaviour")
     co.add_argument("--stealth-frozen", action="store_true",
                     help="pin the stealth head to the loud posture — the control "
                          "arm for measuring whether stealth changed anything")
-    co.add_argument("--candidates", type=int, default=5,
+    co.add_argument("--candidates", type=int, default=None,
                     help="cards the victim-selection bandit chooses among each episode")
-    co.add_argument("--selection-warmup", type=int, default=10,
+    co.add_argument("--selection-warmup", type=int, default=None,
                     help="updates of uniform victim sampling before the bandit selects")
     co.add_argument("--checkpoint-dir", type=Path, default=DEFAULT_CHECKPOINTS,
                     help="where the trained attacker and final defender are written")

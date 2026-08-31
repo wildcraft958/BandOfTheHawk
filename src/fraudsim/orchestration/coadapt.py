@@ -116,10 +116,8 @@ class CoadaptEngine:
         # rather than each call site remembering to. Copied rather than mutated
         # in place: the caller's config is theirs, and an ablation that silently
         # edits it would carry the freeze into whatever ran next.
-        import dataclasses as _dc
-
         base = ppo_config or PPOConfig()
-        self.ppo_config = _dc.replace(base, stealth_frozen=stealth_frozen)
+        self.ppo_config = base.model_copy(update={"stealth_frozen": stealth_frozen})
         self.trainer = PPOTrainer(AttackEnv.obs_dim(), self.ppo_config)
         # Victim choice is a contextual bandit, not part of the sequential
         # policy: a card is picked, a return is observed, and nothing carries to

@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
+
+from pydantic import BaseModel
 
 from .calibration.artifact import FittedParams
 from .logs import configure
@@ -22,6 +24,8 @@ from .settings.simulation import ResolvedConfig, resolve
 
 if TYPE_CHECKING:
     from .settings.simulation import SimulationConfig
+
+_ModelT = TypeVar("_ModelT", bound=BaseModel)
 
 
 def base_parser(prog: str, description: str | None = None) -> argparse.ArgumentParser:
@@ -105,6 +109,17 @@ def overrides_from(args: argparse.Namespace) -> dict | None:
         else:
             overrides.setdefault(path[0], {})[path[1]] = value
     return overrides or None
+
+
+def overlay(section: _ModelT, **flags: object) -> _ModelT:
+    """A config section with any flag the user actually passed applied on top.
+
+    Flags default to None so that "not given" is distinguishable from a value.
+    Without that a CLI has to carry its own copy of every default, which is how
+    orchestration and attacker came to disagree on the bootstrap sizes.
+    """
+    given = {name: value for name, value in flags.items() if value is not None}
+    return section.model_copy(update=given) if given else section
 
 
 def apply_log_level(args: argparse.Namespace) -> None:

@@ -28,44 +28,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# PPOConfig lives in settings.training: it is configuration, and keeping a
+# second copy here is how the CLI defaults came to disagree with it.
+from ..settings.training import PPOConfig
 from .env import AttackEnv
 from .nets import Actor, Critic, NetConfig
-
-
-@dataclass(slots=True)
-class PPOConfig:
-    """Training hyperparameters, all with real-run defaults."""
-
-    gamma: float = 0.99
-    gae_lambda: float = 0.95
-    clip_eps: float = 0.2
-    entropy_coef: float = 0.01
-    # No value coefficient: the critic has its own optimiser and its loss is
-    # backpropagated separately, so there is no combined loss to weight it in.
-    max_grad_norm: float = 0.5
-    lr_actor: float = 3e-4
-    lr_critic: float = 1e-3
-    epochs_per_update: int = 4
-    minibatch_size: int = 256
-    hidden_dim: int = 256
-    n_layers: int = 2
-    # Behaviour-cloning regularisation, annealed over this many updates.
-    bc_kl_coef: float = 0.5
-    bc_kl_anneal_updates: int = 20
-    # "auto" takes the GPU when one is visible and falls back to the CPU when it
-    # is not, so CUDA_VISIBLE_DEVICES alone decides where this runs. An explicit
-    # "cpu" or "cuda" overrides that.
-    device: str = "auto"
-    # Pins the stealth head to the loud posture, reproducing the policy from
-    # before the head existed. This is the control arm: without it, a run that
-    # looks better after the head was added cannot be distinguished from a run
-    # that looks better because a dozen other things changed alongside it.
-    #
-    # The freeze is total, not merely at sampling time. A head that still fed
-    # the entropy bonus and still pushed gradient through the shared trunk would
-    # make the control a different policy rather than the earlier one, and the
-    # arms would differ by more than the thing being measured.
-    stealth_frozen: bool = False
 
 
 @dataclass

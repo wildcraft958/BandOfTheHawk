@@ -16,13 +16,13 @@ from pathlib import Path
 import numpy as np
 
 from ..logs import emit
-from ..cli import add_scale_flags, base_parser, load_config
+from ..cli import add_scale_flags, base_parser, load_config, overlay
 from ..population.factory import build_warm_world
 from ..protocols import AlwaysApproveScorer, Target
 from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .bootstrap import bootstrap_and_train
 from .env import AttackEnv
-from .ppo import PPOConfig, PPOTrainer
+from .ppo import PPOTrainer
 
 
 class WorldFactory:
@@ -74,23 +74,30 @@ def cmd_train(args: argparse.Namespace) -> int:
 
     factory = WorldFactory(config, AlwaysApproveScorer(), train_only=True, seed=config.seed)
 
-    ppo_cfg = PPOConfig(
-        hidden_dim=args.hidden,
-        n_layers=args.layers,
-        minibatch_size=args.minibatch,
-        bc_kl_anneal_updates=max(1, args.updates // 3),
+    boot = overlay(
+        config.training.bootstrap,
+        demo_episodes=args.demo_episodes, bc_epochs=args.bc_epochs,
+        critic_epochs=args.critic_epochs,
     )
+    loop = overlay(
+        config.training.loop,
+        updates=args.updates, episodes_per_update=args.episodes_per_update,
+    )
+    ppo_cfg = overlay(
+        config.training.ppo,
+        hidden_dim=args.hidden, n_layers=args.layers, minibatch_size=args.minibatch,
+    ).model_copy(update={"bc_kl_anneal_updates": max(1, loop.updates // 3)})
     trainer = PPOTrainer(AttackEnv.obs_dim(), ppo_cfg)
 
     report = bootstrap_and_train(
         trainer,
         factory.make_env_and_policy,
         factory.make_env,
-        demo_episodes=args.demo_episodes,
-        bc_epochs=args.bc_epochs,
-        critic_epochs=args.critic_epochs,
-        n_updates=args.updates,
-        episodes_per_update=args.episodes_per_update,
+        demo_episodes=boot.demo_episodes,
+        bc_epochs=boot.bc_epochs,
+        critic_epochs=boot.critic_epochs,
+        n_updates=loop.updates,
+        episodes_per_update=loop.episodes_per_update,
         seed=config.seed,
     )
     emit(report.render())
@@ -107,15 +114,15 @@ def main(argv: list[str] | None = None) -> int:
 
     train = subparsers.add_parser("train", help="bootstrap and train the learned attacker")
     add_scale_flags(train)
-    # Real-run defaults; a smoke test passes smaller.
-    train.add_argument("--demo-episodes", type=int, default=400)
-    train.add_argument("--bc-epochs", type=int, default=10)
-    train.add_argument("--critic-epochs", type=int, default=20)
-    train.add_argument("--updates", type=int, default=60)
-    train.add_argument("--episodes-per-update", type=int, default=64)
-    train.add_argument("--hidden", type=int, default=256)
-    train.add_argument("--layers", type=int, default=2)
-    train.add_argument("--minibatch", type=int, default=256)
+    # Unset means the configured value; see configs/simulation.yaml training.
+    train.add_argument("--demo-episodes", type=int, default=None)
+    train.add_argument("--bc-epochs", type=int, default=None)
+    train.add_argument("--critic-epochs", type=int, default=None)
+    train.add_argument("--updates", type=int, default=None)
+    train.add_argument("--episodes-per-update", type=int, default=None)
+    train.add_argument("--hidden", type=int, default=None)
+    train.add_argument("--layers", type=int, default=None)
+    train.add_argument("--minibatch", type=int, default=None)
     train.add_argument("--out", type=Path, default=None)
     train.set_defaults(func=cmd_train)
 
