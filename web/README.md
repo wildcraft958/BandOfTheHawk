@@ -1,6 +1,7 @@
-# GAUNTLET — web prototype
+# GAUNTLET web prototype
 
-The working prototype for the Mastercard Innovation Challenge 2026 submission. Three views:
+The working prototype for the Mastercard Innovation Challenge 2026 submission. Six views, one
+per judged criterion:
 
 | View | Judged criterion | What it shows |
 |---|---|---|
@@ -20,7 +21,7 @@ cd submission/web
 
 ./run.sh                    # auto-detects Docker, then Node, then Python
 docker compose up --build   # then open http://localhost:8080
-open dist/index.html        # no toolchain at all — the build is self-contained
+open dist/index.html        # no toolchain at all, the build is self-contained
 ```
 
 `./run.sh stop` shuts the container down. `./run.sh dev` starts the Vite dev server with hot
@@ -41,8 +42,8 @@ python3 tools/make_real_fixtures.py
 
 Reads `data/run.log` plus the committed calibration artifacts in `../artifacts/`, and writes
 typed JSON into `src/data/`. It refuses to emit unless the run it parsed matches the one this
-prototype reports — 150 co-adaptation updates, defender refits at updates 11 through 143, and
-an extraction checksum of 945640.9 — so a drifting parser fails loudly instead of quietly
+prototype reports, 150 co-adaptation updates, defender refits at updates 11 through 143, and
+an extraction checksum of 945640.9, so a drifting parser fails loudly instead of quietly
 publishing wrong figures.
 
 Nothing is invented. Two things are labelled rather than presented as measured:
@@ -71,7 +72,7 @@ npm run build     # tsc, then vite, then the CSP guard
 ```
 
 The production build collapses to a single self-contained `dist/index.html` via
-`vite-plugin-singlefile` — all JavaScript, CSS, data and fonts inlined, zero network requests.
+`vite-plugin-singlefile`, all JavaScript, CSS, data and fonts inlined, zero network requests.
 That is why it can be opened straight off disk, and why the committed file and any hosted copy
 are byte-identical.
 
