@@ -215,7 +215,7 @@ export function Demo() {
                   </ul>
                   <p className="prose-sans border-t border-rule px-4 py-3 text-[0.75rem] text-ink-2">
                     One chain, repeated. The trained policy collapsed onto a refund loop that
-                    saturates the 40-action episode budget &mdash; a degenerate exploit, and the
+                    saturates the 40-action episode budget. A degenerate exploit, and the
                     rediscovery of a vertical held out of training. Nobody scripted this.
                   </p>
                 </>

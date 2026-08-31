@@ -6,6 +6,7 @@ import { fixtureFiles } from '../data/run'
 const ROUTES = [
   { to: '/', label: 'Home' },
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/simulator', label: 'Simulator' },
   { to: '/demo', label: 'Demo' },
 ]
 
@@ -22,7 +23,7 @@ export function Chrome() {
           role="alert"
           className="border-b border-atk bg-atk/12 px-4 py-2 text-center text-[0.6875rem] uppercase tracking-[0.1em] text-atk"
         >
-          Demo fixture &mdash; not a measured result ({fixtureFiles.join(', ')})
+          Demo fixture. Not a measured result ({fixtureFiles.join(', ')})
         </div>
       )}
 
@@ -75,7 +76,7 @@ export function Chrome() {
 
       <footer className="border-t border-rule px-4 py-8 text-[0.6875rem] text-ink-3 sm:px-6">
         <p>
-          Band of the Hawk &middot; IIT Kharagpur &mdash; Shehryaar Shah Khan, Saksham Tiwari,
+          Band of the Hawk &middot; IIT Kharagpur &middot; Shehryaar Shah Khan, Saksham Tiwari,
           Animesh Raj, Eisa Shaiju, Monika Kumari
         </p>
         <p className="mt-2 max-w-3xl">

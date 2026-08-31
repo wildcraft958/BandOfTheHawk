@@ -237,7 +237,7 @@ export function ClosedLoop({ stages, total }: { stages: StageTiming[]; total: nu
             <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ink">
               {shown.stage}
             </span>{' '}
-            &mdash; {BLURB[shown.stage]} &middot;{' '}
+            &middot; {BLURB[shown.stage]} &middot;{' '}
             <span className="num">{duration(shown.seconds)}</span>, or{' '}
             <span className="num">{((shown.seconds / total) * 100).toFixed(1)}%</span> of the run
           </>

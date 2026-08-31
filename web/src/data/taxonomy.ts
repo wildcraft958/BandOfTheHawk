@@ -120,7 +120,7 @@ export interface Vertical {
 export const VERTICALS: Vertical[] = [
   {
     id: 'card_testing', label: 'Card testing', entryStage: 'bound',
-    capability: 'none — volume and velocity',
+    capability: 'none, volume and velocity',
     blurb: 'Buy a batch of stolen cards, bind one, probe with small authorisations.',
     heldOut: false, simulated: true,
   },
@@ -156,7 +156,7 @@ export const VERTICALS: Vertical[] = [
   },
   {
     id: 'mule_layering', label: 'Mule layering', entryStage: 'monetized',
-    capability: 'none — transfer topology',
+    capability: 'none, transfer topology',
     blurb: 'Add a payee, wait out the cooling-off, transfer, then launder and cash out.',
     heldOut: false, simulated: true,
   },

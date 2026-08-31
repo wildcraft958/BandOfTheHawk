@@ -46,7 +46,7 @@ export function StageMachine() {
         <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ink">
           {stage}
         </span>{' '}
-        &mdash; {STAGE_BLURB[stage]}
+        &middot; {STAGE_BLURB[stage]}
         {advance && (
           <>
             {' '}Advances to{' '}

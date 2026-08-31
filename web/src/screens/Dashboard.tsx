@@ -60,7 +60,7 @@ export function Dashboard() {
       />
 
       <Panel
-        name="arms race — value extracted per update"
+        name="arms race: value extracted per update"
         live
         aside={
           <span className="hidden text-[0.625rem] uppercase tracking-[0.09em] text-ink-3 sm:inline">
@@ -78,7 +78,7 @@ export function Dashboard() {
             <span className="text-def">&#9474;</span> defender refit
           </span>
           <span>
-            <span className="text-def">&#9472;</span> zero line &mdash; {coadapt.reads.zeros}{' '}
+            <span className="text-def">&#9472;</span> zero line, {coadapt.reads.zeros}{' '}
             updates at exactly 0.0
           </span>
           <span className="text-ink-2">
@@ -143,7 +143,7 @@ export function Dashboard() {
                   tone={e.name === 'text' ? 'atk' : 'def'}
                   note={
                     e.name === 'text'
-                      ? 'the thinnest channel — and the one the attacker converged on'
+                      ? 'the thinnest channel, and the one the attacker converged on'
                       : undefined
                   }
                 />
@@ -307,7 +307,7 @@ export function Dashboard() {
                 max={maxEpisodes}
                 display="0"
                 tone="holdout"
-                note={`held out of training — still caught at ${fixed(z.recall, 3)} recall`}
+                note={`held out of training, still caught at ${fixed(z.recall, 3)} recall`}
               />
             ))}
           </div>

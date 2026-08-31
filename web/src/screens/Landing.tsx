@@ -47,7 +47,7 @@ export function Landing() {
 
       <p className="prose-sans mt-7 max-w-3xl text-[1rem] leading-relaxed text-ink-2">
         GAUNTLET invents GenAI payment fraud, simulates it against a synthetic bank, and trains a
-        detector that catches it &mdash; as one closed loop where attacker and defender adapt against
+        detector that catches it, as one closed loop where attacker and defender adapt against
         each other. The attacker is a reinforcement-learning agent that discovers strategies on its
         own. When the defender improves, the attacker finds new gaps; when the attacker escalates,
         the defender refits.
@@ -118,7 +118,7 @@ export function Landing() {
           <p className="prose-sans mt-4 max-w-3xl text-[0.8125rem] text-ink-2">
             The attacker climbs to {int(coadapt.reads.extracted_max)} value extracted per episode.
             Each blue rule is a defender refit. After the first, extraction falls to{' '}
-            <span className="text-def">exactly zero for {coadapt.reads.zeros} updates</span> &mdash;
+            <span className="text-def">exactly zero for {coadapt.reads.zeros} updates</span>,
             then the attacker finds a different channel and climbs again. That sawtooth is the
             closed loop.
           </p>
@@ -145,7 +145,7 @@ export function Landing() {
           <p className="prose-sans max-w-3xl text-[0.9375rem] leading-relaxed text-ink">
             The attacker independently converged on{' '}
             <span className="text-atk">buy credentials, reset the password, request refunds</span>{' '}
-            &mdash; a refund-abuse loop appearing in none of the seven trained verticals. Refund
+            , a refund-abuse loop appearing in none of the seven trained verticals. Refund
             abuse was one of the two verticals{' '}
             <span className="text-holdout">deliberately held out</span>. It rediscovered the
             held-out attack on its own, through the defender&rsquo;s thinnest expert: text, at{' '}

@@ -17,8 +17,8 @@ const H = 300
  * different channel.
  *
  * Scale is symlog rather than linear. The series spans 0 to 28,781.9 and
- * contains sixteen true zeros: on a linear axis the entire collapse — the
- * dramatic heart of the run — flattens into an unreadable line on the baseline,
+ * contains sixteen true zeros: on a linear axis the entire collapse, the
+ * dramatic heart of the run, flattens into an unreadable line on the baseline,
  * and a log axis cannot represent the zeros at all.
  */
 export function Seismograph({

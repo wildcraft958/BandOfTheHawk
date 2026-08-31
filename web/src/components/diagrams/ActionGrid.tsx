@@ -18,7 +18,7 @@ export function ActionGrid() {
         One shared action space across every vertical, so a per-vertical recall figure reflects a
         difference in behaviour rather than in machinery.{' '}
         <span className="text-atk">{genaiCount} of {ACTIONS.length} actions</span> require a
-        generated artifact — a cloned voice, a deepfake selfie, a written pretext, a dispute
+        generated artifact: a cloned voice, a deepfake selfie, a written pretext, a dispute
         narrative. Those are the points where a generative model changes the attacker&rsquo;s cost.
       </p>
 

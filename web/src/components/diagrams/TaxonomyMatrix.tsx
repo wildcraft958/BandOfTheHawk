@@ -58,9 +58,9 @@ export function TaxonomyMatrix() {
               </td>
               <td className="num py-3 pr-4 text-right text-ink">
                 {v.heldOut ? (
-                  <span className="font-mono text-[0.6875rem] text-holdout">0 — zero-shot</span>
+                  <span className="font-mono text-[0.6875rem] text-holdout">0, zero-shot</span>
                 ) : (
-                  (episodes[v.id] ?? '—')
+                  (episodes[v.id] ?? '.')
                 )}
               </td>
             </tr>
@@ -79,7 +79,7 @@ export function TaxonomyMatrix() {
                 {v.entryStage}
               </td>
               <td className="py-3 pr-4 text-[0.8125rem] text-ink-3">{v.capability}</td>
-              <td className="py-3 pr-4 text-right font-mono text-[0.6875rem] text-ink-3">—</td>
+              <td className="py-3 pr-4 text-right font-mono text-[0.6875rem] text-ink-3">.</td>
             </tr>
           ))}
         </tbody>

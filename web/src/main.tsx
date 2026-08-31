@@ -3,6 +3,7 @@ import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { Chrome } from './app/Chrome'
 import { Landing } from './screens/Landing'
 import { Dashboard } from './screens/Dashboard'
+import { Simulator } from './screens/Simulator'
 import { Demo } from './screens/Demo'
 import './index.css'
 
@@ -14,6 +15,7 @@ const router = createHashRouter([
     children: [
       { path: '/', element: <Landing /> },
       { path: '/dashboard', element: <Dashboard /> },
+      { path: '/simulator', element: <Simulator /> },
       { path: '/demo', element: <Demo /> },
     ],
   },
