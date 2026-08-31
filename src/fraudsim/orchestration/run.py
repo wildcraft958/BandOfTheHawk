@@ -298,7 +298,7 @@ class EpisodeRunner:
             )
         )
         sim.open_episode(actor_id)
-        policy = build_policy(vertical, target, self.rng)
+        policy = build_policy(vertical, target, self.rng, self.config)
 
         auths = 0
         approved = 0

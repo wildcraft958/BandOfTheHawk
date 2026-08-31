@@ -65,7 +65,7 @@ class WorldFactory:
         target = self._target()
         env = AttackEnv(self.sim, target)
         vertical = self._verticals[int(self.rng.integers(len(self._verticals)))]
-        policy = build_policy(vertical, target, self.rng)
+        policy = build_policy(vertical, target, self.rng, self.config)
         return env, policy
 
 

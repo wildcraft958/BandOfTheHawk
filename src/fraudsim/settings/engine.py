@@ -76,9 +76,6 @@ class ChannelConfig(StrictModel):
     base_decline_rate: UnitInterval = 0.03
     voice_similarity_threshold: UnitInterval = 0.85
     liveness_threshold: UnitInterval = 0.90
-    document_forensic_threshold: UnitInterval = 0.75
-    step_up_challenge_rate: UnitInterval = 0.12
-    step_up_abandon_rate: UnitInterval = 0.15
     payee_cooling_off_hours: Annotated[int, Field(ge=0, le=168)] = 24
 
 
@@ -114,4 +111,3 @@ class EngineConfig(StrictModel):
     channel: ChannelConfig = Field(default_factory=ChannelConfig)
     episode: EpisodeConfig = Field(default_factory=EpisodeConfig)
     fraud_base_rate: Annotated[float, Field(ge=0.0001, le=0.2)] = 0.005
-    check_invariants_every: Annotated[int, Field(ge=0, le=1_000_000)] = 0

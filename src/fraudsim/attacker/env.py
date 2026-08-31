@@ -36,6 +36,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..clock import MINUTES_PER_HOUR
 from ..engine.actions import ACTION_ORDER, Action
 from ..engine.outcome import Outcome, OutcomeCode
 from ..engine.simulator import Actor, ActorKind, Simulator
@@ -80,7 +81,6 @@ _FEATURE_KEYS = (
 # the velocity windows while leaving the time-of-day tell exactly where it was.
 from ..clock import MINUTES_PER_DAY
 
-COOL_OFF_MINUTES = 20 * 60
 
 
 @dataclass(slots=True)
@@ -122,6 +122,9 @@ class AttackEnv:
     ) -> None:
         self.sim = simulator
         self.target = target
+        # The action ranges and episode guards the policy plays inside, from the
+        # same configuration the engine enforces its own caps from.
+        self.space = simulator.config.training.action_space
         self.weights = weights or RewardWeights()
         self.gate = StageGate()
         self.actor_id = actor_id if actor_id is not None else _fresh_actor_id()
@@ -208,8 +211,8 @@ class AttackEnv:
         before_stage = actor.stage
         name = ACTION_ORDER[action_idx]
 
-        amount = float(squash_amount(_as_tensor(amount_raw)).item())
-        delay = int(float(squash_delay(_as_tensor(delay_raw)).item()))
+        amount = float(squash_amount(_as_tensor(amount_raw), self.space).item())
+        delay = int(float(squash_delay(_as_tensor(delay_raw), self.space).item()))
 
         # Rotation happens before the action, since it changes what the action
         # acts on. Applied here rather than inside the resolver because moving to
@@ -220,7 +223,7 @@ class AttackEnv:
         card_id = self.active_card
 
         if stealth_idx == STEALTH_AGED_COOL:
-            delay = max(delay, COOL_OFF_MINUTES)
+            delay = max(delay, int(self.space.cool_off_hours * MINUTES_PER_HOUR))
 
         action = Action(
             name=name,
@@ -336,12 +339,11 @@ class AttackEnv:
 
     # How many non-progress steps end an episode. Enough to try a couple of
     # alternatives, not enough to farm a legal-but-failing action to the cap.
-    STUCK_LIMIT = 6
 
     def _done(self, stage: Stage) -> bool:
         if stage is Stage.TERMINAL:
             return True
-        if self._stuck >= self.STUCK_LIMIT:
+        if self._stuck >= self.space.stuck_limit:
             return True
         episode = self.sim.config.engine.episode
         if self._steps >= episode.max_actions:

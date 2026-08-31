@@ -75,9 +75,14 @@ class WarmStartClock(SimClock):
     History is produced before the observation window opens, so it runs from a
     negative offset up to the origin. Everything downstream still sees a
     monotonic clock; only the starting point differs.
+
+    Both arguments are required. A default lookback here would restate
+    warm_start.lookback_days and drift from it, which is what happened: it said
+    90 days where the configuration says 180. Nothing in the package constructs
+    this yet; population.warmstart does the arithmetic itself.
     """
 
-    def __init__(self, origin: int = 0, lookback_minutes: int = 90 * DAY) -> None:
+    def __init__(self, origin: int, lookback_minutes: int) -> None:
         super().__init__(origin=origin - lookback_minutes)
         self._target = origin
 

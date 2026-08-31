@@ -15,6 +15,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..settings.detector import MetricsConfig
+
 
 def pr_auc(y_true: np.ndarray, scores: np.ndarray) -> float:
     """Area under the precision-recall curve, by the trapezoid rule.
@@ -95,13 +97,17 @@ class DetectionMetrics:
 
     @classmethod
     def compute(
-        cls, y_true: np.ndarray, scores: np.ndarray, alert_budget: int = 100
+        cls, y_true: np.ndarray, scores: np.ndarray,
+        settings: MetricsConfig | None = None,
     ) -> "DetectionMetrics":
+        settings = settings or MetricsConfig()
+        budgets = settings.false_positive_budgets
+        alert_budget = settings.alert_budget
         return cls(
             pr_auc=pr_auc(y_true, scores),
             roc_auc=roc_auc(y_true, scores),
-            recall_at_0p1=recall_at_fpr(y_true, scores, 0.001),
-            recall_at_1=recall_at_fpr(y_true, scores, 0.01),
+            recall_at_0p1=recall_at_fpr(y_true, scores, budgets[0]),
+            recall_at_1=recall_at_fpr(y_true, scores, budgets[1]),
             precision_at_budget=precision_at_k(y_true, scores, alert_budget),
             n_positives=int(y_true.sum()),
             n_total=int(y_true.shape[0]),

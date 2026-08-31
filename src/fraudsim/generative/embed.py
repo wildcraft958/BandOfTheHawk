@@ -30,7 +30,8 @@ DEFAULT_EMBED_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 # here: the text expert fits on the few hundred text events a run produces, and
 # a thousand columns against that many rows is mostly noise. The default
 # truncation below is chosen on that ratio, not on cost.
-EMBED_FULL_DIM = 1024
+from ..settings.generation import EmbeddingConfig
+EMBED_FULL_DIM = EmbeddingConfig().full_dim
 DEFAULT_TRUNCATE_DIM = 256
 
 

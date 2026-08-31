@@ -26,15 +26,20 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..clock import MINUTES_PER_HOUR
 from ..engine.actions import ACTION_INDEX, Action, ActionName
 from ..engine.outcome import Outcome
 from ..protocols import ActorObservation
+from ..settings.simulation import SimulationConfig
 
 # Quality floors the channel controls enforce, cleared with a margin so a
 # well-resourced attacker gets through and a poorly resourced one does not. The
 # controls themselves live in config; these are what a script chooses to buy.
-VOICE_QUALITY = 0.9  # clears voice_similarity_threshold 0.85
-FACE_QUALITY = 0.95  # clears liveness_threshold 0.90
+# How far above the configured acceptance bar a scripted attacker aims. A
+# harvested sample only has to clear the threshold; overshooting it wastes
+# effort the vertical would not spend. 0.05 reproduces the 0.9 and 0.95 these
+# were previously hardcoded to, at the shipped thresholds of 0.85 and 0.90.
+QUALITY_MARGIN = 0.05
 
 
 @dataclass(slots=True)
@@ -75,13 +80,36 @@ class ScriptedPolicy:
 
     vertical: str = "base"
 
-    def __init__(self, target, rng: np.random.Generator) -> None:
+    def __init__(
+        self, target, rng: np.random.Generator,
+        config: SimulationConfig | None = None,
+    ) -> None:
         # `target` is a small immutable record the runner hands over: which card,
         # merchant pool and account the episode acts against. It is not the
         # graph; it is the equivalent of an attacker knowing a card number.
         self.target = target
         self.rng = rng
         self.state = ScriptState()
+        # An attacker acts against the channel rules the engine enforces, so the
+        # thresholds it must clear and the delays it must wait are read from the
+        # same config the engine reads. Hardcoding them meant the two agreed at
+        # the shipped values and silently diverged if either moved.
+        self.channel = (config or SimulationConfig()).engine.channel
+
+    @property
+    def voice_quality(self) -> float:
+        """A sample good enough to clear the configured similarity bar."""
+        return min(1.0, self.channel.voice_similarity_threshold + QUALITY_MARGIN)
+
+    @property
+    def face_quality(self) -> float:
+        """A presentation good enough to clear the configured liveness bar."""
+        return min(1.0, self.channel.liveness_threshold + QUALITY_MARGIN)
+
+    @property
+    def cooling_minutes(self) -> int:
+        """The payee cooling-off the engine will actually enforce."""
+        return self.channel.payee_cooling_off_hours * MINUTES_PER_HOUR
 
     # -------------------------------------------------------- policy contract
 
@@ -205,13 +233,13 @@ class VoiceCloneProvisioning(ScriptedPolicy):
     def _acquire(self, obs):
         if not self.state.voiced:
             self.state.voiced = True
-            return Action(name=ActionName.HARVEST_VOICE, params={"quality": VOICE_QUALITY})
+            return Action(name=ActionName.HARVEST_VOICE, params={"quality": self.voice_quality})
         return Action(name=ActionName.BUY_CREDS, params={"count": 1, "quality": 0.7})
 
     def _bind(self, obs):
         if not self.state.voiced:
             self.state.voiced = True
-            return Action(name=ActionName.HARVEST_VOICE, params={"quality": VOICE_QUALITY})
+            return Action(name=ActionName.HARVEST_VOICE, params={"quality": self.voice_quality})
         return Action(name=ActionName.CALL_IVR_PROVISION, target_id=self.target.card_id)
 
     def _monetize(self, obs):
@@ -241,12 +269,12 @@ class DeepfakeOnboarding(ScriptedPolicy):
             self.state.synth = True
             return Action(name=ActionName.MAKE_SYNTH_ID)
         self.state.faced = True
-        return Action(name=ActionName.HARVEST_FACE, params={"quality": FACE_QUALITY})
+        return Action(name=ActionName.HARVEST_FACE, params={"quality": self.face_quality})
 
     def _bind(self, obs):
         if not self.state.faced:
             self.state.faced = True
-            return Action(name=ActionName.HARVEST_FACE, params={"quality": FACE_QUALITY})
+            return Action(name=ActionName.HARVEST_FACE, params={"quality": self.face_quality})
         return Action(name=ActionName.SUBMIT_KYC)
 
     def _monetize(self, obs):
@@ -352,7 +380,7 @@ class MuleLayering(ScriptedPolicy):
             self.state.payee_added_at = self.state.now_minutes
             return Action(name=ActionName.ADD_PAYEE)
         waited = self.state.now_minutes - self.state.payee_added_at
-        cooling = 24 * 60
+        cooling = self.cooling_minutes
         if waited < cooling:
             # Wait past the cooling-off before attempting the transfer.
             return Action(
@@ -491,5 +519,8 @@ VERTICALS: dict[str, type[ScriptedPolicy]] = {
 ZERO_SHOT_HOLDOUTS: frozenset[str] = frozenset({"sim_swap", "refund_abuse"})
 
 
-def build_policy(vertical: str, target, rng: np.random.Generator) -> ScriptedPolicy:
-    return VERTICALS[vertical](target, rng)
+def build_policy(
+    vertical: str, target, rng: np.random.Generator,
+    config: SimulationConfig | None = None,
+) -> ScriptedPolicy:
+    return VERTICALS[vertical](target, rng, config)

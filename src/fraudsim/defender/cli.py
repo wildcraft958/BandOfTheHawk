@@ -59,19 +59,19 @@ def cmd_baseline(args: argparse.Namespace) -> int:
     d0 = VelocityRuleScorer(config.engine.rules)
     d0_scores = _rule_scores(d0, split.test)
     emit()
-    emit(DetectionMetrics.compute(split.test.y, d0_scores).render("D_0 rule engine"))
+    emit(DetectionMetrics.compute(split.test.y, d0_scores, config.detector.metrics).render("D_0 rule engine"))
 
     # The full tree.
     full = GBDTBaseline(table.columns).fit(split.train)
     full_scores = full.predict_scores(split.test.X)
-    full_metrics = DetectionMetrics.compute(split.test.y, full_scores)
+    full_metrics = DetectionMetrics.compute(split.test.y, full_scores, config.detector.metrics)
     emit()
     emit(full_metrics.render("GBDT full"))
 
     # The ablation: the same tree without the per-entity features.
     ablated = GBDTBaseline(table.columns).fit(split.train, drop_columns=PER_ENTITY_FEATURES)
     ablated_scores = ablated.predict_scores(split.test.X)
-    ablated_metrics = DetectionMetrics.compute(split.test.y, ablated_scores)
+    ablated_metrics = DetectionMetrics.compute(split.test.y, ablated_scores, config.detector.metrics)
     emit()
     emit(ablated_metrics.render("GBDT without per-entity features"))
 
@@ -138,7 +138,7 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     full = GBDTBaseline(table.columns).fit(split.train)
     flat_scores = full.predict_scores(split.test.X)
     emit()
-    emit(DetectionMetrics.compute(split.test.y, flat_scores).render("flat GBDT"))
+    emit(DetectionMetrics.compute(split.test.y, flat_scores, config.detector.metrics).render("flat GBDT"))
 
     # Experts, fit once; scored two ways.
     bank = ExpertBank.build(table.columns).fit(split.train)
@@ -148,11 +148,11 @@ def cmd_mixture(args: argparse.Namespace) -> int:
     avg = FixedAverageCombiner()
     avg_pred = avg.combine(test_scores, test_mask)
     emit()
-    emit(DetectionMetrics.compute(split.test.y, avg_pred).render("experts + fixed average"))
+    emit(DetectionMetrics.compute(split.test.y, avg_pred, config.detector.metrics).render("experts + fixed average"))
 
     learned = LearnedCombiner().fit(train_scores, train_mask, split.train.y)
     learned_pred = learned.combine(test_scores, test_mask)
-    learned_metrics = DetectionMetrics.compute(split.test.y, learned_pred)
+    learned_metrics = DetectionMetrics.compute(split.test.y, learned_pred, config.detector.metrics)
     emit()
     emit(learned_metrics.render("experts + learned combiner"))
 

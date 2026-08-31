@@ -93,6 +93,7 @@ class CoadaptEngine:
         target_prevalence: float | None = None,
     ) -> None:
         self.config = config
+        self.loop = config.training.loop
         self.seed = seed
         self.learned_defender = learned_defender
         self.rng = np.random.default_rng(seed)
@@ -252,7 +253,7 @@ class CoadaptEngine:
         target = self._target()
         env = AttackEnv(self.sim, target)
         vertical = self._train_verticals[int(self.rng.integers(len(self._train_verticals)))]
-        return env, build_policy(vertical, target, self.rng)
+        return env, build_policy(vertical, target, self.rng, self.config)
 
     # -------------------------------------------------- phase A: defender
 
@@ -386,7 +387,7 @@ class CoadaptEngine:
             # warm-up is over and it may start choosing rather than sampling.
             self.selector.end_update()
 
-            extracted = self._measure_success(episodes=self.EVAL_EPISODES)
+            extracted = self._measure_success(episodes=self.loop.eval_episodes)
             report.attacker_success.append(extracted)
             report.mean_return.append(float(batch.ret.mean().item()))
             report.entropy.append(stats["entropy"])
@@ -502,7 +503,7 @@ class CoadaptEngine:
         eligible = max(1, sum(1 for c in self.sim.graph.cards
                               if self.sim.graph.devices_of_card(c)))
         per_card = max(1, self.config.warm_start.events_per_entity)
-        fraction = min(1.0, self.BENIGN_TARGET_EVENTS / (eligible * per_card))
+        fraction = min(1.0, self.loop.benign_target_events / (eligible * per_card))
         WarmStartRunner(
             self.sim, self.config, seed=self.seed + 5000 + self._benign_rounds
         ).run(live=True, card_fraction=fraction)
@@ -541,18 +542,15 @@ class CoadaptEngine:
     # episodes is thirty percent of the run spent watching rather than learning,
     # and the mean of twelve is not meaningfully noisier than the mean of
     # twenty-four at these magnitudes.
-    EVAL_EPISODES = 12
 
-    FP_SAMPLE = 400
 
     # Roughly how many benign events each live sweep should produce. Enough to
     # hold the prevalence and to give the detector a representative negative
     # class, and independent of population size so a larger world costs no more
     # here than a small one.
-    BENIGN_TARGET_EVENTS = 6000
 
     def _refusal_rate(self, events) -> float:
-        return refusal_rate(self.defender, events, self.FP_SAMPLE)
+        return refusal_rate(self.defender, events, self.loop.false_positive_sample)
 
     def _measure_success(self, episodes: int) -> float:
         return measure_success(

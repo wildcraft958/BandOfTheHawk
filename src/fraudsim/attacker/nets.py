@@ -30,6 +30,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
+
+from ..clock import MINUTES_PER_HOUR
+from ..settings.training import ActionSpaceConfig
 import torch.nn as nn
 from torch.distributions import Categorical, Normal
 
@@ -40,8 +43,12 @@ N_STAGES = len(Stage)
 
 # The continuous action ranges. Amount is log-scaled because spend spans orders
 # of magnitude; delay is in minutes.
-AMOUNT_MIN, AMOUNT_MAX = 1.0, 5000.0
-DELAY_MIN, DELAY_MAX = 0.0, 72.0 * 60.0
+# Fallbacks for a direct call with no configuration to hand. The live ranges
+# come from training.action_space; see squash_amount below.
+_SPACE = ActionSpaceConfig()
+AMOUNT_MIN, AMOUNT_MAX = _SPACE.amount_min, _SPACE.amount_max
+DELAY_MIN = _SPACE.delay_min_hours * MINUTES_PER_HOUR
+DELAY_MAX = _SPACE.delay_max_hours * MINUTES_PER_HOUR
 
 # The stealth-modifier space. Four ways to carry out whatever action was chosen,
 # ordered so that index 0 is the behaviour the policy had before this head
@@ -56,7 +63,7 @@ DELAY_MIN, DELAY_MAX = 0.0, 72.0 * 60.0
 # These are intents, not mechanisms: the environment turns each into concrete
 # action fields. The policy names a posture and never sees the graph that
 # resolves it.
-N_STEALTH = 4
+N_STEALTH = _SPACE.n_stealth_postures
 STEALTH_LOUD, STEALTH_AGED, STEALTH_AGED_COOL, STEALTH_ROTATE = range(N_STEALTH)
 
 STEALTH_NAMES = ("loud", "aged", "aged_cool", "rotate")
@@ -183,20 +190,28 @@ class Critic(nn.Module):
         return self.net(obs).squeeze(-1)
 
 
-def squash_amount(raw: torch.Tensor) -> torch.Tensor:
+def squash_amount(
+    raw: torch.Tensor, space: ActionSpaceConfig | None = None
+) -> torch.Tensor:
     """A raw Gaussian sample to an amount in range, monotonically.
 
     A sigmoid maps the real line to (0, 1), then a log-scale interpolation lands
-    it in [AMOUNT_MIN, AMOUNT_MAX], so the policy explores across orders of
+    it in the configured amount range, so the policy explores across orders of
     magnitude rather than linearly.
     """
     import math
 
+    space = space or _SPACE
     unit = torch.sigmoid(raw)
-    lo, hi = math.log(AMOUNT_MIN), math.log(AMOUNT_MAX)
+    lo, hi = math.log(space.amount_min), math.log(space.amount_max)
     return torch.exp(lo + unit * (hi - lo))
 
 
-def squash_delay(raw: torch.Tensor) -> torch.Tensor:
-    unit = torch.sigmoid(raw)
-    return DELAY_MIN + unit * (DELAY_MAX - DELAY_MIN)
+def squash_delay(
+    raw: torch.Tensor, space: ActionSpaceConfig | None = None
+) -> torch.Tensor:
+    """A raw Gaussian sample to a delay in minutes, within the configured range."""
+    space = space or _SPACE
+    lo = space.delay_min_hours * MINUTES_PER_HOUR
+    hi = space.delay_max_hours * MINUTES_PER_HOUR
+    return lo + torch.sigmoid(raw) * (hi - lo)
