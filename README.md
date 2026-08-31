@@ -2,7 +2,8 @@
 
 **Closed-loop adversarial simulation for GenAI-enabled payment fraud.**
 
-GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simulates it against a synthetic bank, and trains a detector that catches it, all as one closed loop where attacker and defender adapt against each other. The attacker is a reinforcement-learning agent that discovers fraud strategies on its own. The defender is a mixture of five specialized experts. When the defender improves, the attacker finds new gaps; when the attacker escalates, the defender refits. The result is a continuously hardening detection model, not a static classifier trained on a frozen dataset.
+GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simulates it against a synthetic bank, and trains a detector that catches it, all as one closed loop where attacker and defender adapt against each other. The attacker is a reinforcement-learning agent that discovers fraud strategies on its own. The defender is five specialized experts, routed by event type and folded together by a
+learned combiner. When the defender improves, the attacker finds new gaps; when the attacker escalates, the defender refits. The result is a continuously hardening detection model, not a static classifier trained on a frozen dataset.
 
 > Mastercard Innovation Challenge 2026 | AI Defense Lab for Payment Security
 > Team **Band of the Hawk**, IIT Kharagpur
@@ -108,7 +109,7 @@ closed loop, purple the generative layer.
 |-------|-------------|
 | `demo` | Build and warm-start a synthetic bank: 12k cardholders, entity graph, per-card behavioral calibration |
 | `text` | Generate dispute letters and embed them with Qwen3-Embedding-0.6B |
-| `fraud` | Inject scripted fraud episodes across the 7 training verticals at a realistic base rate. The 2 held-out families are withheld from this stage by design |
+| `fraud` | Inject scripted fraud episodes across the 7 training verticals at a raised prevalence, so the architectural ablations have a stable delta. The 2 held-out families are withheld from this stage by design |
 | `baseline` | Fit a flat gradient-boosted detector as a static benchmark |
 | `mixture` | Fit 5 specialized experts (transaction, binding, identity, network, text) and a combiner |
 | `coadapt` | The closed loop: warm-start defender and RL attacker, then run live co-adaptation |
@@ -291,7 +292,7 @@ BandOfTheHawk/
 ├── requirements.txt             # One exact set of versions, verified together
 ├── configs/                     # The data. Plain YAML, no code.
 │   ├── simulation.yaml          # Population, engine, behavior, detector, training
-│   ├── profiles.yaml            # The four run sizes
+│   ├── profiles.yaml            # The five run sizes
 │   └── logging.yaml             # The two output channels
 ├── src/
 │   └── fraudsim/                # Core package (~19k lines)
@@ -321,14 +322,18 @@ BandOfTheHawk/
 ├── tests/                       # 42 test files; conftest.py skips absent tiers
 ├── .github/workflows/ci.yml     # Lint, both tiers, and a reproducibility check
 └── artifacts/                   # Calibration outputs from a real pipeline run
-    ├── fitted_params.json
-    ├── noise_floors.json
+    ├── fitted_params.json       # The current ledger: fitted models, swept ranges, floors, targets
+    ├── noise_floors.json        # The split-half floors alone, for fraudsim.timing --floors
     └── text_pool.json
 ```
 
 A run also writes `artifacts/coadapt_metrics.json` and `artifacts/checkpoints/`. Both are
 generated, so both are gitignored; the committed artifacts above are the calibration
 inputs a fresh clone needs, not run outputs.
+
+`fitted_params.json` is the one to read. It carries the whole provenance ledger, and its
+floors and targets are a superset of `noise_floors.json`, which is kept only because
+`fraudsim.timing` takes it directly as `--floors`.
 
 ## Team
 
