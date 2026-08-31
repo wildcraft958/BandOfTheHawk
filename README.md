@@ -2,9 +2,9 @@
 
 **Closed-loop adversarial simulation for GenAI-enabled payment fraud.**
 
-GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simulates it against a synthetic bank, and trains a detector that catches it -- as one closed loop where attacker and defender adapt against each other. The attacker is a reinforcement-learning agent that discovers fraud strategies on its own. The defender is a mixture of five specialized experts. When the defender improves, the attacker finds new gaps; when the attacker escalates, the defender refits. The result is a continuously hardening detection model, not a static classifier trained on a frozen dataset.
+GAUNTLET is a red-team/blue-team system that invents GenAI payment fraud, simulates it against a synthetic bank, and trains a detector that catches it, all as one closed loop where attacker and defender adapt against each other. The attacker is a reinforcement-learning agent that discovers fraud strategies on its own. The defender is a mixture of five specialized experts. When the defender improves, the attacker finds new gaps; when the attacker escalates, the defender refits. The result is a continuously hardening detection model, not a static classifier trained on a frozen dataset.
 
-> Mastercard Innovation Challenge 2026 -- AI Defense Lab for Payment Security
+> Mastercard Innovation Challenge 2026 | AI Defense Lab for Payment Security
 > Team **Band of the Hawk**, IIT Kharagpur
 
 ## Key Results
@@ -41,9 +41,9 @@ demo --> text --> fraud --> baseline --> mixture --> coadapt
 
 Three dependency tiers keep the simulation path fast and the ML layers isolated:
 
-- **Runtime** (numpy, scipy, pydantic) -- the simulation engine, zero ML imports
-- **Defender** (scikit-learn, xgboost) -- the detection models
-- **RL + Generative** (torch, transformers, sentence-transformers) -- the learned attacker and text generation
+- **Runtime** (numpy, scipy, pydantic): the simulation engine, zero ML imports
+- **Defender** (scikit-learn, xgboost): the detection models
+- **RL + Generative** (torch, transformers, sentence-transformers): the learned attacker and text generation
 
 An AST-level import firewall (`tests/test_import_firewall.py`) enforces these boundaries at test time.
 
@@ -56,7 +56,7 @@ An AST-level import firewall (`tests/test_import_firewall.py`) enforces these bo
 git clone https://github.com/wildcraft958/BandOfTheHawk.git
 cd BandOfTheHawk
 
-# Install (GPU -- recommended)
+# Install (GPU, recommended)
 python -m venv .venv && source .venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cu130
 pip install -r requirements.txt
@@ -93,7 +93,7 @@ Nine attack families, each a distinct path through the 20-action space:
 | 8 | `sim_swap` | Coordinated SIM hijacking (held out of training) |
 | 9 | `refund_abuse` | Fabricated return claims (held out of training) |
 
-A tenth (`merchant_collusion`) is documented but deliberately not simulated -- it requires a settlement and clawback model this system does not implement.
+A tenth (`merchant_collusion`) is documented but deliberately not simulated. It requires a settlement and clawback model this system does not implement.
 
 ## Directory Structure
 
@@ -129,7 +129,7 @@ A tenth (`merchant_collusion`) is documented but deliberately not simulated -- i
 
 ## Team
 
-**Band of the Hawk** -- IIT Kharagpur
+**Band of the Hawk** | IIT Kharagpur
 
 - Shehryaar Shah Khan
 - Animesh Raj
