@@ -50,6 +50,10 @@ include = ["fraudsim*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error::RuntimeWarning"]
+# Tests that need an optional extra skip without it; see tests/conftest.py.
+markers = [
+    "needs_tier(name): requires an optional dependency extra",
+]
 
 [tool.ruff]
 line-length = 100

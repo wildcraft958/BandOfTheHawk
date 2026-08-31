@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import pytest
+
+pd = pytest.importorskip(
+    "pandas", reason='install the "calibration" extra'
+)
+
+import numpy as np
+
 
 from fraudsim.behavior.loyalty import LoyaltyModel, archetype_weights, clusters_from_graph
 from fraudsim.calibration.entity_stats import categorical_entity_concentration

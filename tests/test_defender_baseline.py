@@ -9,8 +9,15 @@ particular value, since that is a finding, not an invariant.
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
+
+from conftest import requires_sklearn, requires_xgboost
+
+# The tree and linear models are imported inside fit(), so this module
+# imports cleanly and only fails when a fixture actually fits.
+pytestmark = [requires_xgboost, requires_sklearn]
+
+import numpy as np
 
 from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.defender.baseline import PER_ENTITY_FEATURES, GBDTBaseline

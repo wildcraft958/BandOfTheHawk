@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import pytest
 
+from conftest import requires_torch
+
 from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import Action, ActionName
 from fraudsim.engine.outcome import OutcomeCode
@@ -179,6 +181,7 @@ def test_an_over_cap_attempt_is_refused_not_trimmed():
 # ---------------------------------------------------- 4. episode duration cap
 
 
+@requires_torch
 def test_episode_duration_cap_ends_a_long_running_attack():
     """Stretching an episode across months steps outside the detector's window.
 

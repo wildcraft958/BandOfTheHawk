@@ -6,6 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+
 from fraudsim.calibration.fit_amount import fit_amount, hill_index
 from fraudsim.calibration.fit_arrival import fit_arrival, measure_targets, simulate_arrival
 from fraudsim.calibration.fit_timing import fit_hawkes, simulate_hawkes

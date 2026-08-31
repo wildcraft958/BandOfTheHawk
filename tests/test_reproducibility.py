@@ -11,16 +11,18 @@ These tests fail on the code as it was.
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
-torch = pytest.importorskip("torch", reason="rl extra not installed")
+torch = pytest.importorskip(
+    "torch", reason='install the "rl" extra'
+)
+
+import numpy as np
 
 from fraudsim.attacker.env import AttackEnv  # noqa: E402
 from fraudsim.attacker.ppo import PPOTrainer  # noqa: E402
 from fraudsim.rng import RngHub, set_seed  # noqa: E402
 from fraudsim.settings.training import PPOConfig  # noqa: E402
-
 
 def trainer(seed: int) -> PPOTrainer:
     return PPOTrainer(
@@ -28,10 +30,8 @@ def trainer(seed: int) -> PPOTrainer:
         PPOConfig(hidden_dim=16, n_layers=1, minibatch_size=8, device="cpu", seed=seed),
     )
 
-
 def weights(model: PPOTrainer) -> list[np.ndarray]:
     return [p.detach().cpu().numpy().copy() for p in model.actor.parameters()]
-
 
 def test_the_same_seed_initialises_the_same_network() -> None:
     """Network init drew from the unseeded global generator."""
@@ -39,12 +39,10 @@ def test_the_same_seed_initialises_the_same_network() -> None:
     for left, right in zip(a, b, strict=True):
         assert np.array_equal(left, right)
 
-
 def test_a_different_seed_initialises_a_different_network() -> None:
     """Guards the guard: equal weights everywhere would pass the test above."""
     a, b = weights(trainer(7)), weights(trainer(8))
     assert any(not np.array_equal(x, y) for x, y in zip(a, b, strict=True))
-
 
 def test_the_same_seed_samples_the_same_actions() -> None:
     """Action, amount and delay all go through torch.distributions."""
@@ -67,7 +65,6 @@ def test_the_same_seed_samples_the_same_actions() -> None:
 
     assert sample(11) == sample(11)
 
-
 def test_an_unseeded_config_still_works() -> None:
     """seed=None keeps the old behaviour rather than failing."""
     model = PPOTrainer(
@@ -75,7 +72,6 @@ def test_an_unseeded_config_still_works() -> None:
         PPOConfig(hidden_dim=16, n_layers=1, minibatch_size=8, device="cpu"),
     )
     assert model.config.seed is None
-
 
 def test_set_seed_covers_python_and_numpy() -> None:
     import random
@@ -85,10 +81,8 @@ def test_set_seed_covers_python_and_numpy() -> None:
     set_seed(3)
     assert (random.random(), float(np.random.random())) == first
 
-
 def test_set_seed_returns_the_value_it_applied() -> None:
     assert set_seed(42) == 42
-
 
 def test_named_streams_are_independent_of_declaration_order() -> None:
     """Adding a stream must not shift an existing one."""
@@ -96,7 +90,6 @@ def test_named_streams_are_independent_of_declaration_order() -> None:
     b = RngHub(5)
     b.stream("unrelated")
     assert np.array_equal(a.stream("victims").random(4), b.stream("victims").random(4))
-
 
 # The derived seeds a run uses, by purpose. These are offsets from the root seed
 # rather than named RngHub streams: they are distinct and deterministic, and
@@ -113,11 +106,9 @@ SEED_OFFSETS = {
     "live_benign_base": 5000,
 }
 
-
 def test_derived_seeds_do_not_collide() -> None:
     """Two purposes sharing an offset would draw the same numbers."""
     assert len(set(SEED_OFFSETS.values())) == len(SEED_OFFSETS)
-
 
 def test_live_benign_rounds_stay_clear_of_other_offsets() -> None:
     """It is base + round number, so it must not walk into a neighbour."""

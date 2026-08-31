@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import pytest
+
+pd = pytest.importorskip(
+    "pandas", reason='install the "calibration" extra'
+)
+
+import numpy as np
+
 
 from fraudsim.behavior.amount import AmountModel, level_spread
 from fraudsim.calibration.fit_heterogeneity import entity_level_spread, fit_heterogeneity

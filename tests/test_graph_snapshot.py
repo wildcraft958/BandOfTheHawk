@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
+
+pytest.importorskip(
+    "networkx", reason='install the "analysis" extra'
+)
+
+import numpy as np
+
 
 from fraudsim.analysis.graph_snapshot import (
     DegreeSummary,

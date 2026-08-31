@@ -3,9 +3,14 @@ produces, since that is the only reason they exist."""
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import pytest
+
+pd = pytest.importorskip(
+    "pandas", reason='install the "calibration" extra'
+)
+
+import numpy as np
+
 
 from fraudsim.calibration.behavioral import (
     burst_stats,

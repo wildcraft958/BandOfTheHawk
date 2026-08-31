@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-torch = pytest.importorskip("torch")
+pytest.importorskip(
+    "torch", reason='install the "rl" extra'
+)
 
 from fraudsim.attacker.ppo import PPOConfig
 from fraudsim.settings.simulation import SimulationConfig
@@ -23,7 +25,6 @@ from fraudsim.features.state import FeatureStateStore
 from fraudsim.orchestration.coadapt import run_coadapt
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer, RiskAction, RiskAssessment
-
 
 def test_simulator_scorer_is_swappable():
     config = SimulationConfig.model_validate({"population": {"n_holders": 200}})
@@ -50,7 +51,6 @@ def test_simulator_scorer_is_swappable():
     # The swapped-in defender declines, proving the swap took effect live.
     assert out.code.value == "declined"
 
-
 @pytest.fixture(scope="module")
 def coadapt_report():
     config = SimulationConfig.model_validate(
@@ -70,13 +70,11 @@ def coadapt_report():
         ppo_config=PPOConfig(hidden_dim=64, n_layers=1, minibatch_size=64, bc_kl_anneal_updates=2),
     )
 
-
 def test_all_phases_produced_output(coadapt_report):
     r = coadapt_report
     assert r.initial_defender_positives > 0  # phase A fitted on real fraud
     assert r.critic_final_loss >= 0.0  # phase C ran
     assert len(r.attacker_success) == 6  # phase D produced a per-update curve
-
 
 def test_defender_refit_on_cadence(coadapt_report):
     r = coadapt_report
@@ -87,11 +85,9 @@ def test_defender_refit_on_cadence(coadapt_report):
         b >= a for a, b in zip(r.defender_positives_at_refit, r.defender_positives_at_refit[1:])
     )
 
-
 def test_zero_shot_present(coadapt_report):
     r = coadapt_report
     assert set(r.zero_shot) == {"refund_abuse", "sim_swap"}
-
 
 def test_top_sequences_logged(coadapt_report):
     r = coadapt_report

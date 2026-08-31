@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import pytest
 
-torch = pytest.importorskip("torch")
+torch = pytest.importorskip(
+    "torch", reason='install the "rl" extra'
+)
 
 from fraudsim.attacker.env import AttackEnv
 from fraudsim.clock import MINUTES_PER_HOUR
@@ -42,7 +44,6 @@ from fraudsim.protocols import Target
 from fraudsim.population.builder import PopulationBuilder
 from fraudsim.protocols import AlwaysApproveScorer
 
-
 @pytest.fixture(scope="module")
 def world():
     config = SimulationConfig.model_validate({"population": {"n_holders": 300}})
@@ -51,7 +52,6 @@ def world():
     builder = EventBuilder(graph, states, config.engine.windows)
     return Simulator(graph, config, builder, scorer=AlwaysApproveScorer())
 
-
 def _multi_bound_card(graph):
     """A card with more than one device, so oldest and newest differ."""
     for card_id in graph.cards:
@@ -59,7 +59,6 @@ def _multi_bound_card(graph):
         if len(devices) >= 2:
             return card_id, devices
     pytest.skip("no card in this world carries two bindings")
-
 
 def _target_for(graph, card_id, extra=()):
     holder = int(graph.cards[card_id].holder_id)
@@ -72,9 +71,7 @@ def _target_for(graph, card_id, extra=()):
         card_ids=(int(card_id),) + tuple(int(c) for c in extra),
     )
 
-
 # --------------------------------------------------------------- resolution
-
 
 def test_aged_posture_routes_through_the_oldest_binding(world):
     """The whole point: an aged posture must not mint or prefer a new device."""
@@ -92,7 +89,6 @@ def test_aged_posture_routes_through_the_oldest_binding(world):
     # a device here would make the two postures indistinguishable downstream.
     assert env._device_for(STEALTH_LOUD, int(card_id)) is None
 
-
 def test_aged_posture_skips_blocklisted_bindings(world):
     """A blocklisted device would be refused anyway; naming it wastes the step."""
     graph = world.graph
@@ -108,14 +104,12 @@ def test_aged_posture_skips_blocklisted_bindings(world):
     finally:
         graph.devices[oldest].blocklisted = False
 
-
 def test_entry_mode_follows_the_posture():
     """Entry mode was drawn from an RNG; the policy had no say in it."""
     assert AttackEnv._entry_mode(STEALTH_AGED) == 1
     assert AttackEnv._entry_mode(STEALTH_AGED_COOL) == 1
     assert AttackEnv._entry_mode(STEALTH_LOUD) == 0
     assert AttackEnv._entry_mode(STEALTH_ROTATE) == 0
-
 
 def test_cool_posture_advances_the_clock(world):
     """Cooling off must actually wait, or the posture is a label on nothing."""
@@ -132,7 +126,6 @@ def test_cool_posture_advances_the_clock(world):
     assert world.clock.now - before >= cool_off
     env.close()
 
-
 def test_rotation_moves_to_another_card(world):
     """Rotation must change what is being spent, not merely bump a counter."""
     graph = world.graph
@@ -144,7 +137,6 @@ def test_rotation_moves_to_another_card(world):
     env.step(ACTION_INDEX[ActionName.BUY_CREDS], 0.0, -20.0, STEALTH_ROTATE)
     assert env.active_card != first
     env.close()
-
 
 def test_rotation_on_a_single_card_dump_is_a_no_op(world):
     """A one-card dump has nowhere to rotate to; it must not wrap or crash."""
@@ -158,9 +150,7 @@ def test_rotation_on_a_single_card_dump_is_a_no_op(world):
     assert env.active_card == first
     env.close()
 
-
 # -------------------------------------------------------------- observation
-
 
 def test_observation_reports_the_attackers_own_detection_history(world):
     """Without this the posture choice is unlearnable: both look identical."""
@@ -180,7 +170,6 @@ def test_observation_reports_the_attackers_own_detection_history(world):
     assert obs.features["last_action_flagged"] == 0.0
     env.close()
 
-
 def test_encoder_width_matches_the_reported_dimension(world):
     """The nets size themselves from obs_dim; a mismatch is a silent shape bug."""
     graph = world.graph
@@ -190,9 +179,7 @@ def test_encoder_width_matches_the_reported_dimension(world):
     assert AttackEnv.encode(obs).shape == (AttackEnv.obs_dim(),)
     env.close()
 
-
 # ------------------------------------------------------------- termination
-
 
 def test_fraud_loop_terminates_when_episodes_produce_no_auths(monkeypatch):
     """The prevalence loop must not spin forever on an unproductive world.
@@ -239,9 +226,7 @@ def test_fraud_loop_terminates_when_episodes_produce_no_auths(monkeypatch):
     assert report.fraud_auths == 0
     assert calls["n"] > 0, "the loop must actually have run"
 
-
 # ------------------------------------------------------------------- reward
-
 
 def test_terminal_bonus_is_paid_for_money_not_for_a_stage_label():
     """Reaching MONETIZED without realising value must not pay the big bonus.
@@ -272,9 +257,7 @@ def test_terminal_bonus_is_paid_for_money_not_for_a_stage_label():
     )
     assert r_paid - r_dry > env.weights.terminal_bonus
 
-
 # --------------------------------------------------------------------- head
-
 
 def test_stealth_head_is_unmasked_and_full_width():
     """Every posture is meaningful at every stage, so nothing is masked out."""
@@ -287,7 +270,6 @@ def test_stealth_head_is_unmasked_and_full_width():
     _, stealth, _, _ = actor(obs, mask)
     assert stealth.probs.shape == (4, N_STEALTH)
     assert torch.all(stealth.probs > 0), "no posture may be unreachable"
-
 
 def test_stealth_joins_the_joint_log_prob():
     """Posture and action are one decision; scoring them apart loses the credit."""
@@ -303,7 +285,6 @@ def test_stealth_joins_the_joint_log_prob():
     lp_b, _ = actor.evaluate(obs, mask, act, torch.ones(2, dtype=torch.long), amt, dly)
     # Different postures must score differently, or the head is not in the loss.
     assert not torch.allclose(lp_a, lp_b)
-
 
 def test_behaviour_cloning_leaves_the_stealth_head_free():
     """The head must not be cloned: the demonstrations say nothing about posture.
@@ -351,7 +332,6 @@ def test_behaviour_cloning_leaves_the_stealth_head_free():
         "cloning collapsed the stealth head; PPO cannot explore a posture it is "
         "already certain about"
     )
-
 
 def test_frozen_stealth_reproduces_the_loud_policy():
     """The ablation control must actually pin the head, or it measures nothing."""

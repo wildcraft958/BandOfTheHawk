@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-torch = pytest.importorskip("torch")
+torch = pytest.importorskip(
+    "torch", reason='install the "rl" extra'
+)
 
 from fraudsim.attacker.env import AttackEnv
 from fraudsim.attacker.nets import Actor, NetConfig, squash_amount, squash_delay
@@ -19,7 +21,6 @@ from fraudsim.attacker.ppo import PPOConfig, PPOTrainer, compute_gae
 from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.actions import N_ACTIONS
 from fraudsim.protocols import ActorObservation
-
 
 def test_masked_head_never_proposes_illegal():
     cfg = NetConfig(obs_dim=AttackEnv.obs_dim(), hidden_dim=32, n_layers=1)
@@ -34,7 +35,6 @@ def test_masked_head_never_proposes_illegal():
     assert probs[0] > 0.999
     assert probs[1:].sum() < 1e-3
 
-
 def test_squash_ranges():
     raw = torch.linspace(-5, 5, 20)
     amt = squash_amount(raw)
@@ -42,13 +42,11 @@ def test_squash_ranges():
     assert float(amt.min()) >= 1.0 and float(amt.max()) <= 5000.0
     assert float(dly.min()) >= 0.0 and float(dly.max()) <= 72 * 60
 
-
 def test_gae_matches_hand_computation():
     # One step, terminal, no bootstrap: advantage = reward - value.
     adv, ret = compute_gae([1.0], [0.4], [True], 0.0, gamma=0.99, lam=0.95)
     assert abs(adv[0] - (1.0 - 0.4)) < 1e-6
     assert abs(ret[0] - 1.0) < 1e-6
-
 
 def test_encode_width_matches_obs_dim():
     obs = ActorObservation(
@@ -56,7 +54,6 @@ def test_encode_width_matches_obs_dim():
     )
     vec = AttackEnv.encode(obs)
     assert vec.shape[0] == AttackEnv.obs_dim()
-
 
 def test_trainer_bootstrap_improves_return():
     from fraudsim.attacker.bootstrap import bootstrap_and_train

@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import pytest
+
+pd = pytest.importorskip(
+    "pandas", reason='install the "calibration" extra'
+)
+
+import numpy as np
+
 
 from fraudsim.calibration.splits import entity_level_split, row_level_split
 

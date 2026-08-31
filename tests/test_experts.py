@@ -8,8 +8,15 @@ Whether the mixture beats the flat table is a finding, not pinned here.
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
+
+from conftest import requires_sklearn, requires_xgboost
+
+# The tree and linear models are imported inside fit(), so this module
+# imports cleanly and only fails when a fixture actually fits.
+pytestmark = [requires_xgboost, requires_sklearn]
+
+import numpy as np
 
 from fraudsim.settings.simulation import SimulationConfig
 from fraudsim.engine.bands import CostModel, grid_search_bands
