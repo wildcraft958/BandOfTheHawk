@@ -11,15 +11,11 @@ from pathlib import Path
 
 import numpy as np
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG, DEFAULT_FLOORS
 from ..calibration.artifact import FittedParams
 from ..settings.simulation import resolve
 from .arrival import DriftingRateProcess, burstiness, lag1_autocorrelation
 from .circadian import CircadianClock, resultant_length
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
-DEFAULT_FLOORS = ROOT / "artifacts" / "noise_floors.json"
 
 
 def cmd_gate(args: argparse.Namespace) -> int:

@@ -115,6 +115,8 @@ import time
 import traceback
 from datetime import datetime
 
+from fraudsim.paths import ARTIFACT_DIR
+
 PROFILES = ("quick", "default", "gpu", "server")
 
 # The pipeline, in order. Each entry is (stage name, module, argument builder).
@@ -215,7 +217,7 @@ def _stage_args(stage: str, s: dict, use_models: bool) -> tuple[str, list[str]]:
             ["--stealth-frozen", "--dump-size", "1",
              # A separate metrics file, or the second arm silently overwrites
              # the first and the ablation has nothing left to compare.
-             "--metrics", "artifacts/control_metrics.json"]
+             "--metrics", str(ARTIFACT_DIR / "control_metrics.json")]
             if stage == "control"
             else []
         )

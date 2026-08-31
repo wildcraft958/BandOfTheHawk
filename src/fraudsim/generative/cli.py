@@ -14,13 +14,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ..paths import DEFAULT_CFPB, DEFAULT_POOL
 from .cfpb import load_reference
 from .pool import build_pool
 from .scoring import TextScorer
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_OUT = ROOT / "artifacts" / "text_pool.json"
-DEFAULT_CFPB = ROOT / "Dataset" / "complaints" / "cfpb_payments_all.parquet"
 
 
 def _tier_report(pool, scorer) -> str:
@@ -124,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     build = subparsers.add_parser("build", help="generate and score the text pool")
-    build.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    build.add_argument("--out", type=Path, default=DEFAULT_POOL)
     build.add_argument("--cfpb", type=Path, default=DEFAULT_CFPB)
     build.add_argument("--per-key", type=int, default=8)
     build.add_argument("--reference-limit", type=int, default=2000)

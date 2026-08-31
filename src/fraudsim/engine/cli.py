@@ -9,15 +9,12 @@ import argparse
 import time
 from pathlib import Path
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from ..calibration.artifact import FittedParams
 from ..settings.simulation import resolve
 from ..population.factory import build_warm_world
 from ..rules.engine import VelocityRuleEngine
 from .stages import describe_stages
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def cmd_demo(args: argparse.Namespace) -> int:

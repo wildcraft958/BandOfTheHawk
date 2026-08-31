@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from ..calibration.artifact import FittedParams
 from ..settings.simulation import resolve
 from ..features.builder import EventBuilder
@@ -19,10 +20,6 @@ from ..population.builder import PopulationBuilder
 from ..timing.arrival import DriftingRateProcess
 from ..timing.circadian import HolderClockModel
 from .engine import VelocityRuleEngine
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def _load(args: argparse.Namespace):

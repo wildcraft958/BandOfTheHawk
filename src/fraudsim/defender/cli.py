@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from ..calibration.artifact import FittedParams
 from ..settings.simulation import resolve
 from ..engine.bands import CostModel, grid_search_bands
@@ -27,10 +28,6 @@ from .experts import ExpertBank
 from .metrics import DetectionMetrics
 from .split import entity_split
 from .table import build_table
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def _collect(config, holders: int | None):

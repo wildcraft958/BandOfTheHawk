@@ -9,12 +9,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from ..calibration.artifact import FittedParams
 from .simulation import resolve
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 def _load(args: argparse.Namespace):

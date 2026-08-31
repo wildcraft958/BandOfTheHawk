@@ -13,13 +13,12 @@ import argparse
 import json
 from pathlib import Path
 
+from ..paths import ARTIFACT_DIR
 from .behavioral import fanout_stats, fraud_rate_by_fanout
 from .loaders import IeeeCisLoader, SparkovLoader
 from .noise_floor import NoiseFloorBuilder
 from .pipeline import run_calibration
 from .splits import entity_level_split, row_level_split
-
-ARTIFACTS = Path(__file__).resolve().parents[3] / "artifacts"
 
 
 def cmd_split(args: argparse.Namespace) -> int:
@@ -52,7 +51,7 @@ def cmd_noise_floor(args: argparse.Namespace) -> int:
     floors = builder.build()
     print(floors.render())
 
-    out = ARTIFACTS / "noise_floors.json"
+    out = ARTIFACT_DIR / "noise_floors.json"
     floors.save(out)
     print(f"\nwrote {out}")
 
@@ -85,7 +84,7 @@ def cmd_fanout(args: argparse.Namespace) -> int:
     print("  a profile that climbs with degree would mean sharing was stamped in as fraud")
 
     if args.save:
-        out = ARTIFACTS / "noise_floors.json"
+        out = ARTIFACT_DIR / "noise_floors.json"
         if out.exists():
             payload = json.loads(out.read_text(encoding="utf-8"))
             payload["targets"].update(
@@ -145,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
 
     fit = subparsers.add_parser("fit", help="run every fit and write the artifact")
     fit.add_argument("--seed", type=int, default=0)
-    fit.add_argument("--out", type=Path, default=ARTIFACTS / "fitted_params.json")
+    fit.add_argument("--out", type=Path, default=ARTIFACT_DIR / "fitted_params.json")
     fit.add_argument("--skip-hawkes", action="store_true")
     fit.set_defaults(func=cmd_fit)
 

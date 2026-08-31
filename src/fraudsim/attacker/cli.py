@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..paths import DEFAULT_ARTIFACT, DEFAULT_CONFIG
 from ..calibration.artifact import FittedParams
 from ..settings.simulation import resolve
 from ..population.factory import build_warm_world
@@ -23,10 +24,6 @@ from ..attacker.scripted import VERTICALS, ZERO_SHOT_HOLDOUTS, build_policy
 from .bootstrap import bootstrap_and_train
 from .env import AttackEnv
 from .ppo import PPOConfig, PPOTrainer
-
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG = ROOT / "configs" / "simulation.yaml"
-DEFAULT_ARTIFACT = ROOT / "artifacts" / "fitted_params.json"
 
 
 class WorldFactory:

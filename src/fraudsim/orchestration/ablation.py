@@ -21,21 +21,21 @@ The interval spans zero. The arms collapse alike.
 
 from __future__ import annotations
 
-import glob
 import json
-import os
 import statistics as st
 
 import numpy as np
+
+from ..paths import ABLATION_DIR
 
 REFIT_AT = 6  # first defender refit, at --refit-every 6
 
 
 def load(arm):
     out = {}
-    for path in sorted(glob.glob(f"artifacts/ablation/{arm}_s*.json")):
-        seed = int(os.path.basename(path).split("_s")[1].split(".")[0])
-        out[seed] = json.load(open(path))
+    for path in sorted(ABLATION_DIR.glob(f"{arm}_s*.json")):
+        seed = int(path.name.split("_s")[1].split(".")[0])
+        out[seed] = json.loads(path.read_text())
     return out
 
 

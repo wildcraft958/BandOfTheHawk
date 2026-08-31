@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from ..paths import DATASET_DIR
 
 import pandas as pd
 
-DATASET_ROOT = Path(__file__).resolve().parents[3] / "Dataset"
 
 # card1 alone over-merges; pairing it with card2 and addr1 is the standard
 # reconstruction of a cardholder in this dataset.
@@ -75,7 +75,7 @@ def _require(path: Path) -> Path:
 class IeeeCisLoader:
     """Reads IEEE-CIS transactions and identity rows."""
 
-    def __init__(self, root: Path | str = DATASET_ROOT) -> None:
+    def __init__(self, root: Path | str = DATASET_DIR) -> None:
         self.root = Path(root) / "ieee-fraud-detection"
 
     def transactions(self, extra_columns: tuple[str, ...] = ()) -> TransactionFrame:
@@ -142,7 +142,7 @@ class SparkovLoader:
         "travel": "travel",
     }
 
-    def __init__(self, root: Path | str = DATASET_ROOT) -> None:
+    def __init__(self, root: Path | str = DATASET_DIR) -> None:
         self.root = Path(root) / "sparkov"
 
     def transactions(self) -> pd.DataFrame:

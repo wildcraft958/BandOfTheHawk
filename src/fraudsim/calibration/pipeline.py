@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..paths import ARTIFACT_DIR
 from .artifact import FittedParams
 from .behavioral import fanout_stats
 from .fit_amount import fit_amount
@@ -22,8 +23,6 @@ from .fit_heterogeneity import fit_heterogeneity
 from .fit_timing import fit_hawkes, sequences_from_frame
 from .loaders import IeeeCisLoader, SparkovLoader
 from .noise_floor import NoiseFloorBuilder
-
-ARTIFACTS = Path(__file__).resolve().parents[3] / "artifacts"
 
 
 def run_calibration(
@@ -258,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(prog="fraudsim.calibration.pipeline")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--out", type=Path, default=ARTIFACTS / "fitted_params.json")
+    parser.add_argument("--out", type=Path, default=ARTIFACT_DIR / "fitted_params.json")
     parser.add_argument("--skip-hawkes", action="store_true",
                         help="skip refitting the rejected alternative")
     args = parser.parse_args(argv)
