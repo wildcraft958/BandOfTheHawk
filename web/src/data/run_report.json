@@ -1,0 +1,160 @@
+{
+  "source": "data/run.log",
+  "warm_start": {
+    "entities": 12701.0,
+    "events": 48240.0,
+    "dormant_share": 0.574,
+    "cards_with_a_median": 0.259,
+    "history_days": 180.0
+  },
+  "hard_negatives": {
+    "dispute": 38.0,
+    "gift_card": 841.0,
+    "large_purchase": 451.0,
+    "new_device": 108.0,
+    "ordinary": 42418.0,
+    "recovery": 57.0,
+    "session": 540.0,
+    "travel": 355.0
+  },
+  "rule_trigger_rates": {
+    "R1": 0.0123,
+    "R2": 0.012,
+    "R3": 0.0296,
+    "R4": 0.0096,
+    "R5": 0.0062,
+    "R6": 0.0171,
+    "R7": 0.0,
+    "R8": 0.0062,
+    "any": 0.0671
+  },
+  "rule_target": 0.065,
+  "rule_verdict": "within target",
+  "rule_events": 47885.0,
+  "episodes": 83.0,
+  "reached_monetized": 72.0,
+  "benign_auths": 47744.0,
+  "fraud_auths": 241.0,
+  "fraud_auth_share": 0.005,
+  "per_vertical": {
+    "card_testing": 10,
+    "deepfake_onboarding": 20,
+    "friendly_fraud": 15,
+    "mule_layering": 8,
+    "phishing_ato": 14,
+    "support_se": 9,
+    "voice_clone": 7
+  },
+  "top_sequences": [
+    {
+      "count": 15,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "attempt_auth",
+        "file_dispute"
+      ]
+    },
+    {
+      "count": 8,
+      "chain": [
+        "make_synth_id",
+        "harvest_face",
+        "submit_kyc",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 6,
+      "chain": [
+        "make_synth_id",
+        "harvest_face",
+        "submit_kyc",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 6,
+      "chain": [
+        "make_synth_id",
+        "harvest_face",
+        "submit_kyc",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 6,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 5,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "add_payee",
+        "transfer_p2p"
+      ]
+    },
+    {
+      "count": 4,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "open_ticket",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 3,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "open_ticket",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    },
+    {
+      "count": 3,
+      "chain": [
+        "buy_creds",
+        "add_device_selfserve",
+        "add_payee",
+        "transfer_p2p",
+        "transfer_p2p"
+      ]
+    },
+    {
+      "count": 3,
+      "chain": [
+        "harvest_voice",
+        "buy_creds",
+        "call_ivr_provision",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth",
+        "attempt_auth"
+      ]
+    }
+  ]
+}

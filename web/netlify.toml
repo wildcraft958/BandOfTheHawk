@@ -1,0 +1,9 @@
+# Deploys the already-built single file. The app uses hash routing, so no
+# redirect rules are needed for deep links.
+[build]
+  publish = "dist"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-store"

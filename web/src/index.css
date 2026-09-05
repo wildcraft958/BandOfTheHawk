@@ -1,0 +1,370 @@
+@import 'tailwindcss';
+
+/* Pin what Tailwind scans. Its automatic source detection reads .gitignore, so
+   while web/ was ignored it also walked dist/index.html and emitted variables for
+   class names it found in its own previous output. Excluding the build directory
+   makes the CSS depend on the sources alone. */
+@source not '../dist';
+
+/* Self-hosted rather than linked from Google Fonts, so the page renders
+   identically offline (a judge running Docker without a network) and online,
+   and so the built file stays genuinely self-contained. Vite inlines these as
+   data URIs at build time. Variable fonts: one file per family covers every
+   weight used. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('./assets/fonts/bricolage.woff2') format('woff2');
+  font-weight: 400 800;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Archivo';
+  src: url('./assets/fonts/archivo.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/jetbrainsmono.woff2') format('woff2');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------------------------------------------------------------------------
+   GAUNTLET, operations console
+
+   A security operations console, not a marketing page: sidebar and top bar
+   chrome, dense cards, chips carrying real identifiers, and colour reserved
+   strictly for state.
+
+   Colour language, learnable at a glance:
+     red    attacker, failure
+     blue   defender, action, links
+     amber  money and value extracted, warning
+     green  pass
+     violet never seen in training (the zero-shot held-out verticals)
+   --------------------------------------------------------------------------- */
+
+@theme {
+  /* Surfaces. Near-black, faintly warm, so the red accent reads as a signal
+     rather than as decoration. */
+  --color-surface: #0a0a0b;
+  --color-surface-raised: #101013;
+  --color-surface-card: #0d0d10;
+  --color-surface-hover: #16161a;
+  --color-surface-active: #1e1e24;
+  --color-rule: #1f1f24;
+  --color-rule-subtle: #17171b;
+
+  /* Text hierarchy */
+  --color-ink: #e8e8ea;
+  --color-ink-2: #8a8a93;
+  --color-ink-3: #5a5a63;
+
+  /* Action */
+  --color-accent: #e5484d;
+  --color-accent-hover: #ff5a5f;
+  --color-accent-deep: #2a0d0f;
+
+  /* State. Red team versus blue team, and the colour language is fixed:
+     red attacker or blocked, blue defender, amber money, green pass,
+     purple never seen in training. */
+  --color-atk: #e5484d;
+  --color-def: #3b82f6;
+  --color-value: #f59e0b;
+  --color-pass: #22c55e;
+  --color-holdout: #a855f7;
+
+  --font-display: 'Bricolage Grotesque', 'Archivo', system-ui, sans-serif;
+  --font-sans: 'Archivo', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-card: 4px;
+  --radius-panel: 3px;
+  --radius-chip: 2px;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-surface);
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    /* 15px, not 13px. This is presented on a projector as well as read on a
+       laptop, and the console aesthetic was quietly costing legibility at the
+       back of a room. */
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Every figure aligns in its column and never jitters during a count-up. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgb(229 72 77 / 0.3);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-rule);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-surface-active);
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+  }
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    z-index: 60;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-panel);
+  }
+}
+
+@layer utilities {
+  /* The page-load moment: the hero curve traces once, then everything stops.
+     Driven by stroke-dashoffset over a normalised pathLength, so it costs no
+     React re-renders. */
+  @keyframes seismo-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .seismo-trace {
+    stroke-dasharray: 1;
+    animation: seismo-draw 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+
+  @keyframes ring-fill {
+    from {
+      stroke-dashoffset: var(--ring-circumference);
+    }
+  }
+
+  .ring-arc {
+    animation: ring-fill 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+
+/* The architecture flow: dashes drift along every edge so the graph reads as
+     something running rather than a picture of it, and a brighter dart travels
+     the edge on each pass to show direction. */
+  @keyframes branch-drift {
+    to {
+      stroke-dashoffset: -18;
+    }
+  }
+
+  /* Offsets are in pathLength units, so every segment sweeps at the same
+     apparent speed regardless of its real length. Direction follows the order
+     the segment is drawn in, which is why each arm of a fork or join is its own
+     path rather than one compound path. */
+  @keyframes branch-dart {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      stroke-dashoffset: -1;
+    }
+  }
+
+  @keyframes node-wake {
+    0% {
+      opacity: 0.35;
+      transform: translateY(4px);
+    }
+    45% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  .rise {
+    animation: rise 0.32s ease-out both;
+  }
+
+
+
+  /* The status dot. Its resting state is already lit, so when reduced motion
+     collapses the animation it holds a steady glow rather than going flat. */
+  @keyframes status-glow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--color-pass) 28%, transparent),
+        0 0 5px color-mix(in oklab, var(--color-pass) 45%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in oklab, var(--color-pass) 18%, transparent),
+        0 0 12px color-mix(in oklab, var(--color-pass) 90%, transparent);
+    }
+  }
+
+  .status-dot {
+    border-radius: 9999px;
+    background: var(--color-pass);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-pass) 28%, transparent),
+      0 0 5px color-mix(in oklab, var(--color-pass) 45%, transparent);
+    animation: status-glow 2.4s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@layer components {
+  /* Prose opts out of the console's mono default, because judges have to read
+     the explanations and long mono paragraphs fight that. */
+  .prose-sans {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+  }
+}
+
+/* Sequenced diagram wires.
+   
+   These live at the top level rather than inside a Tailwind layer, and are
+   referenced by the two classes below, because Tailwind v4 prunes @keyframes it
+   cannot see referenced. An animation-name set from an inline style is invisible
+   to it, so keyframes declared in a layer and used that way are dropped from the
+   build with no warning: the rule simply does not exist at runtime.
+   
+   Every wire in a diagram shares one cycle length and differs only in its
+   animation-delay, which is what turns simultaneous movement into a flow you can
+   follow. A dart travels during the first slice of the cycle and is invisible
+   for the rest, so only the steps actually happening are lit. Paths declare
+   pathLength 1, so a short and a long wire travel at the same apparent speed. */
+/* Disclosure chevron.
+ *
+ * Tailwind's group-open variant is emitted into the bundle but does not resolve
+ * against this markup, and a decorative rotation is not worth chasing through
+ * the layer cascade. Same fix as the wire keyframes below: a real class and an
+ * explicit rule at top level, where nothing can prune or outrank it. */
+.note-chevron {
+  transition: rotate 150ms ease;
+}
+details[open] > summary .note-chevron {
+  rotate: 90deg;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-chevron {
+    transition: none;
+  }
+}
+
+@keyframes wire-step {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+  0.6% {
+    opacity: 1;
+  }
+  7.4% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0;
+    stroke-dashoffset: -1;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -1;
+  }
+}
+
+/* The slow paths: a latency, a refit. Twice the crossing time, because the cost
+   of those steps is time. */
+@keyframes wire-step-slow {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+  0.6% {
+    opacity: 1;
+  }
+  15.4% {
+    opacity: 1;
+  }
+  16% {
+    opacity: 0;
+    stroke-dashoffset: -1;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -1;
+  }
+}
+
+.wire-step,
+.wire-step-slow {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+.wire-step {
+  animation-name: wire-step;
+}
+
+.wire-step-slow {
+  animation-name: wire-step-slow;
+}

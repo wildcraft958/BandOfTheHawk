@@ -38,5 +38,6 @@ scratch/
 tmp/
 *.log
 
-# Web prototype. Delivered as a hosted link rather than in-repo.
-web/
+# The run logs behind every reported number are kept as provenance, so they are
+# the one exception to *.log above.
+!results/*.log

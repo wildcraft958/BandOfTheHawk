@@ -1,0 +1,348 @@
+{
+  "source": "artifacts/text_pool.json",
+  "generator": "qwen",
+  "embed_model": "Qwen/Qwen3-Embedding-0.6B@256",
+  "embed_dim": 256,
+  "fingerprint": "5d59d7b9caff40b91dd7eaa6c3257d7409279d48e34a683f965409a9ae5e3cf0",
+  "n_entries": 12000,
+  "note": "Both classes are generated. Entries labelled not-fraudulent carry a generated persona and synthetic merchant and bank names just as the fraudulent ones do, so the label separates intent, not provenance. The pool contains no real consumer complaints.",
+  "tier_note": "Capability tiers are ordinal. They are ranked, never treated as quantities, because error rates are not comparable across editions.",
+  "samples": [
+    {
+      "vertical": "friendly_fraud",
+      "tier": 0,
+      "fraudulent": false,
+      "persona": "a busy parent who rarely checks the app",
+      "text": "I\u2019m writing to dispute a charge of $73.40 at Northgate Electronics on February 20, 2024. I noticed this charge when reviewing my monthly statement, and upon checking, I realized I was double-billed for the same item. Please reverse the duplicate charge so I can finalize my account.",
+      "facts": {
+        "amount": 73.4,
+        "merchant_name": "Northgate Electronics",
+        "bank_name": "Meridian Bank",
+        "date": "2024-02-20",
+        "detail": "reviewing their monthly statement"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 0,
+      "fraudulent": true,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "I noticed the charge of $264.71 at Riverside Grocery on August 23, 2024, when I reviewed my monthly statement. I did not authorize this transaction and don't recognize the merchant. Please resolve this discrepancy as soon as possible.",
+      "facts": {
+        "amount": 264.71,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "First National",
+        "date": "2024-08-23",
+        "detail": "reviewing their monthly statement"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 1,
+      "fraudulent": false,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Dear Meridian Bank,\n\nI\u2019m writing to dispute a charge of $597.87 made by Riverside Grocery on 2024-11-19. I received a text alert from my bank this morning, which prompted me to review my statements more closely. Upon inspection, I noticed that I was double-billed for this purchase. To correct this, I request that you reverse the duplicate charge.\n\nThank you for your prompt attention to this matter.\n\nSincerely,\n[Your Name]",
+      "facts": {
+        "amount": 597.87,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "Meridian Bank",
+        "date": "2024-11-19",
+        "detail": "a text alert from the bank"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 1,
+      "fraudulent": true,
+      "persona": "a young professional who does everything on their phone",
+      "text": "Dear Coastal Credit Union,\n\nI\u2019m writing to dispute a charge of $830.12 at CityFuel from 2/1/2024. I noticed this charge when reviewing my monthly statement via the mobile app last week. I did not authorize this purchase and do not recognize the merchant. Please investigate and resolve this as soon as possible.\n\nThank you,\n[Your Full Name]",
+      "facts": {
+        "amount": 830.12,
+        "merchant_name": "CityFuel",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-02-01",
+        "detail": "reviewing their monthly statement"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 2,
+      "fraudulent": false,
+      "persona": "a young professional who does everything on their phone",
+      "text": "Dear Coastal Credit Union Team,\n\nI hope this message finds you well. I\u2019m reaching out because I\u2019ve noticed an unusual charge of $879.87 from BlueLine Transit on September 5, 2024. I received a text alert from the bank immediately after the transaction, which is unusual for me since I always make sure my trips are properly managed through their app.\n\nAfter reviewing my trip history, I realized that I was double-billed for this trip. It appears there\u2019s a mistake and I only made one valid purchase. Can you please look into this and reverse the duplicate charge? I need this resolved as soon as possible.\n\nThank you for your attention to this matter. \n\nBest,\n[Your Name]",
+      "facts": {
+        "amount": 879.87,
+        "merchant_name": "BlueLine Transit",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-09-05",
+        "detail": "a text alert from the bank"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 2,
+      "fraudulent": true,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Dear Coastal Credit Union Team,\n\nI hope this message finds you well. I am writing to dispute a charge of $548.69 that appeared on my account on June 18th, 2024, at CityFuel. I thoroughly reviewed my monthly statement after logging into my online banking, and I do not recognize either the amount or the merchant. As far as I can recall, I did not authorize this transaction.\n\nCould you please investigate this matter and get back to me with your findings? It's causing quite a bit of stress for me since I didn't make this purchase and need to ensure my account is secure.\n\nThank you for your prompt attention to this issue.\n\nBest regards,\nJohn Doe",
+      "facts": {
+        "amount": 548.69,
+        "merchant_name": "CityFuel",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-06-18",
+        "detail": "reviewing their monthly statement"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 3,
+      "fraudulent": false,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Coastal Credit Union,\n\nI hope this message finds you well. I\u2019m writing to dispute a charge of $730.42 that appeared on my account on July 19, 2024, at Northgate Electronics. When I checked my account app today, I noticed multiple charges for the same item, indicating that I was double-billed. This charge is entirely incorrect.\n\nAs a long-time customer, this situation is particularly concerning because it has never happened before. I usually monitor my transactions regularly and always check for any discrepancies. The duplicate charge needs to be reversed immediately.\n\nCould you please look into this matter and provide a written response within the next 10 business days? I appreciate your prompt attention to this issue and hope we can resolve it quickly.\n\nThank you for your understanding and assistance.\n\nBest regards,\n\n[Your Full Name]\n[Your Account Number]",
+      "facts": {
+        "amount": 730.42,
+        "merchant_name": "Northgate Electronics",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-07-19",
+        "detail": "checking the app after a notification"
+      }
+    },
+    {
+      "vertical": "friendly_fraud",
+      "tier": 3,
+      "fraudulent": true,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Dear First National,\n\nI am writing to dispute a charge of $156.55 made by CityFuel on January 8, 2024. I noticed this charge when I checked my account today via the mobile app. I received a notification, which prompted me to review my transaction history immediately.\n\nThis charge is perplexing because I did not authorize any purchase from CityFuel and have never visited that location. I have been a loyal customer of your bank for over a decade and have always kept a close eye on my transactions, but this is the first time something like this has occurred.\n\nI kindly request that you investigate this matter and provide a written response within 10 business days. Please include details about the investigation process and any steps you will take to resolve this issue.\n\nThank you for your prompt attention to this matter.\n\nSincerely,\n[Your Full Name]\n\nPS: Account Number: [Your Account Number]",
+      "facts": {
+        "amount": 156.55,
+        "merchant_name": "CityFuel",
+        "bank_name": "First National",
+        "date": "2024-01-08",
+        "detail": "checking the app after a notification"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 0,
+      "fraudulent": false,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Summit Outdoor,\n\nI hope this message finds you well. I placed an order with you on April 24, 2024, for an item worth $57.53. Unfortunately, the product was not as described, so I had to return it. Could you please process my refund? I\u2019m feeling a bit anxious about getting my money back.\n\nThank you very much!",
+      "facts": {
+        "amount": 57.53,
+        "merchant_name": "Summit Outdoor",
+        "bank_name": "Meridian Bank",
+        "date": "2024-04-24",
+        "detail": "the item was not as described"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 0,
+      "fraudulent": true,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Harbor Books,\n\nI hope this message finds you well. I am writing to request a full refund for the order placed on June 2, 2024, with the order number 1234567. The total amount was $284.25. Unfortunately, the item did not meet the description provided. Please let me know how I can proceed with the refund. Thank you.\n\nSincerely,\n[Your Full Name]",
+      "facts": {
+        "amount": 284.25,
+        "merchant_name": "Harbor Books",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-06-02",
+        "detail": "the item was not as described"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 1,
+      "fraudulent": false,
+      "persona": "a young professional who does everything on their phone",
+      "text": "Hi Northgate Electronics Team,\n\nI placed an order with you on February 2, 2024, for a smartwatch valued at $819.18. Unfortunately, the item I received did not match the description provided on your website. I followed your return policy and sent the item back yesterday. Despite receiving the return confirmation, I haven't seen any activity on my account.\n\nCould you please process a refund for me? I'm really frustrated and hoping this can be sorted quickly. My order number is 123456789.\n\nThanks,\n[Your Name]",
+      "facts": {
+        "amount": 819.18,
+        "merchant_name": "Northgate Electronics",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-02-02",
+        "detail": "the item was not as described"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 1,
+      "fraudulent": true,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Summit Outdoor,\n\nI hope this message finds you well. I\u2019m writing regarding the order I placed on May 12, 2024, which was for a total of $749.53. Unfortunately, the item has not arrived, and I haven\u2019t received any updates or tracking information. I would appreciate a full refund for this order as soon as possible.\n\nThank you for your prompt attention to this matter.\n\nBest regards,\n[Your Name]",
+      "facts": {
+        "amount": 749.53,
+        "merchant_name": "Summit Outdoor",
+        "bank_name": "Meridian Bank",
+        "date": "2024-05-12",
+        "detail": "the item never arrived"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 2,
+      "fraudulent": false,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear CityFuel,\n\nI hope this message finds you well. I placed an order for part number 123456789 on April 25, 2024, and the total was $448.75. Unfortunately, the item has not arrived, and I've already gone through the return process. Despite reaching out to your customer service multiple times, I still haven't received any resolution.\n\nI'm really disappointed and frustrated because I paid for a service that didn\u2019t deliver what I expected. Could we please get this issue resolved so I can get my refund? I appreciate your understanding and hope to hear from you soon.\n\nThank you,\nRetiree Customer",
+      "facts": {
+        "amount": 448.75,
+        "merchant_name": "CityFuel",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-04-25",
+        "detail": "the item never arrived"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 2,
+      "fraudulent": true,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Summit Outdoor,\n\nI\u2019m writing to request a refund for the recent order I placed on September 22, 2024. The total for the order was $300.41, and unfortunately, the item never arrived.\n\nI\u2019ve tried calling the number on your website several times over the past week but haven\u2019t been able to get through to anyone. I\u2019m really disappointed because this is the first time I\u2019ve experienced issues with my order from you, and I expected better service.\n\nCould you please expedite the refund process? I just want to be sure that I get my money back before I decide whether to give you another chance. I hope we can resolve this quickly.\n\nThank you,\nJane Doe",
+      "facts": {
+        "amount": 300.41,
+        "merchant_name": "Summit Outdoor",
+        "bank_name": "First National",
+        "date": "2024-09-22",
+        "detail": "the item never arrived"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 3,
+      "fraudulent": false,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Dear Riverside Grocery Team,\n\nI hope this message finds you well.\n\nOn August 13, 2024, I placed an order for some household items from your store. The total was $329.51, which included a tracking number of 1234567890ABCDEF. Unfortunately, despite being assured that my package was on its way, the order has never arrived. \n\nI reached out to your customer service team a couple of weeks ago to check on the status of the order. They were very helpful and suggested that I file a return and initiate a refund process. I did exactly that and received confirmation that the item had been processed and is now pending a refund. However, I\u2019m still waiting, and the refund hasn\u2019t been credited to my account yet.\n\nThis situation is causing quite a bit of anxiety for me. I\u2019ve had great experiences with Riverside Grocery in the past, but this recent issue has left me feeling frustrated and disappointed. Could you please expedite the process and resolve this matter at your earliest convenience? I\u2019ve attached a copy of my order confirmation and the return documentation for your reference.\n\nThank you for your prompt attention to this matter.\n\nSincerely,\n\n[Your Name]\nAccount No.: [Your Account Number]",
+      "facts": {
+        "amount": 329.51,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "First National",
+        "date": "2024-08-13",
+        "detail": "the item never arrived"
+      }
+    },
+    {
+      "vertical": "refund_abuse",
+      "tier": 3,
+      "fraudulent": true,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Dear Riverside Grocery,\n\nI hope this message finds you well. I am writing regarding my recent order placed on October 7, 2024, which included items totaling $571.63. Unfortunately, the items never arrived, and I have not received any updates since placing the order.\n\nI checked using the tracking number you provided, but it shows no activity since my initial submission. This is very concerning, especially since I have always had positive experiences with your store in the past. Could you please help me resolve this issue? I am really hoping to receive a full refund so that I can place a new order with you.\n\nI appreciate your attention to this matter and look forward to your prompt response. Please let me know if there\u2019s anything else I can provide to assist in resolving this.\n\nThank you for your understanding and cooperation.\n\nBest regards,\nElizabeth Johnson",
+      "facts": {
+        "amount": 571.63,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "Meridian Bank",
+        "date": "2024-10-07",
+        "detail": "the item never arrived"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 0,
+      "fraudulent": false,
+      "persona": "a young professional who does everything on their phone",
+      "text": "Hey there, I\u2019m trying to log in to my Coastal Credit Union account but the authenticator app is not working and I can\u2019t get into my account. Can someone please help me out? This is urgent!",
+      "facts": {
+        "amount": 356.13,
+        "merchant_name": "Northgate Electronics",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-06-25",
+        "detail": "their authenticator app stopped working"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 0,
+      "fraudulent": true,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "I\u2019m so frustrated! My authenticator app just stopped working, and I can\u2019t get into my account to do anything important. Can you help me fix this right away?",
+      "facts": {
+        "amount": 731.69,
+        "merchant_name": "BlueLine Transit",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-06-14",
+        "detail": "their authenticator app stopped working"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 1,
+      "fraudulent": false,
+      "persona": "a retiree who prefers to call rather than use the website",
+      "text": "Good morning, this is John Smith from First National. I\u2019m reaching out because I\u2019m locked out of my own account and it\u2019s causing some real trouble at home. My wife and I are in a bit of a rush, dealing with a family emergency, and we can\u2019t access our funds. Could you please help us get back into the account as soon as possible? Thank you so much for your assistance today.",
+      "facts": {
+        "amount": 223.96,
+        "merchant_name": "CityFuel",
+        "bank_name": "First National",
+        "date": "2024-11-16",
+        "detail": "a family emergency has them locked out"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 1,
+      "fraudulent": true,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Hi Coastal Credit Union Customer Service,\n\nI hope you\u2019re doing well. My name is Sarah Thompson, and I\u2019m in a bit of a bind. I just found out my phone was stolen while I was at the airport, and now I can\u2019t get into my Coastal Credit Union account. I need to check my balance before I fly to make sure everything\u2019s okay. Could you please help me regain access? I really need this sorted ASAP.\n\nThanks a million! Sarah",
+      "facts": {
+        "amount": 762.17,
+        "merchant_name": "Harbor Books",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-02-23",
+        "detail": "they are travelling and their phone was stolen"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 2,
+      "fraudulent": false,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Hi there,\n\nI hope this message finds you well. I\u2019m reaching out in a bit of a panic because my Authenticator app just stopped working, and now I can\u2019t get into my Coastal Credit Union account. I\u2019ve tried resetting it through the app several times, but nothing seems to work. I really need to access my accounts today for some important transactions.\n\nCould you please help me figure out what\u2019s going on and how to regain access? I\u2019m really worried about missing a payment due to this issue. Your prompt assistance would be greatly appreciated.\n\nThanks so much for your help!\n\nSincerely,\nJohn Doe",
+      "facts": {
+        "amount": 49.59,
+        "merchant_name": "Northgate Electronics",
+        "bank_name": "Coastal Credit Union",
+        "date": "2024-11-26",
+        "detail": "their authenticator app stopped working"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 2,
+      "fraudulent": true,
+      "persona": "a young professional who does everything on their phone",
+      "text": "Hey there,\n\nI\u2019m in a bit of a bind here and could really use some help. I\u2019ve been trying to log into my Meridian Bank account for a while now but keep getting locked out. My password expired a couple days ago, and I can\u2019t figure out how to reset it through the app. I\u2019m in the middle of a family emergency, so this is a big issue right now.\n\nCan you please assist me in resetting my password? I\u2019d really appreciate it if someone could do this quickly since I need to handle some important stuff ASAP. If you need any more info from me, just let me know.\n\nThanks a million!\n\nBest,\n[Your Name]",
+      "facts": {
+        "amount": 336.0,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "Meridian Bank",
+        "date": "2024-05-12",
+        "detail": "a family emergency has them locked out"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 3,
+      "fraudulent": false,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Hey First National Team,\n\nI hope this email finds you well. My name is Sarah Thompson, and I\u2019m in quite a bind here. My son called me in a panic because we can\u2019t get into our bank account. I know you guys have your security stuff tight, but he\u2019s locked out right now, and I need access to make an urgent payment.\n\nThe account number is 1234567890 and the routing number is 0987654321. I always read my statements carefully, so I remember these.\n\nTo speed things up, I want to confirm some information that you might already have: I\u2019ve used my debit card at the same local grocery store about two weeks ago. And last month, there was a direct deposit from my husband\u2019s employer, XYZ Corp.\n\nI understand you\u2019ll need some more information, but this is really urgent. My son has missed work because we can\u2019t transfer funds to his payroll. Can we please do this as fast as possible? \n\nThanks for your help,\nSarah",
+      "facts": {
+        "amount": 770.31,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "First National",
+        "date": "2024-11-16",
+        "detail": "a family emergency has them locked out"
+      }
+    },
+    {
+      "vertical": "support_se",
+      "tier": 3,
+      "fraudulent": true,
+      "persona": "a 48-year-old who banks online and reads every statement",
+      "text": "Hey there,\n\nI\u2019m really hoping you can help me out. My phone got stolen last night while I was on vacation in Miami. It\u2019s crazy because it\u2019s my primary way to access my accounts. I can't log into my Meridian Online Banking right now, and I need to make sure everything is secure. Could you please take care of this for me?\n\nHere\u2019s what I have so far:\n- Account number: 123456789 (I hope that\u2019s enough for you to figure it out)\n- My name is Sarah Johnson\n- I usually use my password and fingerprint to log in\n\nI know it\u2019s a bit of an emergency and I\u2019m not at home. Can you please change my login to require a security question? I remember one of my favorite pets from childhood \u2013 my dog, Charlie. He was brown with white spots.\n\nI\u2019d really appreciate if we could get this sorted as quickly as possible. I need to check my balances and make sure nothing has gone missing. \n\nThanks so much for your help!\n\nSarah",
+      "facts": {
+        "amount": 284.42,
+        "merchant_name": "Riverside Grocery",
+        "bank_name": "Meridian Bank",
+        "date": "2024-09-22",
+        "detail": "they are travelling and their phone was stolen"
+      }
+    }
+  ]
+}

@@ -46,6 +46,16 @@ states on itself. The cost curve is labelled relative cost, never a currency fig
 The prototype does not drive the pipeline. It replays recorded runs rather than pretending to
 launch one. To regenerate those runs, see the commands below.
 
+The source is in `web/`. It builds to a single self-contained `web/dist/index.html` that
+makes no network requests, so the built file also opens straight from the filesystem.
+
+```bash
+cd web
+npm install
+npm run build     # typecheck, bundle, then verify no external references
+npm run dev       # or serve it on localhost:5173 while editing
+```
+
 ## Key Results
 
 Two regimes are reported and they are not interchangeable. Static benchmarks run at 12,000
@@ -288,6 +298,8 @@ BandOfTheHawk/
 ├── main.py                      # Pipeline entrypoint (all stages, or one)
 ├── make_figures.py              # Regenerates the five measured figures
 ├── docs/                        # The solution document, as PDF and .docx
+├── results/                     # Run logs behind the reported figures
+├── web/                         # Prototype source: React, Vite, one-file build
 ├── pyproject.toml               # The dependency contract: base + five extras
 ├── requirements.txt             # One exact set of versions, verified together
 ├── configs/                     # The data. Plain YAML, no code.
