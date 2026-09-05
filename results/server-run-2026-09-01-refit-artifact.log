@@ -1,0 +1,597 @@
+00:00:03 INFO    fraudsim.pipeline: ==============================================================================
+00:00:03 INFO    fraudsim.pipeline: fraudsim
+00:00:03 INFO    fraudsim.pipeline: profile: server    population: 12,000
+00:00:03 INFO    fraudsim.pipeline: models:  real Qwen + embeddings
+00:00:03 INFO    fraudsim.pipeline: stages:  demo -> text -> fraud -> baseline -> mixture -> coadapt
+00:00:03 INFO    fraudsim.pipeline: ==============================================================================
+00:00:03 INFO    fraudsim.pipeline: ==============================================================================
+00:00:03 INFO    fraudsim.pipeline: STAGE: demo
+00:00:03 INFO    fraudsim.pipeline: fraudsim.engine.cli demo --holders 12000
+00:00:03 INFO    fraudsim.pipeline: ==============================================================================
+stage machine
+  none        phish_holder, buy_creds, make_synth_id, harvest_voice, harvest_face
+  acquired    harvest_voice, harvest_face, call_ivr_provision, submit_kyc, add_device_selfserve, sim_swap, reset_password, add_payee
+  bound       add_payee, open_ticket, escalate_limit, attempt_auth, complete_3ds, transfer_p2p, request_refund
+  monetized   attempt_auth, file_dispute, cash_out, launder_chain
+  terminal    nothing
+
+
+  history spans             180 days
+
+rule trigger rates over 47,456 events
+
+  R1       0.0120
+  R2       0.0121
+  R3       0.0263
+  R4       0.0094
+  R5       0.0056
+  R6       0.0150
+  R7       0.0000
+  R8       0.0063
+  any      0.0620
+
+  target 0.065, within target
+
+  graph invariants         hold
+  built and warmed          5.3s
+00:00:09 INFO    fraudsim.pipeline: demo: ok in 5.7s
+00:00:09 INFO    fraudsim.pipeline: ==============================================================================
+00:00:09 INFO    fraudsim.pipeline: STAGE: text
+00:00:09 INFO    fraudsim.pipeline: fraudsim.generative.cli build --per-key 500 --qwen --embed --embed-dim 256
+00:00:09 INFO    fraudsim.pipeline: ==============================================================================
+text pool  (qwen)
+  entries            12,000
+  embed model      Qwen/Qwen3-Embedding-0.6B@256  (dim 256)
+  fingerprint      5d59d7b9caff40b9
+
+  reusing /Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/text_pool.json -- pass --rebuild to generate a new one
+00:00:09 INFO    fraudsim.pipeline: text: ok in 0.3s
+00:00:09 INFO    fraudsim.pipeline: ==============================================================================
+00:00:09 INFO    fraudsim.pipeline: STAGE: fraud
+00:00:09 INFO    fraudsim.pipeline: fraudsim.orchestration.cli run --holders 12000 --train-only
+00:00:09 INFO    fraudsim.pipeline: ==============================================================================
+episode run
+  benign auths            47,020
+  fraud auths                240
+  fraud auth share        0.0051
+  episodes                    84
+  reached monetized           75
+
+  episodes per vertical
+    card_testing              13
+    deepfake_onboarding       13
+    friendly_fraud            13
+    mule_layering             14
+    phishing_ato              12
+    support_se                 6
+    voice_clone               13
+
+  top action sequences
+      13  buy_creds>add_device_selfserve>attempt_auth>file_dispute
+       9  harvest_voice>buy_creds>call_ivr_provision>attempt_auth>attempt_auth>attempt_auth>attempt_auth
+       8  buy_creds>add_device_selfserve>add_payee>transfer_p2p
+       5  buy_creds>add_device_selfserve>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth
+       5  buy_creds>add_device_selfserve>add_payee>transfer_p2p>transfer_p2p
+       5  make_synth_id>harvest_face>submit_kyc>attempt_auth>attempt_auth>attempt_auth>attempt_auth
+       5  make_synth_id>harvest_face>submit_kyc>attempt_auth>attempt_auth
+       4  buy_creds>add_device_selfserve>open_ticket>attempt_auth>attempt_auth>attempt_auth
+       4  phish_holder>reset_password>attempt_auth>attempt_auth>attempt_auth>attempt_auth
+       3  buy_creds>add_device_selfserve>attempt_auth>attempt_auth>attempt_auth>attempt_auth>attempt_auth
+
+  graph invariants         hold
+  built and run            10.7s
+00:00:21 INFO    fraudsim.pipeline: fraud: ok in 11.5s
+00:00:21 INFO    fraudsim.pipeline: ==============================================================================
+00:00:21 INFO    fraudsim.pipeline: STAGE: baseline
+00:00:21 INFO    fraudsim.pipeline: fraudsim.defender.cli baseline --holders 12000 --fraud-rate 0.01
+00:00:21 INFO    fraudsim.pipeline: ==============================================================================
+defender baseline  [STATIC BENCHMARK vs the scripted red team]
+  a fixed adversary and fixed data, so architectures can be compared and
+  the per-entity ablation means something. NOT a claim about the learned
+  attacker -- that is the co-adaptation curve.
+  train rows              34,401  (485 fraud)
+  test rows               14,532  (269 fraud)
+
+  D_0 rule engine
+    PR-AUC                0.0353
+    ROC-AUC              0.7258
+    recall @0.1% FPR     0.0000
+    recall @1% FPR       0.0149
+    precision @budget    0.0300
+    positives               269 / 14,532
+
+  GBDT full
+    PR-AUC                0.9961
+    ROC-AUC              0.9999
+    recall @0.1% FPR     0.9777
+    recall @1% FPR       1.0000
+    precision @budget    1.0000
+    positives               269 / 14,532
+
+  GBDT without per-entity features
+    PR-AUC                0.9958
+    ROC-AUC              0.9999
+    recall @0.1% FPR     0.9814
+    recall @1% FPR       0.9963
+    precision @budget    1.0000
+    positives               269 / 14,532
+
+  the open question (H.6)
+    per-entity PR-AUC lift    +0.0004
+    verdict                  the per-entity features add little here
+
+  top features by gain
+    device_age_days                        720.4
+    seconds_since_last_auth                606.0
+    entry_mode_count_86400s                389.2
+    entry_mode                             349.5
+    entry_mode_sum_86400s                  284.8
+    card_n_devices                         173.4
+    amount                                 150.1
+    device_age_days_missing                131.6
+    amount_vs_median_missing               110.0  <- per-entity
+    entry_mode_count_3600s                 103.9
+    hour_of_day                            103.3
+    seconds_since_last_auth_missing         98.5
+00:00:34 INFO    fraudsim.pipeline: baseline: ok in 13.3s
+00:00:34 INFO    fraudsim.pipeline: ==============================================================================
+00:00:34 INFO    fraudsim.pipeline: STAGE: mixture
+00:00:34 INFO    fraudsim.pipeline: fraudsim.defender.cli mixture --holders 12000 --fraud-rate 0.01
+00:00:34 INFO    fraudsim.pipeline: ==============================================================================
+mixture of experts  [STATIC BENCHMARK vs the scripted red team]
+  the same fixed data as the baseline, so the two are comparable. NOT a
+  claim about the learned attacker.
+  train rows              34,401  (485 fraud)
+  test rows               14,532  (269 fraud)
+
+  flat GBDT
+    PR-AUC                0.9961
+    ROC-AUC              0.9999
+    recall @0.1% FPR     0.9777
+    recall @1% FPR       1.0000
+    precision @budget    1.0000
+    positives               269 / 14,532
+
+  experts + fixed average
+    PR-AUC                0.9134
+    ROC-AUC              0.9960
+    recall @0.1% FPR     0.8401
+    recall @1% FPR       0.8401
+    precision @budget    1.0000
+    positives               269 / 14,532
+
+  experts + learned combiner
+    PR-AUC                0.9483
+    ROC-AUC              0.9969
+    recall @0.1% FPR     0.8030
+    recall @1% FPR       0.9442
+    precision @budget    1.0000
+    positives               269 / 14,532
+
+  learned combiner weights
+    identity        +5.769
+    binding         +7.831
+    transaction    +12.040
+    text            +0.219
+    network        +15.298
+
+  learned vs fixed-average PR-AUC lift    +0.0349
+  verdict                                learned combination helps
+
+  cost-curve bands
+    step_up  0.42   hold 0.53   decline 0.63   block 0.73
+00:00:47 INFO    fraudsim.pipeline: mixture: ok in 12.8s
+00:00:47 INFO    fraudsim.pipeline: ==============================================================================
+00:00:47 INFO    fraudsim.pipeline: STAGE: coadapt
+00:00:47 INFO    fraudsim.pipeline: fraudsim.orchestration.cli coadapt --holders 12000 --fraud-rate 0.01 --learned --demo-episodes 800 --bc-epochs 15 --critic-rollouts 128 --critic-epochs 40 --updates 150 --episodes-per-update 80 --refit-every 12 --hidden 512 --minibatch 512 --label-latency 4320 --fraud-rounds 4 --target-prevalence 0.02
+00:00:47 INFO    fraudsim.pipeline: ==============================================================================
+00:00:47 INFO    fraudsim.orchestration.coadapt_report: setup: world
+00:00:47 INFO    fraudsim.orchestration.coadapt_report:   [  0.0s] building the population graph (12,000 holders)
+00:00:48 INFO    fraudsim.orchestration.coadapt_report:   [  0.5s] graph holds 23,977 cards, 19,200 devices
+00:00:48 INFO    fraudsim.orchestration.coadapt_report:   [  0.5s] loading the text pool
+00:00:49 INFO    fraudsim.orchestration.coadapt_report:   [  2.2s] warm start: backdating history so the first events are not feature-poor
+00:00:55 INFO    fraudsim.orchestration.coadapt_report:   setup: world done in 7.6s  (47,501 warm-start events)
+00:00:55 INFO    fraudsim.orchestration.coadapt_report: phase A: initial defender
+00:00:55 INFO    fraudsim.orchestration.coadapt_report:   [  0.0s] collecting benign traffic and a first scripted fraud sweep
+00:01:01 INFO    fraudsim.orchestration.coadapt_report:   [  6.3s] log holds 96,521 events; extracting the table
+00:01:02 INFO    fraudsim.orchestration.coadapt_report:   [  7.4s] fitting the defender on 49,020 rows (743 fraud)
+00:01:03 INFO    fraudsim.orchestration.coadapt_report:   phase A: initial defender done in 8.5s
+00:01:03 INFO    fraudsim.orchestration.coadapt_report: phase B: actor behaviour cloning
+00:01:03 INFO    fraudsim.orchestration.coadapt_report:   [  0.0s] running 800 scripted demonstration episodes
+00:01:04 INFO    fraudsim.orchestration.coadapt_report:   [  0.8s] cloning on 4,232 transitions, 15 epochs [cpu]
+00:01:05 INFO    fraudsim.orchestration.coadapt_report:   phase B: actor behaviour cloning done in 1.3s  (final loss 1.5839)
+00:01:05 INFO    fraudsim.orchestration.coadapt_report: phase C: critic
+00:01:05 INFO    fraudsim.orchestration.coadapt_report:   [  0.0s] collecting 128 rollouts from the cloned actor
+00:01:06 INFO    fraudsim.orchestration.coadapt_report:   [  1.4s] fitting the critic on 2,329 transitions, 40 epochs
+00:01:06 INFO    fraudsim.orchestration.coadapt_report:   phase C: critic done in 1.6s  (final loss 333.9)
+00:01:06 INFO    fraudsim.orchestration.coadapt: live phase: 150 updates, refit every 12
+00:01:06 INFO    fraudsim.orchestration.coadapt: update  extracted   return   entropy  critic      elapsed
+00:01:07 INFO    fraudsim.orchestration.coadapt:   0          671.1    14.35     4.814    0.96     0.0m  eta   3.3m
+00:01:09 INFO    fraudsim.orchestration.coadapt:   1          640.7    13.60     4.754    0.94     0.1m  eta   4.1m
+00:01:11 INFO    fraudsim.orchestration.coadapt:   2         1154.1    23.47     4.662    0.94     0.1m  eta   4.2m
+00:01:13 INFO    fraudsim.orchestration.coadapt:   3         1998.4    35.39     4.652    0.97     0.1m  eta   4.3m
+00:01:15 INFO    fraudsim.orchestration.coadapt:   4         1995.1    43.12     4.638    0.94     0.2m  eta   4.4m
+00:01:17 INFO    fraudsim.orchestration.coadapt:   5         2762.8    51.50     4.618    0.89     0.2m  eta   4.5m
+00:01:20 INFO    fraudsim.orchestration.coadapt:   6         3281.6    67.63     4.586    0.98     0.2m  eta   4.6m
+00:01:22 INFO    fraudsim.orchestration.coadapt:   7         5601.8    77.71     4.594    1.01     0.3m  eta   4.6m
+00:01:24 INFO    fraudsim.orchestration.coadapt:   8         7138.6   109.49     4.566    1.12     0.3m  eta   4.6m
+00:01:26 INFO    fraudsim.orchestration.coadapt:   9         9432.9   149.32     4.535    1.25     0.3m  eta   4.6m
+00:01:28 INFO    fraudsim.orchestration.coadapt:   10        7222.8   178.89     4.545    1.31     0.4m  eta   4.7m
+00:01:31 INFO    fraudsim.orchestration.coadapt:   11       10623.0   184.93     4.553    1.30     0.4m  eta   4.7m
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/sklearn/linear_model/_logistic.py:599: ConvergenceWarning: lbfgs failed to converge after 2000 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=2000).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  n_iter_i = _check_optimize_result(
+00:01:36 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 2,016 fraud rows   (declined 0.00% of genuine traffic)
+00:01:37 INFO    fraudsim.orchestration.coadapt:   12        2559.6   136.04     4.714    1.02     0.5m  eta   5.5m
+00:01:39 INFO    fraudsim.orchestration.coadapt:   13        5787.2   139.17     4.727    1.02     0.5m  eta   5.2m
+00:01:40 INFO    fraudsim.orchestration.coadapt:   14        3928.6   160.34     4.727    1.06     0.6m  eta   5.0m
+00:01:41 INFO    fraudsim.orchestration.coadapt:   15        1530.0   165.87     4.717    1.05     0.6m  eta   4.8m
+00:01:42 INFO    fraudsim.orchestration.coadapt:   16        5702.7   154.48     4.684    1.02     0.6m  eta   4.7m
+00:01:43 INFO    fraudsim.orchestration.coadapt:   17        7408.0   165.63     4.703    1.04     0.6m  eta   4.5m
+00:01:44 INFO    fraudsim.orchestration.coadapt:   18        4468.5   164.71     4.778    1.02     0.6m  eta   4.4m
+00:01:45 INFO    fraudsim.orchestration.coadapt:   19        6332.7   164.83     4.744    1.02     0.7m  eta   4.2m
+00:01:46 INFO    fraudsim.orchestration.coadapt:   20        4958.3   188.99     4.673    1.07     0.7m  eta   4.1m
+00:01:47 INFO    fraudsim.orchestration.coadapt:   21        5181.0   185.85     4.601    1.05     0.7m  eta   4.0m
+00:01:49 INFO    fraudsim.orchestration.coadapt:   22        6512.6   193.07     4.603    1.06     0.7m  eta   3.9m
+00:01:50 INFO    fraudsim.orchestration.coadapt:   23        5850.5   172.39     4.587    1.02     0.7m  eta   3.8m
+00:01:53 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 2,060 fraud rows   (declined 1.75% of genuine traffic)
+00:01:54 INFO    fraudsim.orchestration.coadapt:   24        4618.3   143.61     4.634    0.98     0.8m  eta   4.0m
+00:01:55 INFO    fraudsim.orchestration.coadapt:   25        4830.3   158.45     4.577    0.98     0.8m  eta   3.9m
+00:01:57 INFO    fraudsim.orchestration.coadapt:   26        5624.4   148.75     4.627    0.97     0.8m  eta   3.8m
+00:01:58 INFO    fraudsim.orchestration.coadapt:   27        5377.4   135.17     4.596    0.94     0.9m  eta   3.8m
+00:01:59 INFO    fraudsim.orchestration.coadapt:   28        4748.2   156.99     4.664    0.97     0.9m  eta   3.7m
+00:02:01 INFO    fraudsim.orchestration.coadapt:   29        6057.4   169.26     4.614    1.00     0.9m  eta   3.6m
+00:02:02 INFO    fraudsim.orchestration.coadapt:   30        4956.2   183.80     4.516    1.03     0.9m  eta   3.6m
+00:02:04 INFO    fraudsim.orchestration.coadapt:   31        4483.2   180.37     4.423    1.01     1.0m  eta   3.5m
+00:02:05 INFO    fraudsim.orchestration.coadapt:   32        8292.0   178.94     4.440    1.01     1.0m  eta   3.5m
+00:02:06 INFO    fraudsim.orchestration.coadapt:   33        6793.6   174.75     4.373    0.97     1.0m  eta   3.4m
+00:02:08 INFO    fraudsim.orchestration.coadapt:   34        5782.7   191.54     4.343    1.02     1.0m  eta   3.4m
+00:02:10 INFO    fraudsim.orchestration.coadapt:   35        7562.7   177.87     4.377    0.97     1.1m  eta   3.3m
+00:02:13 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 1,122 fraud rows   (declined 0.75% of genuine traffic)
+00:02:14 INFO    fraudsim.orchestration.coadapt:   36        3725.6   143.92     4.433    0.96     1.1m  eta   3.4m
+00:02:15 INFO    fraudsim.orchestration.coadapt:   37        4564.5   145.64     4.482    0.95     1.2m  eta   3.4m
+00:02:16 INFO    fraudsim.orchestration.coadapt:   38        3274.1   126.84     4.425    0.90     1.2m  eta   3.3m
+00:02:17 INFO    fraudsim.orchestration.coadapt:   39        3760.2   120.33     4.439    0.86     1.2m  eta   3.3m
+00:02:18 INFO    fraudsim.orchestration.coadapt:   40        4892.6   133.87     4.374    0.90     1.2m  eta   3.2m
+00:02:20 INFO    fraudsim.orchestration.coadapt:   41        4485.6   129.53     4.525    0.92     1.2m  eta   3.2m
+00:02:21 INFO    fraudsim.orchestration.coadapt:   42        3892.7   123.62     4.489    0.89     1.3m  eta   3.1m
+00:02:23 INFO    fraudsim.orchestration.coadapt:   43        5139.3   120.37     4.478    0.84     1.3m  eta   3.1m
+00:02:24 INFO    fraudsim.orchestration.coadapt:   44        3976.6   134.13     4.414    0.86     1.3m  eta   3.0m
+00:02:26 INFO    fraudsim.orchestration.coadapt:   45        6535.3   136.01     4.435    0.90     1.3m  eta   3.0m
+00:02:27 INFO    fraudsim.orchestration.coadapt:   46        4520.0   137.66     4.248    0.86     1.4m  eta   3.0m
+00:02:29 INFO    fraudsim.orchestration.coadapt:   47        7068.9   138.82     4.317    0.89     1.4m  eta   2.9m
+00:02:31 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 132 fraud rows   (declined 0.50% of genuine traffic)
+00:02:33 INFO    fraudsim.orchestration.coadapt:   48       13601.1   204.01     4.281    1.04     1.5m  eta   3.0m
+00:02:36 INFO    fraudsim.orchestration.coadapt:   49       12383.4   231.23     4.378    1.12     1.5m  eta   3.0m
+00:02:39 INFO    fraudsim.orchestration.coadapt:   50       11283.1   241.26     4.332    1.15     1.5m  eta   3.0m
+00:02:42 INFO    fraudsim.orchestration.coadapt:   51       14206.2   237.94     4.320    1.12     1.6m  eta   3.0m
+00:02:44 INFO    fraudsim.orchestration.coadapt:   52       13158.5   239.01     4.330    1.12     1.6m  eta   3.0m
+00:02:47 INFO    fraudsim.orchestration.coadapt:   53       12323.6   238.69     4.374    1.13     1.7m  eta   3.0m
+00:02:49 INFO    fraudsim.orchestration.coadapt:   54       14946.2   245.98     4.300    1.11     1.7m  eta   3.0m
+00:02:52 INFO    fraudsim.orchestration.coadapt:   55       13052.1   257.72     4.300    1.14     1.8m  eta   2.9m
+00:02:54 INFO    fraudsim.orchestration.coadapt:   56       13593.7   267.99     4.283    1.17     1.8m  eta   2.9m
+00:02:56 INFO    fraudsim.orchestration.coadapt:   57       14927.3   268.69     4.216    1.16     1.8m  eta   2.9m
+00:02:58 INFO    fraudsim.orchestration.coadapt:   58       15013.7   268.04     4.188    1.15     1.9m  eta   2.9m
+00:03:00 INFO    fraudsim.orchestration.coadapt:   59       15321.1   273.36     4.176    1.15     1.9m  eta   2.9m
+00:03:03 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 131 fraud rows   (declined 0.00% of genuine traffic)
+00:03:05 INFO    fraudsim.orchestration.coadapt:   60       16819.1   264.01     4.218    1.12     2.0m  eta   2.9m
+00:03:07 INFO    fraudsim.orchestration.coadapt:   61       15716.3   296.84     4.231    1.21     2.0m  eta   2.9m
+00:03:10 INFO    fraudsim.orchestration.coadapt:   62       14611.1   292.28     4.230    1.21     2.1m  eta   2.8m
+00:03:12 INFO    fraudsim.orchestration.coadapt:   63       15662.2   288.00     4.217    1.17     2.1m  eta   2.8m
+00:03:14 INFO    fraudsim.orchestration.coadapt:   64       17456.6   298.00     4.170    1.18     2.1m  eta   2.8m
+00:03:16 INFO    fraudsim.orchestration.coadapt:   65       14310.2   290.29     4.171    1.14     2.2m  eta   2.8m
+00:03:18 INFO    fraudsim.orchestration.coadapt:   66       17334.6   296.40     4.101    1.15     2.2m  eta   2.7m
+00:03:20 INFO    fraudsim.orchestration.coadapt:   67       16337.6   303.63     4.093    1.16     2.2m  eta   2.7m
+00:03:22 INFO    fraudsim.orchestration.coadapt:   68       15658.3   303.41     4.061    1.15     2.3m  eta   2.7m
+00:03:24 INFO    fraudsim.orchestration.coadapt:   69       14266.0   318.66     4.071    1.21     2.3m  eta   2.6m
+00:03:26 INFO    fraudsim.orchestration.coadapt:   70       14380.8   307.00     4.042    1.17     2.3m  eta   2.6m
+00:03:28 INFO    fraudsim.orchestration.coadapt:   71       16157.3   319.36     4.010    1.19     2.4m  eta   2.6m
+00:03:31 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 131 fraud rows   (declined 0.00% of genuine traffic)
+00:03:33 INFO    fraudsim.orchestration.coadapt:   72       19287.5   314.98     4.037    1.16     2.4m  eta   2.6m
+00:03:35 INFO    fraudsim.orchestration.coadapt:   73       16805.9   324.15     3.994    1.17     2.5m  eta   2.5m
+00:03:37 INFO    fraudsim.orchestration.coadapt:   74       18789.3   319.35     3.979    1.17     2.5m  eta   2.5m
+00:03:39 INFO    fraudsim.orchestration.coadapt:   75       17295.1   309.39     3.974    1.15     2.5m  eta   2.5m
+00:03:41 INFO    fraudsim.orchestration.coadapt:   76       15395.9   321.55     3.944    1.16     2.6m  eta   2.4m
+00:03:43 INFO    fraudsim.orchestration.coadapt:   77       19433.6   308.40     3.922    1.11     2.6m  eta   2.4m
+00:03:44 INFO    fraudsim.orchestration.coadapt:   78       15283.8   313.99     3.962    1.12     2.6m  eta   2.4m
+00:03:46 INFO    fraudsim.orchestration.coadapt:   79       14138.2   322.79     3.973    1.15     2.7m  eta   2.3m
+00:03:48 INFO    fraudsim.orchestration.coadapt:   80       18239.0   328.81     3.990    1.16     2.7m  eta   2.3m
+00:03:50 INFO    fraudsim.orchestration.coadapt:   81       16322.3   315.84     3.997    1.11     2.7m  eta   2.3m
+00:03:52 INFO    fraudsim.orchestration.coadapt:   82       16616.8   312.79     3.984    1.10     2.8m  eta   2.2m
+00:03:54 INFO    fraudsim.orchestration.coadapt:   83       18141.6   314.17     3.961    1.12     2.8m  eta   2.2m
+00:03:56 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 132 fraud rows   (declined 0.00% of genuine traffic)
+00:03:58 INFO    fraudsim.orchestration.coadapt:   84       16802.3   328.34     3.965    1.15     2.9m  eta   2.2m
+00:04:00 INFO    fraudsim.orchestration.coadapt:   85       16190.6   309.07     3.993    1.09     2.9m  eta   2.2m
+00:04:02 INFO    fraudsim.orchestration.coadapt:   86       15654.0   323.45     3.974    1.12     2.9m  eta   2.1m
+00:04:04 INFO    fraudsim.orchestration.coadapt:   87       18590.8   330.70     3.930    1.15     3.0m  eta   2.1m
+00:04:06 INFO    fraudsim.orchestration.coadapt:   88       18021.3   310.05     3.943    1.07     3.0m  eta   2.1m
+00:04:08 INFO    fraudsim.orchestration.coadapt:   89       17781.5   332.95     3.976    1.14     3.0m  eta   2.0m
+00:04:10 INFO    fraudsim.orchestration.coadapt:   90       18241.3   324.16     3.899    1.10     3.1m  eta   2.0m
+00:04:12 INFO    fraudsim.orchestration.coadapt:   91       18644.1   323.47     3.961    1.11     3.1m  eta   2.0m
+00:04:14 INFO    fraudsim.orchestration.coadapt:   92       16933.0   338.99     3.979    1.14     3.1m  eta   1.9m
+00:04:16 INFO    fraudsim.orchestration.coadapt:   93       15965.8   324.69     4.015    1.10     3.2m  eta   1.9m
+00:04:18 INFO    fraudsim.orchestration.coadapt:   94       18467.4   325.05     4.049    1.11     3.2m  eta   1.9m
+00:04:20 INFO    fraudsim.orchestration.coadapt:   95       19346.3   340.99     4.119    1.14     3.2m  eta   1.8m
+00:04:23 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 128 fraud rows   (declined 0.00% of genuine traffic)
+00:04:25 INFO    fraudsim.orchestration.coadapt:   96       18009.1   336.04     4.099    1.14     3.3m  eta   1.8m
+00:04:27 INFO    fraudsim.orchestration.coadapt:   97       15994.7   346.51     4.172    1.17     3.3m  eta   1.8m
+00:04:29 INFO    fraudsim.orchestration.coadapt:   98       18638.8   324.74     4.105    1.11     3.4m  eta   1.7m
+00:04:31 INFO    fraudsim.orchestration.coadapt:   99       16948.2   329.18     4.124    1.09     3.4m  eta   1.7m
+00:04:33 INFO    fraudsim.orchestration.coadapt:   100      18529.4   333.33     4.101    1.12     3.5m  eta   1.7m
+00:04:35 INFO    fraudsim.orchestration.coadapt:   101      15723.6   314.44     4.057    1.05     3.5m  eta   1.6m
+00:04:37 INFO    fraudsim.orchestration.coadapt:   102      18985.2   328.67     4.034    1.10     3.5m  eta   1.6m
+00:04:39 INFO    fraudsim.orchestration.coadapt:   103      17444.3   324.59     4.036    1.08     3.5m  eta   1.6m
+00:04:41 INFO    fraudsim.orchestration.coadapt:   104      18598.5   334.83     4.064    1.10     3.6m  eta   1.5m
+00:04:43 INFO    fraudsim.orchestration.coadapt:   105      18547.8   341.33     4.087    1.13     3.6m  eta   1.5m
+00:04:45 INFO    fraudsim.orchestration.coadapt:   106      19117.1   342.06     4.069    1.12     3.7m  eta   1.5m
+00:04:47 INFO    fraudsim.orchestration.coadapt:   107      17390.6   338.28     4.064    1.11     3.7m  eta   1.4m
+00:04:49 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 120 fraud rows   (declined 0.00% of genuine traffic)
+00:04:52 INFO    fraudsim.orchestration.coadapt:   108      17481.1   342.35     4.055    1.11     3.8m  eta   1.4m
+00:04:54 INFO    fraudsim.orchestration.coadapt:   109      18204.9   327.45     4.061    1.08     3.8m  eta   1.4m
+00:04:56 INFO    fraudsim.orchestration.coadapt:   110      16430.2   331.53     4.034    1.07     3.8m  eta   1.3m
+00:04:58 INFO    fraudsim.orchestration.coadapt:   111      18028.0   333.15     4.052    1.08     3.9m  eta   1.3m
+00:05:00 INFO    fraudsim.orchestration.coadapt:   112      18046.8   339.28     4.060    1.08     3.9m  eta   1.3m
+00:05:02 INFO    fraudsim.orchestration.coadapt:   113      17479.2   338.18     4.014    1.08     3.9m  eta   1.2m
+00:05:04 INFO    fraudsim.orchestration.coadapt:   114      16200.1   343.20     3.975    1.09     4.0m  eta   1.2m
+00:05:06 INFO    fraudsim.orchestration.coadapt:   115      19101.3   340.84     3.931    1.08     4.0m  eta   1.2m
+00:05:08 INFO    fraudsim.orchestration.coadapt:   116      19165.0   335.09     3.965    1.06     4.0m  eta   1.1m
+00:05:10 INFO    fraudsim.orchestration.coadapt:   117      17911.4   324.31     3.996    1.03     4.1m  eta   1.1m
+00:05:12 INFO    fraudsim.orchestration.coadapt:   118      17953.0   342.13     4.000    1.07     4.1m  eta   1.1m
+00:05:14 INFO    fraudsim.orchestration.coadapt:   119      17491.7   352.83     3.979    1.10     4.1m  eta   1.0m
+00:05:17 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 124 fraud rows   (declined 0.00% of genuine traffic)
+00:05:19 INFO    fraudsim.orchestration.coadapt:   120      14902.0   347.25     4.053    1.09     4.2m  eta   1.0m
+00:05:21 INFO    fraudsim.orchestration.coadapt:   121      18576.7   347.40     4.052    1.08     4.2m  eta   1.0m
+00:05:23 INFO    fraudsim.orchestration.coadapt:   122      17186.7   345.95     4.023    1.08     4.3m  eta   0.9m
+00:05:25 INFO    fraudsim.orchestration.coadapt:   123      17999.8   357.07     3.999    1.10     4.3m  eta   0.9m
+00:05:27 INFO    fraudsim.orchestration.coadapt:   124      21471.1   353.23     3.961    1.08     4.3m  eta   0.9m
+00:05:29 INFO    fraudsim.orchestration.coadapt:   125      19733.1   354.70     3.887    1.09     4.4m  eta   0.8m
+00:05:31 INFO    fraudsim.orchestration.coadapt:   126      18236.2   366.17     3.910    1.12     4.4m  eta   0.8m
+00:05:33 INFO    fraudsim.orchestration.coadapt:   127      18104.3   364.21     3.838    1.11     4.5m  eta   0.8m
+00:05:35 INFO    fraudsim.orchestration.coadapt:   128      20326.3   358.27     3.741    1.10     4.5m  eta   0.7m
+00:05:37 INFO    fraudsim.orchestration.coadapt:   129      20657.0   370.80     3.774    1.13     4.5m  eta   0.7m
+00:05:39 INFO    fraudsim.orchestration.coadapt:   130      19806.5   365.41     3.816    1.11     4.6m  eta   0.7m
+00:05:41 INFO    fraudsim.orchestration.coadapt:   131      22444.4   369.65     3.769    1.11     4.6m  eta   0.6m
+00:05:44 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 131 fraud rows   (declined 0.00% of genuine traffic)
+00:05:46 INFO    fraudsim.orchestration.coadapt:   132      18225.9   370.86     3.719    1.09     4.7m  eta   0.6m
+00:05:48 INFO    fraudsim.orchestration.coadapt:   133      20407.6   363.82     3.694    1.08     4.7m  eta   0.6m
+00:05:50 INFO    fraudsim.orchestration.coadapt:   134      19186.3   372.76     3.660    1.10     4.7m  eta   0.5m
+00:05:52 INFO    fraudsim.orchestration.coadapt:   135      19580.5   368.50     3.626    1.09     4.8m  eta   0.5m
+00:05:54 INFO    fraudsim.orchestration.coadapt:   136      18430.0   369.03     3.597    1.09     4.8m  eta   0.5m
+00:05:56 INFO    fraudsim.orchestration.coadapt:   137      20248.3   382.23     3.600    1.14     4.8m  eta   0.4m
+00:05:59 INFO    fraudsim.orchestration.coadapt:   138      20447.3   366.61     3.563    1.08     4.9m  eta   0.4m
+00:06:01 INFO    fraudsim.orchestration.coadapt:   139      20928.2   381.01     3.518    1.11     4.9m  eta   0.4m
+00:06:03 INFO    fraudsim.orchestration.coadapt:   140      22034.0   373.51     3.526    1.09     4.9m  eta   0.3m
+00:06:05 INFO    fraudsim.orchestration.coadapt:   141      22077.9   380.68     3.565    1.10     5.0m  eta   0.3m
+00:06:07 INFO    fraudsim.orchestration.coadapt:   142      22548.0   380.36     3.619    1.09     5.0m  eta   0.2m
+00:06:09 INFO    fraudsim.orchestration.coadapt:   143      20460.5   384.62     3.607    1.12     5.0m  eta   0.2m
+00:06:11 INFO    fraudsim.orchestration.coadapt:     -> defender refit on 136 fraud rows   (declined 0.00% of genuine traffic)
+00:06:13 INFO    fraudsim.orchestration.coadapt:   144      17921.4   385.29     3.548    1.10     5.1m  eta   0.2m
+00:06:16 INFO    fraudsim.orchestration.coadapt:   145      19043.0   392.85     3.507    1.12     5.2m  eta   0.1m
+00:06:18 INFO    fraudsim.orchestration.coadapt:   146      17558.4   381.84     3.478    1.09     5.2m  eta   0.1m
+00:06:20 INFO    fraudsim.orchestration.coadapt:   147      20596.5   387.47     3.451    1.10     5.2m  eta   0.1m
+00:06:22 INFO    fraudsim.orchestration.coadapt:   148      23756.2   386.44     3.417    1.10     5.3m  eta   0.0m
+00:06:23 INFO    fraudsim.orchestration.coadapt:   149      18764.8   374.24     3.406    1.06     5.3m  eta   0.0m
+live co-adaptation
+  initial defender fraud        743
+  BC final loss              1.5839
+  critic final loss        333.8686
+
+  live phase  (extracted = value the attacker takes per episode, all channels)
+  update  extracted   return   entropy   defender
+    0          671.1    14.35     4.814
+    1          640.7    13.60     4.754
+    2         1154.1    23.47     4.662
+    3         1998.4    35.39     4.652
+    4         1995.1    43.12     4.638
+    5         2762.8    51.50     4.618
+    6         3281.6    67.63     4.586
+    7         5601.8    77.71     4.594
+    8         7138.6   109.49     4.566
+    9         9432.9   149.32     4.535
+    10        7222.8   178.89     4.545
+    11       10623.0   184.93     4.553  <- refit
+    12        2559.6   136.04     4.714
+    13        5787.2   139.17     4.727
+    14        3928.6   160.34     4.727
+    15        1530.0   165.87     4.717
+    16        5702.7   154.48     4.684
+    17        7408.0   165.63     4.703
+    18        4468.5   164.71     4.778
+    19        6332.7   164.83     4.744
+    20        4958.3   188.99     4.673
+    21        5181.0   185.85     4.601
+    22        6512.6   193.07     4.603
+    23        5850.5   172.39     4.587  <- refit
+    24        4618.3   143.61     4.634
+    25        4830.3   158.45     4.577
+    26        5624.4   148.75     4.627
+    27        5377.4   135.17     4.596
+    28        4748.2   156.99     4.664
+    29        6057.4   169.26     4.614
+    30        4956.2   183.80     4.516
+    31        4483.2   180.37     4.423
+    32        8292.0   178.94     4.440
+    33        6793.6   174.75     4.373
+    34        5782.7   191.54     4.343
+    35        7562.7   177.87     4.377  <- refit
+    36        3725.6   143.92     4.433
+    37        4564.5   145.64     4.482
+    38        3274.1   126.84     4.425
+    39        3760.2   120.33     4.439
+    40        4892.6   133.87     4.374
+    41        4485.6   129.53     4.525
+    42        3892.7   123.62     4.489
+    43        5139.3   120.37     4.478
+    44        3976.6   134.13     4.414
+    45        6535.3   136.01     4.435
+    46        4520.0   137.66     4.248
+    47        7068.9   138.82     4.317  <- refit
+    48       13601.1   204.01     4.281
+    49       12383.4   231.23     4.378
+    50       11283.1   241.26     4.332
+    51       14206.2   237.94     4.320
+    52       13158.5   239.01     4.330
+    53       12323.6   238.69     4.374
+    54       14946.2   245.98     4.300
+    55       13052.1   257.72     4.300
+    56       13593.7   267.99     4.283
+    57       14927.3   268.69     4.216
+    58       15013.7   268.04     4.188
+    59       15321.1   273.36     4.176  <- refit
+    60       16819.1   264.01     4.218
+    61       15716.3   296.84     4.231
+    62       14611.1   292.28     4.230
+    63       15662.2   288.00     4.217
+    64       17456.6   298.00     4.170
+    65       14310.2   290.29     4.171
+    66       17334.6   296.40     4.101
+    67       16337.6   303.63     4.093
+    68       15658.3   303.41     4.061
+    69       14266.0   318.66     4.071
+    70       14380.8   307.00     4.042
+    71       16157.3   319.36     4.010  <- refit
+    72       19287.5   314.98     4.037
+    73       16805.9   324.15     3.994
+    74       18789.3   319.35     3.979
+    75       17295.1   309.39     3.974
+    76       15395.9   321.55     3.944
+    77       19433.6   308.40     3.922
+    78       15283.8   313.99     3.962
+    79       14138.2   322.79     3.973
+    80       18239.0   328.81     3.990
+    81       16322.3   315.84     3.997
+    82       16616.8   312.79     3.984
+    83       18141.6   314.17     3.961  <- refit
+    84       16802.3   328.34     3.965
+    85       16190.6   309.07     3.993
+    86       15654.0   323.45     3.974
+    87       18590.8   330.70     3.930
+    88       18021.3   310.05     3.943
+    89       17781.5   332.95     3.976
+    90       18241.3   324.16     3.899
+    91       18644.1   323.47     3.961
+    92       16933.0   338.99     3.979
+    93       15965.8   324.69     4.015
+    94       18467.4   325.05     4.049
+    95       19346.3   340.99     4.119  <- refit
+    96       18009.1   336.04     4.099
+    97       15994.7   346.51     4.172
+    98       18638.8   324.74     4.105
+    99       16948.2   329.18     4.124
+    100      18529.4   333.33     4.101
+    101      15723.6   314.44     4.057
+    102      18985.2   328.67     4.034
+    103      17444.3   324.59     4.036
+    104      18598.5   334.83     4.064
+    105      18547.8   341.33     4.087
+    106      19117.1   342.06     4.069
+    107      17390.6   338.28     4.064  <- refit
+    108      17481.1   342.35     4.055
+    109      18204.9   327.45     4.061
+    110      16430.2   331.53     4.034
+    111      18028.0   333.15     4.052
+    112      18046.8   339.28     4.060
+    113      17479.2   338.18     4.014
+    114      16200.1   343.20     3.975
+    115      19101.3   340.84     3.931
+    116      19165.0   335.09     3.965
+    117      17911.4   324.31     3.996
+    118      17953.0   342.13     4.000
+    119      17491.7   352.83     3.979  <- refit
+    120      14902.0   347.25     4.053
+    121      18576.7   347.40     4.052
+    122      17186.7   345.95     4.023
+    123      17999.8   357.07     3.999
+    124      21471.1   353.23     3.961
+    125      19733.1   354.70     3.887
+    126      18236.2   366.17     3.910
+    127      18104.3   364.21     3.838
+    128      20326.3   358.27     3.741
+    129      20657.0   370.80     3.774
+    130      19806.5   365.41     3.816
+    131      22444.4   369.65     3.769  <- refit
+    132      18225.9   370.86     3.719
+    133      20407.6   363.82     3.694
+    134      19186.3   372.76     3.660
+    135      19580.5   368.50     3.626
+    136      18430.0   369.03     3.597
+    137      20248.3   382.23     3.600
+    138      20447.3   366.61     3.563
+    139      20928.2   381.01     3.518
+    140      22034.0   373.51     3.526
+    141      22077.9   380.68     3.565
+    142      22548.0   380.36     3.619
+    143      20460.5   384.62     3.607  <- refit
+    144      17921.4   385.29     3.548
+    145      19043.0   392.85     3.507
+    146      17558.4   381.84     3.478
+    147      20596.5   387.47     3.451
+    148      23756.2   386.44     3.417
+    149      18764.8   374.24     3.406
+
+  reads
+    value extracted per episode  671.1 -> 18764.8
+
+  zero-shot recall on held-out verticals
+    refund_abuse       0.000
+    sim_swap           0.103
+
+  how the attacker's strategy changed (sampled at each refit)
+    update 11     5x  phish_holder[aged_cool]>add_device_selfserve[aged_cool]>attempt_auth[aged_cool]>attempt_auth
+    update 23     6x  buy_creds[aged_cool]>add_device_selfserve[aged_cool]>attempt_auth[aged_cool]>attempt_auth[ag
+    update 35     3x  buy_creds[rotate]>reset_password[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_a
+    update 47     2x  buy_creds[rotate]>reset_password[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_a
+    update 59     6x  buy_creds[rotate]>reset_password[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_a
+    update 71    11x  buy_creds[aged_cool]>reset_password[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_coo
+    update 83     8x  buy_creds[aged_cool]>reset_password[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_coo
+    update 95    12x  buy_creds[aged_cool]>reset_password[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_coo
+    update 107    6x  buy_creds[rotate]>reset_password[rotate]>attempt_auth[rotate]>attempt_auth[rotate]>attempt_a
+    update 119   11x  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged
+    update 131   12x  buy_creds[aged_cool]>reset_password[aged_cool]>attempt_auth[aged_cool]>attempt_auth[aged_coo
+    update 143   10x  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged
+
+  victim selection (posterior mean by feature)
+    (coefficients are differences from the reference level)
+    bin tier 0       reference
+    bin tier 1       +76.436
+    bin tier 2       +25.483
+    bin tier 3       -69.156
+    age under 6m     reference
+    age 6m to 1y      +0.000
+    age 1y to 3y      +0.000
+    age over 3y     +471.756
+    observations     12,000
+    selecting      yes
+
+  top action sequences (final trained attacker)
+      30  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+       1  buy_creds[aged]>reset_password[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed>attempt_auth[aged]!failed
+
+  metrics written to /Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/coadapt_metrics.json
+  attacker saved to /Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/attacker.pt
+  defender saved to /Users/bakasur/Desktop/MC_Hackathon/submission/artifacts/checkpoints/defender.joblib
+00:07:43 INFO    fraudsim.pipeline: coadapt: ok in 416.1s
+
+==============================================================================
+  SUMMARY
+==============================================================================
+  demo        ok            5.7s
+  text        ok            0.3s
+  fraud       ok           11.5s
+  baseline    ok           13.3s
+  mixture     ok           12.8s
+  coadapt     ok          416.1s
+  total                   459.6s
+  finished: 2026-09-01 00:07:43
