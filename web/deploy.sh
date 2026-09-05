@@ -2,8 +2,8 @@
 # Publish the built prototype to a public URL.
 #
 # Both providers upload this folder directly rather than reading the git repo,
-# which is what we need: web/ is gitignored, so a git-connected deploy would
-# find nothing.
+# so what ships is the dist/ built here and checked below, not whatever a build
+# on their side would produce.
 #
 #   ./deploy.sh vercel-now   no account needed, returns a claimable URL
 #   ./deploy.sh login        authenticate, then use ./deploy.sh vercel
